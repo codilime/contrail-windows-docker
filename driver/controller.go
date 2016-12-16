@@ -15,17 +15,17 @@ const (
 type Info struct {
 }
 
-type ContrailClient struct {
+type Controller struct {
 	ApiClient contrail.ApiClient
 }
 
-func NewContrailClient(ip string, port int) *ContrailClient {
-	client := &ContrailClient{}
+func NewController(ip string, port int) *Controller {
+	client := &Controller{}
 	client.ApiClient = contrail.NewClient(ip, port)
 	return client
 }
 
-func (c *ContrailClient) GetNetwork(tenantName, networkName string) (*types.VirtualNetwork,
+func (c *Controller) GetNetwork(tenantName, networkName string) (*types.VirtualNetwork,
 	error) {
 	name := fmt.Sprintf("%s:%s:%s", DomainName, tenantName, networkName)
 	net, err := types.VirtualNetworkByName(c.ApiClient, name)
@@ -35,7 +35,7 @@ func (c *ContrailClient) GetNetwork(tenantName, networkName string) (*types.Virt
 	return net, nil
 }
 
-func (c *ContrailClient) GetDefaultGatewayIp(net *types.VirtualNetwork) (string, error) {
+func (c *Controller) GetDefaultGatewayIp(net *types.VirtualNetwork) (string, error) {
 	ipamReferences, err := net.GetNetworkIpamRefs()
 	if err != nil {
 		return "", err
@@ -55,7 +55,7 @@ func (c *ContrailClient) GetDefaultGatewayIp(net *types.VirtualNetwork) (string,
 	return gw, nil
 }
 
-func (c *ContrailClient) GetOrCreateInstance(tenantName, containerId string) (*types.VirtualMachine, error) {
+func (c *Controller) GetOrCreateInstance(tenantName, containerId string) (*types.VirtualMachine, error) {
 	name := fmt.Sprintf("%s:%s:%s", DomainName, tenantName, containerId)
 	instance, err := types.VirtualMachineByName(c.ApiClient, name)
 	if err == nil && instance != nil {
@@ -71,7 +71,7 @@ func (c *ContrailClient) GetOrCreateInstance(tenantName, containerId string) (*t
 	return instance, nil
 }
 
-func (c *ContrailClient) GetOrCreateInterface(net *types.VirtualNetwork,
+func (c *Controller) GetOrCreateInterface(net *types.VirtualNetwork,
 	instance *types.VirtualMachine) (*types.VirtualMachineInterface, error) {
 	instanceFQName := instance.GetFQName()
 	namespace := instanceFQName[len(instanceFQName)-2]
@@ -98,7 +98,7 @@ func (c *ContrailClient) GetOrCreateInterface(net *types.VirtualNetwork,
 	return iface, nil
 }
 
-func (c *ContrailClient) GetInterfaceMac(iface *types.VirtualMachineInterface) (string, error) {
+func (c *Controller) GetInterfaceMac(iface *types.VirtualMachineInterface) (string, error) {
 	macs := iface.GetVirtualMachineInterfaceMacAddresses()
 	if len(macs.MacAddress) == 0 {
 		return "", errors.New("Empty MAC list")
@@ -106,7 +106,7 @@ func (c *ContrailClient) GetInterfaceMac(iface *types.VirtualMachineInterface) (
 	return macs.MacAddress[0], nil
 }
 
-func (c *ContrailClient) GetOrCreateInstanceIp(net *types.VirtualNetwork,
+func (c *Controller) GetOrCreateInstanceIp(net *types.VirtualNetwork,
 	iface *types.VirtualMachineInterface) (*types.InstanceIp, error) {
 	ifaceFQName := iface.GetFQName()
 	tenantName := ifaceFQName[len(ifaceFQName)-2]
@@ -117,6 +117,7 @@ func (c *ContrailClient) GetOrCreateInstanceIp(net *types.VirtualNetwork,
 	}
 
 	instIp = &types.InstanceIp{}
+	instIp.SetName(name)
 	err = instIp.AddVirtualNetwork(net)
 	if err != nil {
 		return nil, err

@@ -23,16 +23,17 @@ func TestController(t *testing.T) {
 const (
 	tenantName   = "agatka"
 	networkName  = "test_net"
+	subnetCIDR   = "10.10.10.0/24"
 	subnetPrefix = "10.10.10.0"
 	subnetMask   = 24
 	defaultGW    = "10.10.10.1"
 	ifaceMac     = "contrail_pls_check_macs"
-	containerId  = "12345678901"
+	containerID  = "12345678901"
 )
 
 var _ = Describe("Controller", func() {
 
-	var client *driver.ContrailClient
+	var client *driver.Controller
 	var project *types.Project
 
 	BeforeEach(func() {
@@ -68,8 +69,8 @@ var _ = Describe("Controller", func() {
 		Context("network has subnet with default gateway", func() {
 			var testNetwork *types.VirtualNetwork
 			BeforeEach(func() {
-				testNetwork = createMockedNetworkWithSubnet(client.ApiClient, project)
-				addDefaultGatewayToSubnet(client.ApiClient, testNetwork)
+				testNetwork = createMockedNetwork(client.ApiClient, project)
+				addSubnetWithDefaultGateway(client.ApiClient, testNetwork)
 			})
 			It("returns gateway IP", func() {
 				gwAddr, err := client.GetDefaultGatewayIp(testNetwork)
@@ -108,7 +109,7 @@ var _ = Describe("Controller", func() {
 				testInstance = createMockedInstance(client.ApiClient)
 			})
 			It("returns existing instance", func() {
-				instance, err := client.GetOrCreateInstance(tenantName, containerId)
+				instance, err := client.GetOrCreateInstance(tenantName, containerID)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(instance).ToNot(BeNil())
 				Expect(instance).To(BeEquivalentTo(testInstance))
@@ -116,9 +117,14 @@ var _ = Describe("Controller", func() {
 		})
 		Context("when instance doesn't exist in Contrail", func() {
 			It("creates a new instance", func() {
-				instance, err := client.GetOrCreateInstance(tenantName, containerId)
+				instance, err := client.GetOrCreateInstance(tenantName, containerID)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(instance).ToNot(BeNil())
+
+				existingInst, err := types.VirtualMachineByUuid(client.ApiClient,
+					instance.GetUuid())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(existingInst).To(BeEquivalentTo(instance))
 			})
 		})
 	})
@@ -148,6 +154,11 @@ var _ = Describe("Controller", func() {
 				iface, err := client.GetOrCreateInterface(testNetwork, testInstance)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(iface).ToNot(BeNil())
+
+				existingIface, err := types.VirtualMachineInterfaceByUuid(client.ApiClient,
+					iface.GetUuid())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(existingIface).To(BeEquivalentTo(iface))
 			})
 		})
 	})
@@ -194,7 +205,7 @@ var _ = Describe("Controller", func() {
 		Context("when instance IP already exists in Contrail", func() {
 			var testInstanceIP *types.InstanceIp
 			BeforeEach(func() {
-				testInstanceIP = createMockedInstanceIp(client.ApiClient, testInterface,
+				testInstanceIP = createMockedInstanceIP(client.ApiClient, testInterface,
 					testNetwork)
 			})
 			It("returns existing instance IP", func() {
@@ -202,6 +213,9 @@ var _ = Describe("Controller", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(instanceIP).ToNot(BeNil())
 				Expect(instanceIP).To(BeEquivalentTo(testInstanceIP))
+
+				// TODO: check if got an IP address
+
 			})
 		})
 		Context("when instance IP doesn't exist in Contrail", func() {
@@ -209,13 +223,19 @@ var _ = Describe("Controller", func() {
 				instanceIP, err := client.GetOrCreateInstanceIp(testNetwork, testInterface)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(instanceIP).ToNot(BeNil())
+
+				existingIP, err := types.InstanceIpByUuid(client.ApiClient, instanceIP.GetUuid())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(existingIP).To(BeEquivalentTo(instanceIP))
+
+				// TODO: check if got an IP address
 			})
 		})
 	})
 })
 
-func newMockedClient() *driver.ContrailClient {
-	c := &driver.ContrailClient{}
+func newMockedClient() *driver.Controller {
+	c := &driver.Controller{}
 	mockedApiClient := new(mocks.ApiClient)
 	mockedApiClient.Init()
 	c.ApiClient = mockedApiClient
@@ -223,16 +243,26 @@ func newMockedClient() *driver.ContrailClient {
 }
 
 func createMockedNetworkWithSubnet(c contrail.ApiClient, project *types.Project) *types.VirtualNetwork {
-	netUuid, err := config.CreateNetwork(c, project.GetUuid(), networkName)
+	netUUID, err := config.CreateNetworkWithSubnet(c, project.GetUuid(), networkName, subnetCIDR)
 	Expect(err).ToNot(HaveOccurred())
-	Expect(netUuid).ToNot(BeNil())
-	testNetwork, err := types.VirtualNetworkByUuid(c, netUuid)
+	Expect(netUUID).ToNot(BeNil())
+	testNetwork, err := types.VirtualNetworkByUuid(c, netUUID)
 	Expect(err).ToNot(HaveOccurred())
 	Expect(testNetwork).ToNot(BeNil())
 	return testNetwork
 }
 
-func addDefaultGatewayToSubnet(c contrail.ApiClient, testNetwork *types.VirtualNetwork) {
+func createMockedNetwork(c contrail.ApiClient, project *types.Project) *types.VirtualNetwork {
+	netUUID, err := config.CreateNetwork(c, project.GetUuid(), networkName)
+	Expect(err).ToNot(HaveOccurred())
+	Expect(netUUID).ToNot(BeNil())
+	testNetwork, err := types.VirtualNetworkByUuid(c, netUUID)
+	Expect(err).ToNot(HaveOccurred())
+	Expect(testNetwork).ToNot(BeNil())
+	return testNetwork
+}
+
+func addSubnetWithDefaultGateway(c contrail.ApiClient, testNetwork *types.VirtualNetwork) {
 	subnet := &types.IpamSubnetType{
 		Subnet:         &types.SubnetType{IpPrefix: subnetPrefix, IpPrefixLen: subnetMask},
 		DefaultGateway: defaultGW,
@@ -251,19 +281,9 @@ func addDefaultGatewayToSubnet(c contrail.ApiClient, testNetwork *types.VirtualN
 	Expect(err).ToNot(HaveOccurred())
 }
 
-func createMockedNetwork(c contrail.ApiClient, project *types.Project) *types.VirtualNetwork {
-	netUuid, err := config.CreateNetwork(c, project.GetUuid(), networkName)
-	Expect(err).ToNot(HaveOccurred())
-	Expect(netUuid).ToNot(BeNil())
-	testNetwork, err := types.VirtualNetworkByUuid(c, netUuid)
-	Expect(err).ToNot(HaveOccurred())
-	Expect(testNetwork).ToNot(BeNil())
-	return testNetwork
-}
-
 func createMockedInstance(c contrail.ApiClient) *types.VirtualMachine {
 	testInstance := new(types.VirtualMachine)
-	testInstance.SetFQName("project", []string{driver.DomainName, tenantName, containerId})
+	testInstance.SetFQName("project", []string{driver.DomainName, tenantName, containerID})
 	err := c.Create(testInstance)
 	Expect(err).ToNot(HaveOccurred())
 	return testInstance
@@ -292,22 +312,20 @@ func addMacToInterface(c contrail.ApiClient, iface *types.VirtualMachineInterfac
 	Expect(err).ToNot(HaveOccurred())
 }
 
-func createMockedInstanceIp(c contrail.ApiClient, iface *types.VirtualMachineInterface,
+func createMockedInstanceIP(c contrail.ApiClient, iface *types.VirtualMachineInterface,
 	net *types.VirtualNetwork) *types.InstanceIp {
 	name := fmt.Sprintf("%s_%s", tenantName, iface.GetName())
 
-	instIp := &types.InstanceIp{}
-	instIp.SetName(name)
-	err := instIp.AddVirtualNetwork(net)
+	instIP := &types.InstanceIp{}
+	instIP.SetName(name)
+	err := instIP.AddVirtualNetwork(net)
 	Expect(err).ToNot(HaveOccurred())
-	err = instIp.AddVirtualMachineInterface(iface)
+	err = instIP.AddVirtualMachineInterface(iface)
 	Expect(err).ToNot(HaveOccurred())
-	err = c.Create(instIp)
+	err = c.Create(instIP)
 	Expect(err).ToNot(HaveOccurred())
 
-	allocatedIp, err := c.FindByUuid(instIp.GetType(), instIp.GetUuid())
+	allocatedIP, err := types.InstanceIpByUuid(c, instIP.GetUuid())
 	Expect(err).ToNot(HaveOccurred())
-	Expect(allocatedIp.(*types.InstanceIp).GetInstanceIpAddress()).ToNot(BeNil())
-
-	return allocatedIp.(*types.InstanceIp)
+	return allocatedIP
 }

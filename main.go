@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	d, err := driver.NewDriver()
+	d, err := driver.NewDriver("127.0.0.1", 8082)
 	if err != nil {
 		logrus.Error(err)
 	}

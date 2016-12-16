@@ -19,10 +19,13 @@ const (
 )
 
 type ContrailDriver struct {
+	controller *Controller
 }
 
-func NewDriver() (*ContrailDriver, error) {
-	d := &ContrailDriver{}
+func NewDriver(controllerIp string, controllerPort int) (*ContrailDriver, error) {
+	d := &ContrailDriver{
+		controller: NewController(controllerIp, controllerPort),
+	}
 	return d, nil
 }
 
@@ -53,19 +56,6 @@ func (d *ContrailDriver) CreateNetwork(req *network.CreateNetworkRequest) error 
 	for k, v := range req.Options {
 		fmt.Printf("%v: %v\n", k, v)
 	}
-
-	// subnets := []hcsshim.Subnet{}
-	// s := hcsshim.Subnet{
-	// 	AddressPrefix:  req.IPv4Data[0].Pool,
-	// 	GatewayAddress: req.IPv4Data[0].Gateway,
-	// }
-	// subnets = append(subnets, s)
-
-	// logrus.Debugln("subnets", subnets)
-
-	// configuration := &hcsshim.HNSNetwork{
-	// 	Name:    req.NetworkID,
-
 	return nil
 }
 
