@@ -4,100 +4,95 @@
 package driver
 
 import (
-	"encoding/json"
 	"fmt"
 
-	"github.com/Microsoft/hcsshim"
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/go-plugins-helpers/network"
 )
 
 const (
-	// Drivername is name of the driver that is to be specified during docker network creation
-	Drivername = "Contrail"
+	// DriverName is name of the driver that is to be specified during docker network creation
+	DriverName = "Contrail"
+
+	// HNSNetworkName is a constant name for HNS network
+	NetworkHNSname = "ContrailHNSNet"
 )
 
-type ContrailDriver struct{}
+type ContrailDriver struct {
+}
+
+func NewDriver() (*ContrailDriver, error) {
+	d := &ContrailDriver{}
+	return d, nil
+}
+
+func (d *ContrailDriver) Teardown() error {
+	return nil
+}
 
 func (d *ContrailDriver) GetCapabilities() (*network.CapabilitiesResponse, error) {
-	logrus.Println("=== GetCapabilities")
+	logrus.Debugln("=== GetCapabilities")
 	r := &network.CapabilitiesResponse{}
 	r.Scope = network.LocalScope
 	return r, nil
 }
 
 func (d *ContrailDriver) CreateNetwork(req *network.CreateNetworkRequest) error {
-	logrus.Println("=== CreateNetwork")
-	logrus.Println("network.NetworkID =", req.NetworkID)
-	logrus.Println(req)
-	logrus.Println("IPv4:")
+	logrus.Debugln("=== CreateNetwork")
+	logrus.Debugln("network.NetworkID =", req.NetworkID)
+	logrus.Debugln(req)
+	logrus.Debugln("IPv4:")
 	for _, n := range req.IPv4Data {
-		logrus.Println(n)
+		logrus.Debugln(n)
 	}
-	logrus.Println("IPv6:")
+	logrus.Debugln("IPv6:")
 	for _, n := range req.IPv6Data {
-		logrus.Println(n)
+		logrus.Debugln(n)
 	}
-	logrus.Println("options:")
+	logrus.Debugln("options:")
 	for k, v := range req.Options {
 		fmt.Printf("%v: %v\n", k, v)
 	}
 
-	subnets := []hcsshim.Subnet{}
-	s := hcsshim.Subnet{
-		AddressPrefix:  req.IPv4Data[0].Pool,
-		GatewayAddress: req.IPv4Data[0].Gateway,
-	}
-	subnets = append(subnets, s)
+	// subnets := []hcsshim.Subnet{}
+	// s := hcsshim.Subnet{
+	// 	AddressPrefix:  req.IPv4Data[0].Pool,
+	// 	GatewayAddress: req.IPv4Data[0].Gateway,
+	// }
+	// subnets = append(subnets, s)
 
-	logrus.Println("subnets", subnets)
+	// logrus.Debugln("subnets", subnets)
 
-	configuration := &hcsshim.HNSNetwork{
-		Name:    req.NetworkID,
-		Type:    "transparent",
-		Subnets: subnets,
-	}
-
-	request, err := json.Marshal(configuration)
-	if err != nil {
-		return err
-	}
-	logrus.Println("[HNS] Request ", string(request))
-
-	response, err := hcsshim.HNSNetworkRequest("POST", "", string(request))
-	if err != nil {
-		logrus.Println("[HNS] Error ", err)
-		return err
-	}
-	logrus.Println("[HNS] Response ", response)
+	// configuration := &hcsshim.HNSNetwork{
+	// 	Name:    req.NetworkID,
 
 	return nil
 }
 
 func (d *ContrailDriver) AllocateNetwork(req *network.AllocateNetworkRequest) (*network.AllocateNetworkResponse, error) {
-	logrus.Println("=== AllocateNetwork")
-	logrus.Println(req)
+	logrus.Debugln("=== AllocateNetwork")
+	logrus.Debugln(req)
 	r := &network.AllocateNetworkResponse{}
 	return r, nil
 }
 
 func (d *ContrailDriver) DeleteNetwork(req *network.DeleteNetworkRequest) error {
-	logrus.Println("=== DeleteNetwork")
-	logrus.Println(req)
+	logrus.Debugln("=== DeleteNetwork")
+	logrus.Debugln(req)
 	return nil
 }
 
 func (d *ContrailDriver) FreeNetwork(req *network.FreeNetworkRequest) error {
-	logrus.Println("=== FreeNetwork")
-	logrus.Println(req)
+	logrus.Debugln("=== FreeNetwork")
+	logrus.Debugln(req)
 	return nil
 }
 
 func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (*network.CreateEndpointResponse, error) {
-	logrus.Println("=== CreateEndpoint")
-	logrus.Println(req)
-	logrus.Println(req.Interface)
-	logrus.Println("options:")
+	logrus.Debugln("=== CreateEndpoint")
+	logrus.Debugln(req)
+	logrus.Debugln(req.Interface)
+	logrus.Debugln("options:")
 	for k, v := range req.Options {
 		fmt.Printf("%v: %v\n", k, v)
 	}
@@ -106,22 +101,22 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (*ne
 }
 
 func (d *ContrailDriver) DeleteEndpoint(req *network.DeleteEndpointRequest) error {
-	logrus.Println("=== DeleteEndpoint")
-	logrus.Println(req)
+	logrus.Debugln("=== DeleteEndpoint")
+	logrus.Debugln(req)
 	return nil
 }
 
 func (d *ContrailDriver) EndpointInfo(req *network.InfoRequest) (*network.InfoResponse, error) {
-	logrus.Println("=== EndpointInfo")
-	logrus.Println(req)
+	logrus.Debugln("=== EndpointInfo")
+	logrus.Debugln(req)
 	r := &network.InfoResponse{}
 	return r, nil
 }
 
 func (d *ContrailDriver) Join(req *network.JoinRequest) (*network.JoinResponse, error) {
-	logrus.Println("=== Join")
-	logrus.Println(req)
-	logrus.Println("options:")
+	logrus.Debugln("=== Join")
+	logrus.Debugln(req)
+	logrus.Debugln("options:")
 	for k, v := range req.Options {
 		fmt.Printf("%v: %v\n", k, v)
 	}
@@ -131,31 +126,31 @@ func (d *ContrailDriver) Join(req *network.JoinRequest) (*network.JoinResponse, 
 }
 
 func (d *ContrailDriver) Leave(req *network.LeaveRequest) error {
-	logrus.Println("=== Leave")
-	logrus.Println(req)
+	logrus.Debugln("=== Leave")
+	logrus.Debugln(req)
 	return nil
 }
 
 func (d *ContrailDriver) DiscoverNew(req *network.DiscoveryNotification) error {
-	logrus.Println("=== DiscoverNew")
-	logrus.Println(req)
+	logrus.Debugln("=== DiscoverNew")
+	logrus.Debugln(req)
 	return nil
 }
 
 func (d *ContrailDriver) DiscoverDelete(req *network.DiscoveryNotification) error {
-	logrus.Println("=== DiscoverDelete")
-	logrus.Println(req)
+	logrus.Debugln("=== DiscoverDelete")
+	logrus.Debugln(req)
 	return nil
 }
 
 func (d *ContrailDriver) ProgramExternalConnectivity(req *network.ProgramExternalConnectivityRequest) error {
-	logrus.Println("=== ProgramExternalConnectivity")
-	logrus.Println(req)
+	logrus.Debugln("=== ProgramExternalConnectivity")
+	logrus.Debugln(req)
 	return nil
 }
 
 func (d *ContrailDriver) RevokeExternalConnectivity(req *network.RevokeExternalConnectivityRequest) error {
-	logrus.Println("=== RevokeExternalConnectivity")
-	logrus.Println(req)
+	logrus.Debugln("=== RevokeExternalConnectivity")
+	logrus.Debugln(req)
 	return nil
 }

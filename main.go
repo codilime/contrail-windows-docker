@@ -1,14 +1,17 @@
 package main
 
 import (
+	"github.com/Sirupsen/logrus"
 	"github.com/codilime/contrail-windows-docker/driver"
-
 	"github.com/docker/go-plugins-helpers/network"
 	"github.com/docker/go-plugins-helpers/sdk"
 )
 
 func main() {
-	d := &driver.ContrailDriver{}
+	d, err := driver.NewDriver()
+	if err != nil {
+		logrus.Error(err)
+	}
 	h := network.NewHandler(d)
 
 	config := sdk.WindowsPipeConfig{
@@ -18,5 +21,9 @@ func main() {
 		OutBufferSize:      4096,
 	}
 
-	h.ServeWindows("//./pipe/"+driver.Drivername, driver.Drivername, &config)
+	h.ServeWindows("//./pipe/"+driver.DriverName, driver.DriverName, &config)
+	err = d.Teardown()
+	if err != nil {
+		logrus.Error(err)
+	}
 }
