@@ -3,27 +3,23 @@ package main
 import (
 	"github.com/Sirupsen/logrus"
 	"github.com/codilime/contrail-windows-docker/driver"
-	"github.com/docker/go-plugins-helpers/network"
-	"github.com/docker/go-plugins-helpers/sdk"
 )
 
 func main() {
-	d, err := driver.NewDriver()
-	if err != nil {
+	var d driver.ContrailDriver
+	var err error
+
+	if d, err = driver.NewDriver(); err != nil {
 		logrus.Error(err)
-	}
-	h := network.NewHandler(d)
-
-	config := sdk.WindowsPipeConfig{
-		// This will set permissions for Everyone user allowing him to open, write, read the pipe
-		SecurityDescriptor: "S:(ML;;NW;;;LW)D:(A;;0x12019f;;;WD)",
-		InBufferSize:       4096,
-		OutBufferSize:      4096,
+		return
 	}
 
-	h.ServeWindows("//./pipe/"+driver.DriverName, driver.DriverName, &config)
-	err = d.Teardown()
-	if err != nil {
+	if err = d.Serve(); err != nil {
+		logrus.Error(err)
+		return
+	}
+
+	if err = d.Teardown(); err != nil {
 		logrus.Error(err)
 	}
 }

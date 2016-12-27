@@ -2,10 +2,8 @@ package test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/codilime/contrail-windows-docker/driver"
-	"github.com/docker/go-connections/sockets"
 	"github.com/docker/go-plugins-helpers/network"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -21,16 +19,6 @@ var _ = Describe("Contrail Network Driver", func() {
 	contrailDriver := &driver.ContrailDriver{}
 
 	Context("upon starting", func() {
-
-		It("listens on a pipe", func() {
-			d := startDriver()
-			defer stopDriver(d)
-
-
-			Skip("TODO")
-			_, err := sockets.DialPipe("//./pipe/"+driver.DriverName, time.Second*3)
-			Expect(err).ToNot(HaveOccurred())
-		})
 
 		It("tries to connect to existing HNS switch", func() {
 			d := startDriver()
