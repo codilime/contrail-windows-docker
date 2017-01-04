@@ -4,13 +4,17 @@
 package driver
 
 import (
+	"errors"
 	"fmt"
+
+	"context"
 
 	"github.com/Microsoft/hcsshim"
 	"github.com/Sirupsen/logrus"
 	"github.com/codilime/contrail-windows-docker/common"
 	"github.com/codilime/contrail-windows-docker/controller"
 	"github.com/codilime/contrail-windows-docker/hns"
+	dockerClient "github.com/docker/docker/client"
 	"github.com/docker/go-plugins-helpers/network"
 	"github.com/docker/go-plugins-helpers/sdk"
 )
@@ -20,7 +24,7 @@ type ContrailDriver struct {
 	HnsID      string
 }
 
-func NewDriver(subnet, gateway, adapter, controllerIP string, controllerPort int) (*ContrailDriver,
+func NewDriver(subnet, gateway, adapter string, controller *controller.Controller) (*ContrailDriver,
 	error) {
 
 	subnets := []hcsshim.Subnet{
@@ -43,7 +47,7 @@ func NewDriver(subnet, gateway, adapter, controllerIP string, controllerPort int
 	}
 
 	d := &ContrailDriver{
-		controller: controller.NewController(controllerIP, controllerPort),
+		controller: controller,
 		HnsID:      hnsID,
 	}
 	return d, nil
@@ -93,7 +97,22 @@ func (d *ContrailDriver) CreateNetwork(req *network.CreateNetworkRequest) error 
 		fmt.Printf("%v: %v\n", k, v)
 	}
 
+	tenant, exists := req.Options["tenant"]
+	if !exists {
+		return errors.New("Tenant not specified")
+	}
+
+	network, exists := req.Options["network"]
+	if !exists {
+		return errors.New("Network name not specified")
+	}
+
+	_, err := d.controller.GetNetwork(tenant.(string), network.(string))
+	if err != nil {
+		return err
+	}
 	return nil
+
 }
 
 func (d *ContrailDriver) AllocateNetwork(req *network.AllocateNetworkRequest) (*network.AllocateNetworkResponse, error) {
@@ -123,6 +142,29 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (*ne
 	for k, v := range req.Options {
 		fmt.Printf("%v: %v\n", k, v)
 	}
+
+	docker, err := dockerClient.NewEnvClient()
+	if err != nil {
+		return nil, err
+	}
+
+	net, err := docker.NetworkInspect(context.Background(), req.NetworkID)
+	if err != nil {
+		return nil, err
+	}
+
+	tenant, exists := net.Options["tenant"]
+	if !exists {
+		return nil, errors.New("Retreived network has no Contrail tenant specified")
+	}
+
+	netName, exists := net.Options["network"]
+	if !exists {
+		return nil, errors.New("Retreived network has no Contrail network name specfied")
+	}
+
+	logrus.Infoln(tenant, netName)
+
 	r := &network.CreateEndpointResponse{}
 	return r, nil
 }

@@ -1,11 +1,16 @@
 package driver
 
 import (
+	"context"
 	"testing"
 	"time"
 
+	"github.com/Juniper/contrail-go-api/types"
 	"github.com/codilime/contrail-windows-docker/common"
+	"github.com/codilime/contrail-windows-docker/controller"
 	"github.com/codilime/contrail-windows-docker/hns"
+	dockerTypes "github.com/docker/docker/api/types"
+	dockerClient "github.com/docker/docker/client"
 	"github.com/docker/go-connections/sockets"
 	"github.com/docker/go-plugins-helpers/network"
 	. "github.com/onsi/ginkgo"
@@ -29,12 +34,10 @@ var _ = AfterSuite(func() {
 
 var _ = Describe("Contrail Network Driver", func() {
 
-	contrailDriver := &ContrailDriver{}
-
 	Context("upon starting", func() {
 
 		PIt("listens on a pipe", func() {
-			d := startDriver()
+			d, _, _ := startDriver("")
 			defer stopDriver(d)
 
 			_, err := sockets.DialPipe("//./pipe/"+common.DriverName, time.Second*3)
@@ -42,7 +45,7 @@ var _ = Describe("Contrail Network Driver", func() {
 		})
 
 		PIt("tries to connect to existing HNS switch", func() {
-			d := startDriver()
+			d, _, _ := startDriver("")
 			defer stopDriver(d)
 		})
 
@@ -51,7 +54,7 @@ var _ = Describe("Contrail Network Driver", func() {
 			Expect(net).To(BeNil())
 			Expect(err).To(HaveOccurred())
 
-			d := startDriver()
+			d, _, _ := startDriver("")
 			defer stopDriver(d)
 
 			net, err = hns.GetHNSNetworkByName(common.NetworkHNSname)
@@ -92,6 +95,23 @@ var _ = Describe("Contrail Network Driver", func() {
 
 	Context("on request from docker daemon", func() {
 
+		var contrailController *controller.Controller
+		var contrailDriver *ContrailDriver
+		var project *types.Project
+
+		const (
+			tenantName  = "agatka"
+			networkName = "test_net"
+		)
+
+		BeforeEach(func() {
+			contrailDriver, contrailController, project = startDriver(tenantName)
+		})
+
+		AfterEach(func() {
+			stopDriver(contrailDriver)
+		})
+
 		Context("on GetCapabilities", func() {
 			It("returns local scope CapabilitiesResponse, nil", func() {
 				resp, err := contrailDriver.GetCapabilities()
@@ -100,14 +120,72 @@ var _ = Describe("Contrail Network Driver", func() {
 			})
 		})
 
-		PContext("on CreateNetwork", func() {
+		Context("on CreateNetwork", func() {
 
-			Context("tenant or subnet don't exist in Contrail", func() {
-				It("responds with error", func() {})
+			Context("subnet doesn't exist in Contrail", func() {
+				It("responds with error", func() {
+					req := &network.CreateNetworkRequest{
+						NetworkID: "MyAwesomeNet",
+						Options:   make(map[string]interface{}),
+					}
+					req.Options["tenant"] = tenantName
+					req.Options["network"] = "nonexistingNetwork"
+					err := contrailDriver.CreateNetwork(req)
+					Expect(err).To(HaveOccurred())
+				})
+			})
+
+			Context("tenant doesn't exist in Contrail", func() {
+				It("responds with error", func() {
+					req := &network.CreateNetworkRequest{
+						NetworkID: "MyAwesomeNet",
+						Options:   make(map[string]interface{}),
+					}
+					req.Options["tenant"] = "nonexistingTenant"
+					req.Options["network"] = networkName
+					err := contrailDriver.CreateNetwork(req)
+					Expect(err).To(HaveOccurred())
+				})
+			})
+
+			Context("tenant is not specified in request Options", func() {
+				It("responds with error", func() {
+					req := &network.CreateNetworkRequest{
+						NetworkID: "MyAwesomeNet",
+						Options:   make(map[string]interface{}),
+					}
+					req.Options["network"] = networkName
+					err := contrailDriver.CreateNetwork(req)
+					Expect(err).To(HaveOccurred())
+				})
+			})
+
+			Context("network is not specified in request Options", func() {
+				It("responds with error", func() {
+					req := &network.CreateNetworkRequest{
+						NetworkID: "MyAwesomeNet",
+						Options:   make(map[string]interface{}),
+					}
+					req.Options["tenant"] = tenantName
+					err := contrailDriver.CreateNetwork(req)
+					Expect(err).To(HaveOccurred())
+				})
 			})
 
 			Context("tenant and subnet exist in Contrail", func() {
-				It("responds with nil", func() {})
+				It("responds with nil", func() {
+					controller.CreateMockedNetworkWithSubnet(contrailController.ApiClient,
+						networkName, "10.10.0.0/24", project)
+
+					req := &network.CreateNetworkRequest{
+						NetworkID: "MyAwesomeNet",
+						Options:   make(map[string]interface{}),
+					}
+					req.Options["network"] = networkName
+					req.Options["tenant"] = tenantName
+					err := contrailDriver.CreateNetwork(req)
+					Expect(err).ToNot(HaveOccurred())
+				})
 			})
 		})
 
@@ -137,7 +215,48 @@ var _ = Describe("Contrail Network Driver", func() {
 		})
 
 		Context("on CreateEndpoint", func() {
-			PIt("allocates Contrail resources", func() {})
+			containerID := "2b7ddd5abfad4015b8984bf348a4d51e46a2dd06981f7f5040f9da034d8b631b"
+
+			Context("docker network doesn't exist", func() {
+				It("responds with err", func() {
+					req := network.CreateEndpointRequest{
+						EndpointID: containerID,
+					}
+					_, err := contrailDriver.CreateEndpoint(&req)
+					Expect(err).To(HaveOccurred())
+				})
+			})
+
+			Context("docker network is misconfigured", func() {
+				It("responds with err", func() {
+					docker, err := dockerClient.NewEnvClient()
+					Expect(err).ToNot(HaveOccurred())
+					params := &dockerTypes.NetworkCreate{
+						Driver: "Contrail",
+						Options: map[string]string{
+							"tenant":  "agatka",
+							"network": "lolel",
+						},
+					}
+					_, err = docker.NetworkCreate(context.Background(), networkName, *params)
+					Expect(err).ToNot(HaveOccurred())
+					req := network.CreateEndpointRequest{
+						EndpointID: containerID,
+					}
+					_, err = contrailDriver.CreateEndpoint(&req)
+					Expect(err).To(HaveOccurred())
+				})
+			})
+
+			It("allocates Contrail resources", func() {
+				// req := &network.CreateEndpointRequest{
+				// 	EndpointID: containerID,
+				// 	NetworkID:  networkName,
+				// }
+				// err := contrailDriver.CreateEndpoint(req)
+				// Expect(err).ToNot(HaveOccurred())
+			})
+
 			PIt("configures container network via HNS", func() {})
 			PIt("configures vRouter agent", func() {})
 			It("responds with proper CreateEndpointResponse, nil", func() {
@@ -218,12 +337,14 @@ var _ = Describe("Contrail Network Driver", func() {
 	})
 })
 
-func startDriver() *ContrailDriver {
-	d, err := NewDriver("172.100.0.0/16", "172.100.0.1", "Ethernet0",
-		"dummy_controller_ip", 8082) // use dummy controller address because we use mocked version.
+func startDriver(tenant string) (*ContrailDriver, *controller.Controller, *types.Project) {
+	mockedController, project := controller.NewMockedClientAndProject(tenant)
+
+	d, err := NewDriver("172.100.0.0/16", "172.100.0.1", "Ethernet0", mockedController)
 	Expect(err).ToNot(HaveOccurred())
 	Expect(d.HnsID).ToNot(Equal(""))
-	return d
+
+	return d, mockedController, project
 }
 
 func stopDriver(d *ContrailDriver) {
