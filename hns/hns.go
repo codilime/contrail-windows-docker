@@ -103,3 +103,11 @@ func GetHNSEndpoint(endpointID string) (*hcsshim.HNSEndpoint, error) {
 	}
 	return endpoint, nil
 }
+
+func ListHNSEndpoints() ([]hcsshim.HNSEndpoint, error) {
+	endpoints, err := hcsshim.HNSListEndpointRequest("GET", "", "")
+	if err != nil {
+		return nil, err
+	}
+	return endpoints, nil
+}

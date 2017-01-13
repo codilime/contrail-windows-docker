@@ -6,6 +6,7 @@ package driver
 import (
 	"errors"
 	"fmt"
+	"net"
 
 	"context"
 
@@ -20,8 +21,8 @@ import (
 )
 
 type ContrailDriver struct {
-	controller *controller.Controller
-	HnsID      string
+	controller   *controller.Controller
+	HnsNetworkID string
 }
 
 func NewDriver(subnet, gateway, adapter string, controller *controller.Controller) (*ContrailDriver,
@@ -41,14 +42,14 @@ func NewDriver(subnet, gateway, adapter string, controller *controller.Controlle
 		NetworkAdapterName: adapter,
 	}
 
-	hnsID, err := hns.CreateHNSNetwork(configuration)
+	hnsNetworkID, err := hns.CreateHNSNetwork(configuration)
 	if err != nil {
 		return nil, err
 	}
 
 	d := &ContrailDriver{
-		controller: controller,
-		HnsID:      hnsID,
+		controller:   controller,
+		HnsNetworkID: hnsNetworkID,
 	}
 	return d, nil
 }
@@ -69,7 +70,7 @@ func (d *ContrailDriver) Serve() error {
 }
 
 func (d *ContrailDriver) Teardown() error {
-	err := hns.DeleteHNSNetwork(d.HnsID)
+	err := hns.DeleteHNSNetwork(d.HnsNetworkID)
 	return err
 }
 
@@ -165,7 +166,7 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (*ne
 
 	log.Infoln(tenant, netName)
 
-	if contrailNetwork, err := d.controller.GetNetwork(tenant, netName)
+	contrailNetwork, err := d.controller.GetNetwork(tenant, netName)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +196,29 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (*ne
 		return nil, err
 	}
 
-	r := &network.CreateEndpointResponse{}
+	hnsEndpointConfig := &hcsshim.HNSEndpoint{
+		VirtualNetwork: d.HnsNetworkID,
+		Name:           req.EndpointID,
+		IPAddress:      net.IP(contrailIP.GetInstanceIpAddress()),
+		MacAddress:     contrailMac,
+		GatewayAddress: contrailGateway,
+	}
+
+	// TODO: maybe store hnsEndpointID somehow? is there a reason to?
+	// Maybe it will become more clear when implementing the rest of the API.
+	_, err = hns.CreateHNSEndpoint(hnsEndpointConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: talk to vRouter here
+
+	r := &network.CreateEndpointResponse{
+		Interface: &network.EndpointInterface{
+			Address:    contrailIP.GetInstanceIpAddress(),
+			MacAddress: contrailMac,
+		},
+	}
 	return r, nil
 }
 

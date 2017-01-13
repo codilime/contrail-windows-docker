@@ -36,15 +36,6 @@ var _ = Describe("HNS wrapper", func() {
 	})
 
 	Context("HNS network exists", func() {
-		/*
-			There's an issue with HNS where deleting a network and then creating one
-			immediately after doesn't work (https://github.com/Microsoft/hcsshim/issues/95).
-			A way to fix this is to have a long timeout before creating a network (like 20
-			seconds), which is way too long for test suite such as this one.
-			Ideally, we would like to call Create/Delete a test network for each of the
-			following test cases, but it would take too long. So a single test network will
-			be shared for all of them.
-		*/
 
 		testNetName := "TestNetwork"
 		testHnsNetID := ""
@@ -125,12 +116,46 @@ var _ = Describe("HNS wrapper", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(endpoint).ToNot(BeNil())
 
+			endpoints, err := ListHNSEndpoints()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(endpoints).To(HaveLen(1))
+
 			err = DeleteHNSEndpoint(endpointID)
 			Expect(err).ToNot(HaveOccurred())
 
 			endpoint, err = GetHNSEndpoint(endpointID)
 			Expect(err).To(HaveOccurred())
 			Expect(endpoint).To(BeNil())
+		})
+
+		Specify("Listing HNS endpoints works", func() {
+			hnsEndpointConfig := &hcsshim.HNSEndpoint{
+				VirtualNetwork: testHnsNetID,
+			}
+
+			endpointsList, err := ListHNSEndpoints()
+			Expect(err).ToNot(HaveOccurred())
+			numEndpointsOriginal := len(endpointsList)
+
+			var endpoints [2]string
+			for i := 0; i < 2; i++ {
+				endpoints[i], err = CreateHNSEndpoint(hnsEndpointConfig)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(endpoints[i]).ToNot(Equal(""))
+			}
+
+			endpointsList, err = ListHNSEndpoints()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(endpointsList).To(HaveLen(numEndpointsOriginal + 2))
+
+			for _, ep := range endpoints {
+				err = DeleteHNSEndpoint(ep)
+				Expect(err).ToNot(HaveOccurred())
+			}
+
+			endpointsList, err = ListHNSEndpoints()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(endpointsList).To(HaveLen(numEndpointsOriginal))
 		})
 	})
 
