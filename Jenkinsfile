@@ -58,7 +58,6 @@ node('windows-server-2016') {
         step([$class: 'WsCleanup'])
       }
       catch (error) {
-        step([$class: 'ClaimPublisher'])
         throw error
       }
     } 
