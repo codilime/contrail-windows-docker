@@ -38,7 +38,7 @@ node('windows-server-2016') {
                   stage 'checkout'
                   checkout scm
                   stage 'prepare deps'
-                  bat script: "go install -t -u -d "
+                  bat script: "go get -t -u -d "
                   bat script: "go get -u github.com/onsi/ginkgo/ginkgo"
                   bat script: "go get -u github.com/onsi/gomega"
                   bat script: "go get -u github.com/onsi/ginkgo/extensions/table"
