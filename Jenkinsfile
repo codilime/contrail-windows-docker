@@ -27,7 +27,6 @@ node('windows-server-2016') {
   ws(getWorkspace("")){
     timestamps{
       try {
-        deleteDir()
         def branch = getBranch()
         withEnv(["GOPATH=${pwd()}",
                  "PATH+GOPATH=${pwd()}\\bin"]){
@@ -37,6 +36,8 @@ node('windows-server-2016') {
                 dir("contrail-windows-docker"){
                   stage 'checkout'
                   checkout scm
+                  stage 'clean'
+                  bat script: "go clean -i -r -x "
                   stage 'prepare deps'
                   bat script: "go get -u github.com/docker/docker/client"
                   bat script: "go get -u github.com/docker/docker/api/types"
