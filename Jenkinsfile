@@ -12,12 +12,12 @@ def gotool(tool, args) {
   
 }
 
-def getBranch = {
+def getBranch() {
     env.BRANCH_NAME.tokenize("/").last()
 }
 
 @NonCPS
-def getWorkspace(buildType) = {
+def getWorkspace(buildType) {
   def directory_name = pwd().tokenize("\\").last()
 
   pwd().replace("%2F", "_") + buildType
