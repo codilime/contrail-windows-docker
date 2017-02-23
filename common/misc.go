@@ -101,3 +101,13 @@ func WaitForInterface(ifname string) error {
 		time.Sleep(time.Millisecond * AdapterPollingRate)
 	}
 }
+
+func EnableHyperVExtension(netAdapterName string) error {
+	switchName := fmt.Sprintf("Layered %s", netAdapterName)
+	log.Infoln("Enabling vRouter Hyper-V Extension")
+	if err := exec.Command("powershell", "Enable-VMSwitchExtension", "VMSwitchName", switchName,
+		"Name", HyperVExtensionName).Run(); err != nil {
+		return err
+	}
+	return nil
+}

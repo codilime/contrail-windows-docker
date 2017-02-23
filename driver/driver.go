@@ -65,8 +65,11 @@ func (d *ContrailDriver) StartServing() error {
 		return errors.New("Already serving.")
 	}
 
-	err := d.createRootNetwork()
-	if err != nil {
+	if err := d.createRootNetwork(); err != nil {
+		return err
+	}
+
+	if err := common.EnableHyperVExtension(d.networkAdapter); err != nil {
 		return err
 	}
 
@@ -88,6 +91,7 @@ func (d *ContrailDriver) StartServing() error {
 			OutputBufferSize:   4096,
 		}
 
+		var err error
 		d.listener, err = winio.ListenPipe(d.PipeAddr, &pipeConfig)
 		if err != nil {
 			failedChan <- errors.New(fmt.Sprintln("When setting up listener:", err))
