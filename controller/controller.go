@@ -158,7 +158,7 @@ func (c *Controller) GetOrCreateInterface(net *types.VirtualNetwork,
 		log.Errorf("Failed to create interface: %v", err)
 		return nil, err
 	}
-
+	asdfsdf
 	createdIface, err := types.VirtualMachineInterfaceByName(c.ApiClient, instance.GetName())
 	if err != nil {
 		log.Errorf("Failed to retreive vmi %s by name: %v", instance.GetName(), err)
