@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <testsuite tests="41" failures="2" time="685.4022332">
+      <testcase name="On requests from docker daemon on GetCapabilities request returns local scope CapabilitiesResponse, nil" classname="Contrail Network Driver test suite" time="43.7285966"></testcase>
+      <testcase name="On requests from docker daemon on CreateNetwork request with different, invalid options subnet doesn&#39;t exist in Contrail" classname="Contrail Network Driver test suite" time="4.7571012">
+          <failure type="Failure">Z:/src/github.com/codilime/contrail-windows-docker/driver/driver_test.go:184&#xA;Expected error:&#xA;    &lt;*os.PathError | 0xc0424528a0&gt;: {&#xA;        Op: &#34;open&#34;,&#xA;        Path: &#34;//./pipe/Contrail&#34;,&#xA;        Err: 0x5,&#xA;    }&#xA;    open //./pipe/Contrail: Access is denied.&#xA;not to have occurred&#xA;Z:/src/github.com/codilime/contrail-windows-docker/driver/driver_test.go:181</failure>
+      </testcase>
+      <testcase name="On requests from docker daemon on CreateNetwork request with different, invalid options tenant doesn&#39;t exist in Contrail" classname="Contrail Network Driver test suite" time="9.8363895"></testcase>
+      <testcase name="On requests from docker daemon on CreateNetwork request with different, invalid options tenant is not specified in request Options" classname="Contrail Network Driver test suite" time="8.8608511"></testcase>
+      <testcase name="On requests from docker daemon on CreateNetwork request with different, invalid options network is not specified in request Options" classname="Contrail Network Driver test suite" time="10.2084845"></testcase>
+      <testcase name="On requests from docker daemon on CreateNetwork request tenant and subnet exist in Contrail responds with nil" classname="Contrail Network Driver test suite" time="14.7830381"></testcase>
+      <testcase name="On requests from docker daemon on CreateNetwork request tenant and subnet exist in Contrail creates a HNS network" classname="Contrail Network Driver test suite" time="12.0987491"></testcase>
+      <testcase name="On requests from docker daemon on AllocateNetwork request responds with not implemented error" classname="Contrail Network Driver test suite" time="13.1192048"></testcase>
+      <testcase name="On requests from docker daemon on DeleteNetwork request docker, Contrail and HNS networks are fine removes HNS net" classname="Contrail Network Driver test suite" time="14.6194352"></testcase>
+      <testcase name="On requests from docker daemon on DeleteNetwork request docker, Contrail and HNS networks are fine removes docker net" classname="Contrail Network Driver test suite" time="16.667307"></testcase>
+      <testcase name="On requests from docker daemon on DeleteNetwork request docker, Contrail and HNS networks are fine does not remove Contrail net" classname="Contrail Network Driver test suite" time="14.294242"></testcase>
+      <testcase name="On requests from docker daemon on DeleteNetwork request HNS network doesn&#39;t exist removes docker net" classname="Contrail Network Driver test suite" time="14.3700518"></testcase>
+      <testcase name="On requests from docker daemon on DeleteNetwork request HNS network doesn&#39;t exist does not remove Contrail net" classname="Contrail Network Driver test suite" time="11.5281634"></testcase>
+      <testcase name="On requests from docker daemon on DeleteNetwork request Contrail network doesn&#39;t exist removes HNS net" classname="Contrail Network Driver test suite" time="15.516179900000001"></testcase>
+      <testcase name="On requests from docker daemon on DeleteNetwork request Contrail network doesn&#39;t exist removes docker net" classname="Contrail Network Driver test suite" time="14.3321611"></testcase>
+      <testcase name="On requests from docker daemon on FreeNetwork request responds with not implemented error" classname="Contrail Network Driver test suite" time="9.0703083"></testcase>
+      <testcase name="On requests from docker daemon on CreateEndpoint request Contrail, docker and HNS networks exist allocates Contrail resources" classname="Contrail Network Driver test suite" time="18.9655597"></testcase>
+      <testcase name="On requests from docker daemon on CreateEndpoint request Contrail, docker and HNS networks exist configures HNS endpoint" classname="Contrail Network Driver test suite" time="18.1655542"></testcase>
+      <testcase name="On requests from docker daemon on CreateEndpoint request Contrail, docker and HNS networks exist configures vRouter agent" classname="Contrail Network Driver test suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="On requests from docker daemon on CreateEndpoint request Contrail and docker networks exists, HNS network doesn&#39;t responds with err" classname="Contrail Network Driver test suite" time="15.0423722"></testcase>
+      <testcase name="On requests from docker daemon on CreateEndpoint request Contrail network exists, docker network doesn&#39;t responds with err" classname="Contrail Network Driver test suite" time="12.1156807">
+          <failure type="Failure">Z:/src/github.com/codilime/contrail-windows-docker/driver/driver_test.go:438&#xA;Expected error:&#xA;    &lt;*errors.errorString | 0xc0420e1520&gt;: {&#xA;        s: &#34;409 Conflict: [&#39;default-domain&#39;, &#39;agatka&#39;, &#39;test_net&#39;] already exists with uuid: ca234671-20e9-4adf-a900-4b2c14a389f4&#34;,&#xA;    }&#xA;    409 Conflict: [&#39;default-domain&#39;, &#39;agatka&#39;, &#39;test_net&#39;] already exists with uuid: ca234671-20e9-4adf-a900-4b2c14a389f4&#xA;not to have occurred&#xA;Z:/src/github.com/codilime/contrail-windows-docker/controller/controller_test_helpers.go:64</failure>
+      </testcase>
+      <testcase name="On requests from docker daemon on DeleteEndpoint request happy case: HNS, docker and Contrail states are in sync removes docker endpoint" classname="Contrail Network Driver test suite" time="17.0972389"></testcase>
+      <testcase name="On requests from docker daemon on DeleteEndpoint request happy case: HNS, docker and Contrail states are in sync removes HNS endpoint" classname="Contrail Network Driver test suite" time="15.1929894"></testcase>
+      <testcase name="On requests from docker daemon on DeleteEndpoint request happy case: HNS, docker and Contrail states are in sync removes virtual-machine and its children in Contrail" classname="Contrail Network Driver test suite" time="18.2503448"></testcase>
+      <testcase name="On requests from docker daemon on DeleteEndpoint request happy case: HNS, docker and Contrail states are in sync removes port from vRouter Agent" classname="Contrail Network Driver test suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="On requests from docker daemon on DeleteEndpoint request HNS endpoint doesn&#39;t exist removes docker endpoint" classname="Contrail Network Driver test suite" time="14.6413641"></testcase>
+      <testcase name="On requests from docker daemon on DeleteEndpoint request HNS endpoint doesn&#39;t exist removes virtual-machine and its children in Contrail" classname="Contrail Network Driver test suite" time="18.0977267"></testcase>
+      <testcase name="On requests from docker daemon on DeleteEndpoint request HNS endpoint doesn&#39;t exist removes port from vRouter Agent" classname="Contrail Network Driver test suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="On requests from docker daemon on DeleteEndpoint request virtual-machine in Contrail doesn&#39;t exist removes docker endpoint" classname="Contrail Network Driver test suite" time="17.5051994"></testcase>
+      <testcase name="On requests from docker daemon on DeleteEndpoint request virtual-machine in Contrail doesn&#39;t exist removes HNS endpoint" classname="Contrail Network Driver test suite" time="17.9012231"></testcase>
+      <testcase name="On requests from docker daemon on DeleteEndpoint request virtual-machine in Contrail doesn&#39;t exist removes port from vRouter Agent" classname="Contrail Network Driver test suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="On requests from docker daemon on DeleteEndpoint request port doesn&#39;t exist in vRouter Agent fails" classname="Contrail Network Driver test suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="On requests from docker daemon on EndpointInfo request queried endpoint exists responds with proper InfoResponse" classname="Contrail Network Driver test suite" time="17.4503471"></testcase>
+      <testcase name="On requests from docker daemon on EndpointInfo request queried endpoint doesn&#39;t exist responds with err" classname="Contrail Network Driver test suite" time="14.5635605"></testcase>
+      <testcase name="On requests from docker daemon on Join request queried endpoint exists responds with valid gateway IP and disabled gw service" classname="Contrail Network Driver test suite" time="19.0343809"></testcase>
+      <testcase name="On requests from docker daemon on Join request queried endpoint doesn&#39;t exist responds with err" classname="Contrail Network Driver test suite" time="17.6997089"></testcase>
+      <testcase name="On requests from docker daemon on Leave request queried endpoint exists responds with nil" classname="Contrail Network Driver test suite" time="17.1072096"></testcase>
+      <testcase name="On requests from docker daemon on Leave request queried endpoint doesn&#39;t exist responds with err" classname="Contrail Network Driver test suite" time="16.9675641"></testcase>
+      <testcase name="On requests from docker daemon on DiscoverNew request responds with nil" classname="Contrail Network Driver test suite" time="12.8787727"></testcase>
+      <testcase name="On requests from docker daemon on DiscoverDelete request responds with nil" classname="Contrail Network Driver test suite" time="12.4348875"></testcase>
+      <testcase name="On requests from docker daemon on ProgramExternalConnectivity request responds with nil" classname="Contrail Network Driver test suite" time="12.0299078"></testcase>
+      <testcase name="On requests from docker daemon on RevokeExternalConnectivity request responds with nil" classname="Contrail Network Driver test suite" time="12.0069815"></testcase>
+      <testcase name="Contrail Network Driver can start and stop listening on a named pipe" classname="Contrail Network Driver test suite" time="3.9092876"></testcase>
+      <testcase name="Contrail Network Driver creates a spec file for duration of listening" classname="Contrail Network Driver test suite" time="1.5400939"></testcase>
+      <testcase name="Contrail Network Driver stopping pipe listener won&#39;t cause docker restart to fail" classname="Contrail Network Driver test suite" time="22.1047115"></testcase>
+      <testcase name="Contrail Network Driver creating vswitch for forwarding extension works" classname="Contrail Network Driver test suite" time="2.4907832"></testcase>
+  </testsuite>

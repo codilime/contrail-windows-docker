@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <testsuite tests="26" failures="0" time="14.6024647">
+      <testcase name="Controller cleaning up resources that are referred to by two other doesn&#39;t fail" classname="Controller client test suite" time="1.0832832"></testcase>
+      <testcase name="Controller recursive deletion removes elements down the ref tree" classname="Controller client test suite" time="0.6014996"></testcase>
+      <testcase name="Controller getting Contrail network when network already exists in Contrail returns it" classname="Controller client test suite" time="0.523694"></testcase>
+      <testcase name="Controller getting Contrail network when network doesn&#39;t exist in Contrail returns an error" classname="Controller client test suite" time="0.4408946"></testcase>
+      <testcase name="Controller getting Contrail subnet info network has subnet with default gateway getting default gw IP works" classname="Controller client test suite" time="0.46981710000000004"></testcase>
+      <testcase name="Controller getting Contrail subnet info network has subnet with default gateway getting subnet prefix and prefix len works" classname="Controller client test suite" time="0.6115007"></testcase>
+      <testcase name="Controller getting Contrail subnet info network has subnet without default gateway getting default gw IP returns error" classname="Controller client test suite" time="0.7072346"></testcase>
+      <testcase name="Controller getting Contrail subnet info network has subnet without default gateway getting subnet prefix and prefix len works" classname="Controller client test suite" time="0.7092251"></testcase>
+      <testcase name="Controller getting Contrail subnet info network doesn&#39;t have subnets getting default gw IP returns error" classname="Controller client test suite" time="1.1042371"></testcase>
+      <testcase name="Controller getting Contrail subnet info network doesn&#39;t have subnets getting subnet prefix and prefix len returns error" classname="Controller client test suite" time="0.928695"></testcase>
+      <testcase name="Controller getting Contrail instance when instance already exists in Contrail returns existing instance" classname="Controller client test suite" time="0.7351657"></testcase>
+      <testcase name="Controller getting Contrail instance when instance doesn&#39;t exist in Contrail creates a new instance" classname="Controller client test suite" time="1.1142061"></testcase>
+      <testcase name="Controller getting Contrail virtual interface when vif already exists in Contrail returns existing vif" classname="Controller client test suite" time="0.8718252000000001"></testcase>
+      <testcase name="Controller getting Contrail virtual interface when vif doesn&#39;t exist in Contrail creates a new vif" classname="Controller client test suite" time="1.2569213000000001"></testcase>
+      <testcase name="Controller getting virtual interface MAC when vif has MAC returns MAC address" classname="Controller client test suite" time="0.6134661"></testcase>
+      <testcase name="Controller getting virtual interface MAC when vif doesn&#39;t have a MAC returns error" classname="Controller client test suite" time="0.5866341"></testcase>
+      <testcase name="Controller getting Contrail instance IP when instance IP already exists in Contrail returns existing instance IP" classname="Controller client test suite" time="0.6453564"></testcase>
+      <testcase name="Controller getting Contrail instance IP when instance IP doesn&#39;t exist in Contrail creates new instance IP" classname="Controller client test suite" time="0.7072316000000001"></testcase>
+      <testcase name="Authenticating with different keystone env variables env variables are not set" classname="Controller client test suite" time="0"></testcase>
+      <testcase name="Authenticating with different keystone env variables bad url" classname="Controller client test suite" time="0.008009"></testcase>
+      <testcase name="Authenticating with different keystone env variables empty url" classname="Controller client test suite" time="0"></testcase>
+      <testcase name="Authenticating with different keystone env variables bad user" classname="Controller client test suite" time="0.07977440000000001"></testcase>
+      <testcase name="Authenticating with different keystone env variables bad tenant" classname="Controller client test suite" time="0.0349219"></testcase>
+      <testcase name="Authenticating with different keystone env variables bad password" classname="Controller client test suite" time="0.0319153"></testcase>
+      <testcase name="Authenticating with different keystone env variables bad token" classname="Controller client test suite" time="0.007082700000000001"></testcase>
+      <testcase name="Authenticating with different keystone env variables everything correct" classname="Controller client test suite" time="0.12260140000000001"></testcase>
+  </testsuite>
