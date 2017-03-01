@@ -168,7 +168,7 @@ func (c *Controller) GetOrCreateInterface(net *types.VirtualNetwork, tenantName,
 		log.Errorf("Failed to create interface: %v", err)
 		return nil, err
 	}
-
+	//
 	createdIface, err := types.VirtualMachineInterfaceByName(c.ApiClient, fqName)
 	if err != nil {
 		log.Errorf("Failed to retreive vmi %s by name: %v", fqName, err)
