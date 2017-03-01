@@ -26,6 +26,8 @@ func init() {
 	flag.BoolVar(&useActualController, "useActualController", true,
 		"Whether to use mocked controller or actual.")
 
+	// hello
+
 	log.SetLevel(log.DebugLevel)
 }
 
