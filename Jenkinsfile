@@ -28,8 +28,7 @@ node('windows-server-2016') {
     timestamps{
       try {
         def branch = getBranch()
-        withEnv(["GOPATH=${pwd()}",
-                 "PATH+GOPATH=${pwd()}\\bin"]){
+        withEnv(["GOPATH=${pwd()}", "PATH+GOPATH=${pwd()}\\bin"]){
           dir('src'){
             dir('github.com'){
               dir('codilime'){
@@ -46,10 +45,7 @@ node('windows-server-2016') {
                   bat script: "go clean -i -r "
                   stage 'build'
                   bat script: "go build -i -v"
-                  stage 'test'
-                  echo 'gingko.exe -r .'
                 }
-
               }
             }
           }
