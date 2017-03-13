@@ -775,17 +775,17 @@ func removeDockerNetwork(docker *dockerClient.Client, dockerNetID string) error 
 }
 
 func cleanupAllDockerNetworksAndContainers(docker *dockerClient.Client) {
+	containers, err := docker.ContainerList(context.Background(), dockerTypes.ContainerListOptions{All: true})
+	Expect(err).ToNot(HaveOccurred())
+	for _, c := range containers {
+		log.Debugln("Stopping and removing container", c.ID)
+		stopAndRemoveDockerContainer(docker, c.ID)
+	}
 	nets, err := docker.NetworkList(context.Background(), dockerTypes.NetworkListOptions{})
 	Expect(err).ToNot(HaveOccurred())
 	for _, net := range nets {
-		log.Debugln("Cleaning up endpoints of docker network", net.Name)
-		for containerID := range net.Containers {
-			log.Debugln("Stopping and removing container", containerID)
-			stopAndRemoveDockerContainer(docker, containerID)
-		}
 		if net.Name == "none" || net.Name == "nat" {
-			// those networks are pre-defined and cannot be removed (will cause error)
-			continue
+			continue // those networks are pre-defined and cannot be removed (will cause error)
 		}
 		log.Debugln("Removing docker network", net.Name)
 		err = removeDockerNetwork(docker, net.ID)
