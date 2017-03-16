@@ -10,5 +10,4 @@ type VirtualNetworkType struct {
 	VxlanNetworkIdentifier int `json:"vxlan_network_identifier,omitempty"`
 	ForwardingMode string `json:"forwarding_mode,omitempty"`
 	Rpf string `json:"rpf,omitempty"`
-	MirrorDestination bool `json:"mirror_destination,omitempty"`
 }

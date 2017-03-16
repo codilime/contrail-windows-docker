@@ -5,7 +5,7 @@ import (
 	"github.com/docker/libnetwork/drivers/remote"
 )
 
-func getInitializers(experimental bool) []initializer {
+func getInitializers() []initializer {
 	return []initializer{
 		{null.Init, "null"},
 		{remote.Init, "remote"},

@@ -1,3 +1,5 @@
+// +build windows
+
 package hcsshim
 
 import (
@@ -157,14 +159,4 @@ func HNSEndpointRequest(method, path, request string) (*HNSEndpoint, error) {
 	}
 
 	return endpoint, nil
-}
-
-func HNSListEndpointRequest(method, path, request string) ([]HNSEndpoint, error) {
-	var endpoints []HNSEndpoint
-	err := hnsCall(method, "/endpoints/"+path, request, &endpoints)
-	if err != nil {
-		return nil, err
-	}
-
-	return endpoints, nil
 }

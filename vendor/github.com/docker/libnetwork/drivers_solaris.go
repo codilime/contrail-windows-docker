@@ -6,7 +6,7 @@ import (
 	"github.com/docker/libnetwork/drivers/solaris/overlay"
 )
 
-func getInitializers(experimental bool) []initializer {
+func getInitializers() []initializer {
 	return []initializer{
 		{overlay.Init, "overlay"},
 		{bridge.Init, "bridge"},

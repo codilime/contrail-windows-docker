@@ -38,45 +38,32 @@ func (h Handler) Serve(l net.Listener) error {
 }
 
 // ServeTCP makes the handler to listen for request in a given TCP address.
-// It also writes the spec file in the right directory for docker to read.
+// It also writes the spec file on the right directory for docker to read.
 func (h Handler) ServeTCP(pluginName, addr string, tlsConfig *tls.Config) error {
-	return h.listenAndServe(newTCPListener(addr, pluginName, tlsConfig))
+	l, spec, err := newTCPListener(addr, pluginName, tlsConfig)
+	if err != nil {
+		return err
+	}
+	if spec != "" {
+		defer os.Remove(spec)
+	}
+	return h.Serve(l)
 }
 
 // ServeUnix makes the handler to listen for requests in a unix socket.
-// It also creates the socket file in the right directory for docker to read.
-func (h Handler) ServeUnix(systemGroup, addr string) error {
-	return h.listenAndServe(newUnixListener(addr, systemGroup))
-}
-
-// ServeWindows makes the handler to listen for request in a windows named pipe.
-// It also creates the spec file in the right directory for docker to read.
-func (h Handler) ServeWindows(addr, pluginName string, pipeConfig *WindowsPipeConfig) error {
-	return h.listenAndServe(newWindowsListener(addr, pluginName, pipeConfig))
+// It also creates the socket file on the right directory for docker to read.
+func (h Handler) ServeUnix(addr string, gid int) error {
+	l, spec, err := newUnixListener(addr, gid)
+	if err != nil {
+		return err
+	}
+	if spec != "" {
+		defer os.Remove(spec)
+	}
+	return h.Serve(l)
 }
 
 // HandleFunc registers a function to handle a request path with.
 func (h Handler) HandleFunc(path string, fn func(w http.ResponseWriter, r *http.Request)) {
 	h.mux.HandleFunc(path, fn)
-}
-
-type newListenerFunc func() (net.Listener, string, string, error)
-
-func (h Handler) listenAndServe(fn newListenerFunc) error {
-
-	listener, addr, spec, err := fn()
-
-	server := http.Server{
-		Addr:    addr,
-		Handler: h.mux,
-	}
-
-	if spec != "" {
-		defer os.Remove(spec)
-	}
-	if err != nil {
-		return err
-	}
-
-	return server.Serve(listener)
 }

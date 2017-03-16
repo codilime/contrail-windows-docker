@@ -181,9 +181,6 @@ type tableEntry struct {
 }
 
 func (ep *endpoint) Info() EndpointInfo {
-	if ep.sandboxID != "" {
-		return ep
-	}
 	n, err := ep.getNetworkFromStore()
 	if err != nil {
 		return nil
