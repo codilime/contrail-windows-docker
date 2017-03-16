@@ -1,3 +1,5 @@
+// +build windows
+
 package hcsshim
 
 import (
@@ -159,6 +161,7 @@ func HNSEndpointRequest(method, path, request string) (*HNSEndpoint, error) {
 	return endpoint, nil
 }
 
+// HNSListEndpointRequest makes a HNS call to query the list of available network endpoints
 func HNSListEndpointRequest(method, path, request string) ([]HNSEndpoint, error) {
 	var endpoints []HNSEndpoint
 	err := hnsCall(method, "/endpoints/"+path, request, &endpoints)

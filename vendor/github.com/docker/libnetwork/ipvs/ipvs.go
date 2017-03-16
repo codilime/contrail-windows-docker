@@ -42,13 +42,12 @@ type Destination struct {
 // Handle provides a namespace specific ipvs handle to program ipvs
 // rules.
 type Handle struct {
-	seq  uint32
 	sock *nl.NetlinkSocket
 }
 
 // New provides a new ipvs handle in the namespace pointed to by the
 // passed path. It will return a valid handle or an error in case an
-// error occurred while creating the handle.
+// error occured while creating the handle.
 func New(path string) (*Handle, error) {
 	setup()
 
@@ -81,11 +80,6 @@ func (i *Handle) Close() {
 // NewService creates a new ipvs service in the passed handle.
 func (i *Handle) NewService(s *Service) error {
 	return i.doCmd(s, nil, ipvsCmdNewService)
-}
-
-// IsServicePresent queries for the ipvs service in the passed handle.
-func (i *Handle) IsServicePresent(s *Service) bool {
-	return nil == i.doCmd(s, nil, ipvsCmdGetService)
 }
 
 // UpdateService updates an already existing service in the passed

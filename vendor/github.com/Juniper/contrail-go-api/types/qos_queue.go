@@ -13,24 +13,18 @@ import (
 const (
 	qos_queue_min_bandwidth uint64 = 1 << iota
 	qos_queue_max_bandwidth
-	qos_queue_qos_queue_identifier
 	qos_queue_id_perms
-	qos_queue_perms2
-	qos_queue_annotations
 	qos_queue_display_name
-	qos_queue_forwarding_class_back_refs
+	qos_queue_qos_forwarding_class_back_refs
 )
 
 type QosQueue struct {
         contrail.ObjectBase
 	min_bandwidth int
 	max_bandwidth int
-	qos_queue_identifier int
 	id_perms IdPermsType
-	perms2 PermType2
-	annotations KeyValuePairs
 	display_name string
-	forwarding_class_back_refs contrail.ReferenceList
+	qos_forwarding_class_back_refs contrail.ReferenceList
         valid uint64
         modified uint64
         baseMap map[string]contrail.ReferenceList
@@ -41,12 +35,12 @@ func (obj *QosQueue) GetType() string {
 }
 
 func (obj *QosQueue) GetDefaultParent() []string {
-        name := []string{"default-global-system-config", "default-global-qos-config"}
+        name := []string{"default-domain", "default-project"}
         return name
 }
 
 func (obj *QosQueue) GetDefaultParentType() string {
-        return "global-qos-config"
+        return "project"
 }
 
 func (obj *QosQueue) SetName(name string) {
@@ -99,15 +93,6 @@ func (obj *QosQueue) SetMaxBandwidth(value int) {
         obj.modified |= qos_queue_max_bandwidth
 }
 
-func (obj *QosQueue) GetQosQueueIdentifier() int {
-        return obj.qos_queue_identifier
-}
-
-func (obj *QosQueue) SetQosQueueIdentifier(value int) {
-        obj.qos_queue_identifier = value
-        obj.modified |= qos_queue_qos_queue_identifier
-}
-
 func (obj *QosQueue) GetIdPerms() IdPermsType {
         return obj.id_perms
 }
@@ -115,24 +100,6 @@ func (obj *QosQueue) GetIdPerms() IdPermsType {
 func (obj *QosQueue) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
         obj.modified |= qos_queue_id_perms
-}
-
-func (obj *QosQueue) GetPerms2() PermType2 {
-        return obj.perms2
-}
-
-func (obj *QosQueue) SetPerms2(value *PermType2) {
-        obj.perms2 = *value
-        obj.modified |= qos_queue_perms2
-}
-
-func (obj *QosQueue) GetAnnotations() KeyValuePairs {
-        return obj.annotations
-}
-
-func (obj *QosQueue) SetAnnotations(value *KeyValuePairs) {
-        obj.annotations = *value
-        obj.modified |= qos_queue_annotations
 }
 
 func (obj *QosQueue) GetDisplayName() string {
@@ -144,10 +111,10 @@ func (obj *QosQueue) SetDisplayName(value string) {
         obj.modified |= qos_queue_display_name
 }
 
-func (obj *QosQueue) readForwardingClassBackRefs() error {
+func (obj *QosQueue) readQosForwardingClassBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & qos_queue_forwarding_class_back_refs == 0) {
-                err := obj.GetField(obj, "forwarding_class_back_refs")
+                (obj.valid & qos_queue_qos_forwarding_class_back_refs == 0) {
+                err := obj.GetField(obj, "qos_forwarding_class_back_refs")
                 if err != nil {
                         return err
                 }
@@ -155,13 +122,13 @@ func (obj *QosQueue) readForwardingClassBackRefs() error {
         return nil
 }
 
-func (obj *QosQueue) GetForwardingClassBackRefs() (
+func (obj *QosQueue) GetQosForwardingClassBackRefs() (
         contrail.ReferenceList, error) {
-        err := obj.readForwardingClassBackRefs()
+        err := obj.readQosForwardingClassBackRefs()
         if err != nil {
                 return nil, err
         }
-        return obj.forwarding_class_back_refs, nil
+        return obj.qos_forwarding_class_back_refs, nil
 }
 
 func (obj *QosQueue) MarshalJSON() ([]byte, error) {
@@ -190,15 +157,6 @@ func (obj *QosQueue) MarshalJSON() ([]byte, error) {
                 msg["max_bandwidth"] = &value
         }
 
-        if obj.modified & qos_queue_qos_queue_identifier != 0 {
-                var value json.RawMessage
-                value, err := json.Marshal(&obj.qos_queue_identifier)
-                if err != nil {
-                        return nil, err
-                }
-                msg["qos_queue_identifier"] = &value
-        }
-
         if obj.modified & qos_queue_id_perms != 0 {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
@@ -206,24 +164,6 @@ func (obj *QosQueue) MarshalJSON() ([]byte, error) {
                         return nil, err
                 }
                 msg["id_perms"] = &value
-        }
-
-        if obj.modified & qos_queue_perms2 != 0 {
-                var value json.RawMessage
-                value, err := json.Marshal(&obj.perms2)
-                if err != nil {
-                        return nil, err
-                }
-                msg["perms2"] = &value
-        }
-
-        if obj.modified & qos_queue_annotations != 0 {
-                var value json.RawMessage
-                value, err := json.Marshal(&obj.annotations)
-                if err != nil {
-                        return nil, err
-                }
-                msg["annotations"] = &value
         }
 
         if obj.modified & qos_queue_display_name != 0 {
@@ -262,28 +202,10 @@ func (obj *QosQueue) UnmarshalJSON(body []byte) error {
                                 obj.valid |= qos_queue_max_bandwidth
                         }
                         break
-                case "qos_queue_identifier":
-                        err = json.Unmarshal(value, &obj.qos_queue_identifier)
-                        if err == nil {
-                                obj.valid |= qos_queue_qos_queue_identifier
-                        }
-                        break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
                                 obj.valid |= qos_queue_id_perms
-                        }
-                        break
-                case "perms2":
-                        err = json.Unmarshal(value, &obj.perms2)
-                        if err == nil {
-                                obj.valid |= qos_queue_perms2
-                        }
-                        break
-                case "annotations":
-                        err = json.Unmarshal(value, &obj.annotations)
-                        if err == nil {
-                                obj.valid |= qos_queue_annotations
                         }
                         break
                 case "display_name":
@@ -292,10 +214,10 @@ func (obj *QosQueue) UnmarshalJSON(body []byte) error {
                                 obj.valid |= qos_queue_display_name
                         }
                         break
-                case "forwarding_class_back_refs":
-                        err = json.Unmarshal(value, &obj.forwarding_class_back_refs)
+                case "qos_forwarding_class_back_refs":
+                        err = json.Unmarshal(value, &obj.qos_forwarding_class_back_refs)
                         if err == nil {
-                                obj.valid |= qos_queue_forwarding_class_back_refs
+                                obj.valid |= qos_queue_qos_forwarding_class_back_refs
                         }
                         break
                 }
@@ -332,15 +254,6 @@ func (obj *QosQueue) UpdateObject() ([]byte, error) {
                 msg["max_bandwidth"] = &value
         }
 
-        if obj.modified & qos_queue_qos_queue_identifier != 0 {
-                var value json.RawMessage
-                value, err := json.Marshal(&obj.qos_queue_identifier)
-                if err != nil {
-                        return nil, err
-                }
-                msg["qos_queue_identifier"] = &value
-        }
-
         if obj.modified & qos_queue_id_perms != 0 {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
@@ -348,24 +261,6 @@ func (obj *QosQueue) UpdateObject() ([]byte, error) {
                         return nil, err
                 }
                 msg["id_perms"] = &value
-        }
-
-        if obj.modified & qos_queue_perms2 != 0 {
-                var value json.RawMessage
-                value, err := json.Marshal(&obj.perms2)
-                if err != nil {
-                        return nil, err
-                }
-                msg["perms2"] = &value
-        }
-
-        if obj.modified & qos_queue_annotations != 0 {
-                var value json.RawMessage
-                value, err := json.Marshal(&obj.annotations)
-                if err != nil {
-                        return nil, err
-                }
-                msg["annotations"] = &value
         }
 
         if obj.modified & qos_queue_display_name != 0 {
