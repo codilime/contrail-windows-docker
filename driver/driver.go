@@ -489,7 +489,7 @@ func (d *ContrailDriver) networkMetaFromDockerNetwork(dockerNetID string) (*Netw
 		return nil, err
 	}
 
-	dockerNetwork, err := docker.NetworkInspect(context.Background(), dockerNetID)
+	dockerNetwork, err := docker.NetworkInspect(context.Background(), dockerNetID, false)
 	if err != nil {
 		return nil, err
 	}
