@@ -83,8 +83,15 @@ func (d *ContrailDriver) StartServing() error {
 	h := network.NewHandler(d)
 	go h.Serve(d.listener)
 
-	// wait for listener goroutine to spin up. I don't see more elegant way to do this.
-	time.Sleep(time.Second * 1)
+	// wait for listener goroutine to spin up
+	timeout := time.Second * 5
+	conn, err := winio.DialPipe(pipeAddr, &timeout)
+	if err != nil {
+		return err
+	}
+	if conn != nil {
+		conn.Close()
+	}
 
 	log.Infoln("Started serving on ", pipeAddr)
 
@@ -123,8 +130,12 @@ func (d *ContrailDriver) createRootNetwork() error {
 }
 
 func (d *ContrailDriver) StopServing() error {
-	_ = os.Remove(common.PluginSpecFilePath())
+	log.Infoln("Removing spec file")
+	if err := os.Remove(common.PluginSpecFilePath()); err != nil {
+		log.Errorln(err)
+	}
 
+	log.Infoln("Closing npipe listener")
 	if err := d.listener.Close(); err != nil {
 		log.Errorln(err)
 		return err
