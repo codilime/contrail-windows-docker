@@ -33,6 +33,7 @@ type ContrailDriver struct {
 	hnsMgr         *hnsManager.HNSManager
 	networkAdapter string
 	listener       net.Listener
+	pipeAddr       string
 }
 
 type NetworkMeta struct {
@@ -46,6 +47,7 @@ func NewDriver(adapter string, c *controller.Controller) *ContrailDriver {
 		controller:     c,
 		hnsMgr:         &hnsManager.HNSManager{},
 		networkAdapter: adapter,
+		pipeAddr:       "//./pipe/" + common.DriverName,
 	}
 	return d
 }
@@ -66,8 +68,7 @@ func (d *ContrailDriver) StartServing() error {
 		OutputBufferSize:   4096,
 	}
 
-	pipeAddr := "//./pipe/" + common.DriverName
-	if d.listener, err = winio.ListenPipe(pipeAddr, &pipeConfig); err != nil {
+	if d.listener, err = winio.ListenPipe(d.pipeAddr, &pipeConfig); err != nil {
 		return err
 	}
 
@@ -83,10 +84,17 @@ func (d *ContrailDriver) StartServing() error {
 	h := network.NewHandler(d)
 	go h.Serve(d.listener)
 
-	// wait for listener goroutine to spin up. I don't see more elegant way to do this.
-	time.Sleep(time.Second * 1)
+	// wait for listener goroutine to spin up
+	timeout := time.Second * 5
+	conn, err := winio.DialPipe(d.pipeAddr, &timeout)
+	if err != nil {
+		return err
+	}
+	if conn != nil {
+		conn.Close()
+	}
 
-	log.Infoln("Started serving on ", pipeAddr)
+	log.Infoln("Started serving on ", d.pipeAddr)
 
 	return nil
 }
@@ -123,11 +131,34 @@ func (d *ContrailDriver) createRootNetwork() error {
 }
 
 func (d *ContrailDriver) StopServing() error {
-	_ = os.Remove(common.PluginSpecFilePath())
+	log.Infoln("Removing spec file")
+	if err := os.Remove(common.PluginSpecFilePath()); err != nil {
+		log.Errorln(err)
+	}
 
+	log.Infoln("Closing npipe listener")
 	if err := d.listener.Close(); err != nil {
 		log.Errorln(err)
 		return err
+	}
+
+	// wait for pipe to actually close in Windows
+	log.Infoln("Waiting for pipe to be closed in OS")
+	timeout := time.Second * 1
+	startTime := time.Now()
+	for {
+		if time.Since(startTime) > time.Second*2 {
+			break
+		}
+		conn, err := winio.DialPipe(d.pipeAddr, &timeout)
+		if conn != nil {
+			conn.Close()
+		}
+		if err == nil {
+			time.Sleep(300 * time.Millisecond)
+		} else {
+			break
+		}
 	}
 
 	log.Infoln("Stopped serving")
