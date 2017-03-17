@@ -2,10 +2,13 @@ package hns
 
 import (
 	"encoding/json"
+	"errors"
+	"net"
 	"time"
 
 	"github.com/Microsoft/hcsshim"
 	log "github.com/Sirupsen/logrus"
+	"github.com/codilime/contrail-windows-docker/common"
 )
 
 func CreateHNSNetwork(configuration *hcsshim.HNSNetwork) (string, error) {
@@ -21,10 +24,50 @@ func CreateHNSNetwork(configuration *hcsshim.HNSNetwork) (string, error) {
 		log.Errorln(err)
 		return "", err
 	}
-	// Annoying HNS issue, sleep as a workaround.
+
+	// When the first HNS network is created, a vswitch is also created and attached to
+	// specified network adapter. This adapter will temporarily lose internet connectivity
+	// while it reacquires IPv4. We need to wait for it.
 	// https://github.com/Microsoft/hcsshim/issues/108
-	time.Sleep(time.Second * 2)
+	if err := waitForInterface(); err != nil {
+		log.Errorln(err)
+		return "", err
+	}
+
 	return response.Id, nil
+}
+
+func waitForInterface() error {
+	startTime := time.Now()
+	for {
+		iface, err := net.InterfaceByName(common.HNSTransparentInterfaceName)
+		if err != nil {
+			return err
+		}
+
+		addrs, err := iface.Addrs()
+		if err != nil {
+			return err
+		}
+
+		log.Debugf("Current %s addresses: %s", common.HNSTransparentInterfaceName, addrs)
+
+		// We're essentialy waiting for adapter to reacquire IPv4 (that's how they do it
+		// in Microsoft: https://github.com/Microsoft/hcsshim/issues/108)
+		for _, addr := range addrs {
+			ip, err, _ := net.ParseCIDR(addr.String())
+			if err != nil {
+				if ip.To4() != nil {
+					return nil
+				}
+			}
+		}
+
+		if time.Since(startTime) > time.Millisecond*common.AdapterReconnectTimeout {
+			return errors.New("Waited for net adapter to reconnect for too long.")
+		}
+		time.Sleep(time.Millisecond * 50)
+	}
 }
 
 func DeleteHNSNetwork(hnsID string) error {
