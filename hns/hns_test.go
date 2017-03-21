@@ -391,8 +391,11 @@ var _ = Describe("HNS race conditions workarounds", func() {
 	})
 
 	Specify("without HNS networks, connections work", func() {
-		_, err := net.Dial("tcp", targetAddr)
+		conn, err := net.Dial("tcp", targetAddr)
 		Expect(err).ToNot(HaveOccurred())
+		if conn != nil {
+			conn.Close()
+		}
 	})
 
 	Context("subnet is specified in new HNS switch config", func() {
@@ -413,25 +416,33 @@ var _ = Describe("HNS race conditions workarounds", func() {
 			// net.Dial may fail with error:
 			// `dial tcp localhost:80: connectex: A socket operation was attempted to an
 			// unreachable network.`
+			configuration.NetworkAdapterName = netAdapter
 			for i := 0; i < numTries; i++ {
 				networkIDMsg := fmt.Sprintf("net%v", i)
 				By(fmt.Sprintf("HNS network %s was just created", networkIDMsg))
 				netID, err := CreateHNSNetwork(configuration)
 				Expect(err).ToNot(HaveOccurred(), networkIDMsg)
-				_, err = net.Dial("tcp", targetAddr)
+				conn, err := net.Dial("tcp", targetAddr)
 				Expect(err).ToNot(HaveOccurred(), networkIDMsg)
+				if conn != nil {
+					conn.Close()
+				}
 
 				By(fmt.Sprintf("HNS network %s was just deleted", networkIDMsg))
 				err = DeleteHNSNetwork(netID)
 				Expect(err).ToNot(HaveOccurred(), networkIDMsg)
-				_, err = net.Dial("tcp", targetAddr)
+				conn, err = net.Dial("tcp", targetAddr)
 				Expect(err).ToNot(HaveOccurred(), networkIDMsg)
+				if conn != nil {
+					conn.Close()
+				}
 			}
 		})
 
 		Specify("connections don't fail on subsequent HNS networks", func() {
 
 			var netIDs []string
+			configuration.NetworkAdapterName = netAdapter
 
 			for i := 0; i < numTries; i++ {
 				networkIDMsg := fmt.Sprintf("net%v", i)
@@ -440,8 +451,11 @@ var _ = Describe("HNS race conditions workarounds", func() {
 				netID, err := CreateHNSNetwork(configuration)
 				Expect(err).ToNot(HaveOccurred(), networkIDMsg)
 				netIDs = append(netIDs, netID)
-				_, err = net.Dial("tcp", targetAddr)
+				conn, err := net.Dial("tcp", targetAddr)
 				Expect(err).ToNot(HaveOccurred(), networkIDMsg)
+				if conn != nil {
+					conn.Close()
+				}
 			}
 
 			for i, netID := range netIDs {
@@ -449,8 +463,11 @@ var _ = Describe("HNS race conditions workarounds", func() {
 				By(fmt.Sprintf("HNS network %s was just deleted", networkIDMsg))
 				err := DeleteHNSNetwork(netID)
 				Expect(err).ToNot(HaveOccurred(), networkIDMsg)
-				_, err = net.Dial("tcp", targetAddr)
+				conn, err := net.Dial("tcp", targetAddr)
 				Expect(err).ToNot(HaveOccurred(), networkIDMsg)
+				if conn != nil {
+					conn.Close()
+				}
 			}
 		})
 	})
@@ -465,6 +482,7 @@ var _ = Describe("HNS race conditions workarounds", func() {
 		Specify("error does not occur when we don't supply a subnet to new network", func() {
 			// CreateHNSNetwork may fail with error:
 			// `HNS failed with error : Unspecified error`
+			configuration.NetworkAdapterName = netAdapter
 			for i := 0; i < numTries; i++ {
 				networkIDMsg := fmt.Sprintf("net%v", i)
 				By(fmt.Sprintf("HNS network %s was just created", networkIDMsg))

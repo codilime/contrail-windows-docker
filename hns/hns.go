@@ -38,8 +38,9 @@ func CreateHNSNetwork(configuration *hcsshim.HNSNetwork) (string, error) {
 }
 
 func waitForInterface() error {
-	startTime := time.Now()
+	pollingStart := time.Now()
 	for {
+		queryStart := time.Now()
 		iface, err := net.InterfaceByName(common.HNSTransparentInterfaceName)
 		if err != nil {
 			return err
@@ -50,7 +51,13 @@ func waitForInterface() error {
 			return err
 		}
 
-		log.Debugf("Current %s addresses: %s", common.HNSTransparentInterfaceName, addrs)
+		// We print query time because it turns out that above operations actually take quite a
+		// while (from 5-400ms), and the time depends (I think) if underlying interface configs
+		// are being changed. For example, query usually takes ~10ms, but if it's about to change,
+		// it can take up to 400ms. In other words, there must be some kind of mutex there.
+		// This information could be useful for debugging.
+		log.Debugf("Current %s addresses: %s. Query took %s", common.HNSTransparentInterfaceName,
+			addrs, time.Since(queryStart))
 
 		// We're essentialy waiting for adapter to reacquire IPv4 (that's how they do it
 		// in Microsoft: https://github.com/Microsoft/hcsshim/issues/108)
@@ -58,15 +65,16 @@ func waitForInterface() error {
 			ip, err, _ := net.ParseCIDR(addr.String())
 			if err != nil {
 				if ip.To4() != nil {
+					log.Debugf("Waited %s for IP reacquisition", time.Since(pollingStart))
 					return nil
 				}
 			}
 		}
 
-		if time.Since(startTime) > time.Millisecond*common.AdapterReconnectTimeout {
+		if time.Since(pollingStart) > time.Millisecond*common.AdapterReconnectTimeout {
 			return errors.New("Waited for net adapter to reconnect for too long.")
 		}
-		time.Sleep(time.Millisecond * 50)
+		time.Sleep(time.Millisecond * common.AdapterPollingRate)
 	}
 }
 

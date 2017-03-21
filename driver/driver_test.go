@@ -62,9 +62,9 @@ var _ = AfterSuite(func() {
 })
 
 func cleanupAll() {
-	err := common.HardResetHNS()
+	err := common.RestartDocker()
 	Expect(err).ToNot(HaveOccurred())
-	err = common.RestartDocker()
+	err = common.HardResetHNS()
 	Expect(err).ToNot(HaveOccurred())
 
 	docker := getDockerClient()
