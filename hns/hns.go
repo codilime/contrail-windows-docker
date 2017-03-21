@@ -19,6 +19,15 @@ func CreateHNSNetwork(configuration *hcsshim.HNSNetwork) (string, error) {
 		return "", err
 	}
 	log.Debugln("Config:", string(configBytes))
+
+	// If vswitch was just deleted, the adapter will temporarily lose network connectivity while
+	// it reacquires IPv4. We need to wait for it.
+	// https://github.com/Microsoft/hcsshim/issues/95
+	if err := waitForInterface(configuration.NetworkAdapterName); err != nil {
+		log.Errorln(err)
+		return "", err
+	}
+
 	response, err := hcsshim.HNSNetworkRequest("POST", "", string(configBytes))
 	if err != nil {
 		log.Errorln(err)
@@ -26,10 +35,10 @@ func CreateHNSNetwork(configuration *hcsshim.HNSNetwork) (string, error) {
 	}
 
 	// When the first HNS network is created, a vswitch is also created and attached to
-	// specified network adapter. This adapter will temporarily lose internet connectivity
+	// specified network adapter. This adapter will temporarily lose network connectivity
 	// while it reacquires IPv4. We need to wait for it.
 	// https://github.com/Microsoft/hcsshim/issues/108
-	if err := waitForInterface(); err != nil {
+	if err := waitForInterface(common.HNSTransparentInterfaceName); err != nil {
 		log.Errorln(err)
 		return "", err
 	}
@@ -37,11 +46,11 @@ func CreateHNSNetwork(configuration *hcsshim.HNSNetwork) (string, error) {
 	return response.Id, nil
 }
 
-func waitForInterface() error {
+func waitForInterface(ifname string) error {
 	pollingStart := time.Now()
 	for {
 		queryStart := time.Now()
-		iface, err := net.InterfaceByName(common.HNSTransparentInterfaceName)
+		iface, err := net.InterfaceByName(ifname)
 		if err != nil {
 			return err
 		}
@@ -56,7 +65,7 @@ func waitForInterface() error {
 		// are being changed. For example, query usually takes ~10ms, but if it's about to change,
 		// it can take up to 400ms. In other words, there must be some kind of mutex there.
 		// This information could be useful for debugging.
-		log.Debugf("Current %s addresses: %s. Query took %s", common.HNSTransparentInterfaceName,
+		log.Debugf("Current %s addresses: %s. Query took %s", ifname,
 			addrs, time.Since(queryStart))
 
 		// We're essentialy waiting for adapter to reacquire IPv4 (that's how they do it
