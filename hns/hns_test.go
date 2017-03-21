@@ -407,9 +407,8 @@ var _ = Describe("HNS race conditions workarounds", func() {
 			},
 		}
 		configuration := &hcsshim.HNSNetwork{
-			Type:               "transparent",
-			NetworkAdapterName: netAdapter,
-			Subnets:            subnets,
+			Type:    "transparent",
+			Subnets: subnets,
 		}
 
 		Specify("connections don't fail just after new HNS network is created/deleted", func() {
@@ -475,8 +474,7 @@ var _ = Describe("HNS race conditions workarounds", func() {
 	Context("subnet is NOT specified in new HNS switch config", func() {
 
 		configuration := &hcsshim.HNSNetwork{
-			Type:               "transparent",
-			NetworkAdapterName: netAdapter,
+			Type: "transparent",
 		}
 
 		Specify("error does not occur when we don't supply a subnet to new network", func() {

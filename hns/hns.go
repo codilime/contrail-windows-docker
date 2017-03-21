@@ -52,7 +52,7 @@ func waitForInterface() error {
 		}
 
 		// We print query time because it turns out that above operations actually take quite a
-		// while (from 5-400ms), and the time depends (I think) if underlying interface configs
+		// while (1-400ms), and the time depends (I think) on whether underlying interface configs
 		// are being changed. For example, query usually takes ~10ms, but if it's about to change,
 		// it can take up to 400ms. In other words, there must be some kind of mutex there.
 		// This information could be useful for debugging.
