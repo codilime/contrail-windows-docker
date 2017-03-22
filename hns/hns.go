@@ -20,14 +20,6 @@ func CreateHNSNetwork(configuration *hcsshim.HNSNetwork) (string, error) {
 	}
 	log.Debugln("Config:", string(configBytes))
 
-	// If vswitch was just deleted, the adapter will temporarily lose network connectivity while
-	// it reacquires IPv4. We need to wait for it.
-	// https://github.com/Microsoft/hcsshim/issues/95
-	if err := waitForInterface(configuration.NetworkAdapterName); err != nil {
-		log.Errorln(err)
-		return "", err
-	}
-
 	response, err := hcsshim.HNSNetworkRequest("POST", "", string(configBytes))
 	if err != nil {
 		log.Errorln(err)
@@ -46,36 +38,81 @@ func CreateHNSNetwork(configuration *hcsshim.HNSNetwork) (string, error) {
 	return response.Id, nil
 }
 
+func DeleteHNSNetwork(hnsID string) error {
+	log.Infoln("Deleting HNS network", hnsID)
+
+	toDelete, err := GetHNSNetwork(hnsID)
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+
+	networks, err := ListHNSNetworks()
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+
+	adapterStillInUse := false
+	for _, network := range networks {
+		if network.Id != toDelete.Id &&
+			network.NetworkAdapterName == toDelete.NetworkAdapterName {
+			adapterStillInUse = true
+			break
+		}
+	}
+
+	_, err = hcsshim.HNSNetworkRequest("DELETE", hnsID, "")
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+
+	if !adapterStillInUse {
+		// If the last network that uses an adapter is deleted, then the underlying vswitch is
+		// also deleted. During this period, the adapter will temporarily lose network
+		// connectivity while it reacquires IPv4. We need to wait for it.
+		// https://github.com/Microsoft/hcsshim/issues/95
+		if err := waitForInterface(toDelete.NetworkAdapterName); err != nil {
+			log.Errorln(err)
+			return err
+		}
+	}
+
+	return nil
+}
+
 func waitForInterface(ifname string) error {
 	pollingStart := time.Now()
 	for {
 		queryStart := time.Now()
 		iface, err := net.InterfaceByName(ifname)
 		if err != nil {
-			return err
-		}
-
-		addrs, err := iface.Addrs()
-		if err != nil {
-			return err
-		}
-
-		// We print query time because it turns out that above operations actually take quite a
-		// while (1-400ms), and the time depends (I think) on whether underlying interface configs
-		// are being changed. For example, query usually takes ~10ms, but if it's about to change,
-		// it can take up to 400ms. In other words, there must be some kind of mutex there.
-		// This information could be useful for debugging.
-		log.Debugf("Current %s addresses: %s. Query took %s", ifname,
-			addrs, time.Since(queryStart))
-
-		// We're essentialy waiting for adapter to reacquire IPv4 (that's how they do it
-		// in Microsoft: https://github.com/Microsoft/hcsshim/issues/108)
-		for _, addr := range addrs {
-			ip, err, _ := net.ParseCIDR(addr.String())
+			log.Warnf("Error when getting interface %s, but maybe it will appear soon: %s",
+				ifname, err)
+		} else {
+			addrs, err := iface.Addrs()
 			if err != nil {
-				if ip.To4() != nil {
-					log.Debugf("Waited %s for IP reacquisition", time.Since(pollingStart))
-					return nil
+				return err
+			}
+
+			// We print query time because it turns out that above operations actually take quite a
+			// while (1-400ms), and the time depends (I think) on whether underlying interface
+			// configs are being changed. For example, query usually takes ~10ms, but if it's about
+			// to change, it can take up to 400ms. In other words, there must be some kind of mutex
+			// there. This information could be useful for debugging.
+			log.Debugf("Current %s addresses: %s. Query took %s", ifname,
+				addrs, time.Since(queryStart))
+
+			// We're essentialy waiting for adapter to reacquire IPv4 (that's how they do it
+			// in Microsoft: https://github.com/Microsoft/hcsshim/issues/108)
+			for _, addr := range addrs {
+				ip, err, _ := net.ParseCIDR(addr.String())
+				if err != nil {
+					if ip.To4() != nil {
+						log.Debugf("Waited %s for IP reacquisition", time.Since(pollingStart))
+						return nil
+					}
 				}
 			}
 		}
@@ -85,16 +122,6 @@ func waitForInterface(ifname string) error {
 		}
 		time.Sleep(time.Millisecond * common.AdapterPollingRate)
 	}
-}
-
-func DeleteHNSNetwork(hnsID string) error {
-	log.Infoln("Deleting HNS network", hnsID)
-	_, err := hcsshim.HNSNetworkRequest("DELETE", hnsID, "")
-	if err != nil {
-		log.Errorln(err)
-		return err
-	}
-	return nil
 }
 
 func ListHNSNetworks() ([]hcsshim.HNSNetwork, error) {

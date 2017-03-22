@@ -417,21 +417,22 @@ var _ = Describe("HNS race conditions workarounds", func() {
 			// unreachable network.`
 			configuration.NetworkAdapterName = netAdapter
 			for i := 0; i < numTries; i++ {
-				networkIDMsg := fmt.Sprintf("net%v", i)
-				By(fmt.Sprintf("HNS network %s was just created", networkIDMsg))
+				name := fmt.Sprintf("net%v", i)
+				configuration.Name = name
+				By(fmt.Sprintf("Creating HNS network %s", name))
 				netID, err := CreateHNSNetwork(configuration)
-				Expect(err).ToNot(HaveOccurred(), networkIDMsg)
+				Expect(err).ToNot(HaveOccurred(), name)
 				conn, err := net.Dial("tcp", targetAddr)
-				Expect(err).ToNot(HaveOccurred(), networkIDMsg)
+				Expect(err).ToNot(HaveOccurred(), name)
 				if conn != nil {
 					conn.Close()
 				}
 
-				By(fmt.Sprintf("HNS network %s was just deleted", networkIDMsg))
+				By(fmt.Sprintf("Deleting HNS network %s", name))
 				err = DeleteHNSNetwork(netID)
-				Expect(err).ToNot(HaveOccurred(), networkIDMsg)
+				Expect(err).ToNot(HaveOccurred(), name)
 				conn, err = net.Dial("tcp", targetAddr)
-				Expect(err).ToNot(HaveOccurred(), networkIDMsg)
+				Expect(err).ToNot(HaveOccurred(), name)
 				if conn != nil {
 					conn.Close()
 				}
@@ -444,26 +445,26 @@ var _ = Describe("HNS race conditions workarounds", func() {
 			configuration.NetworkAdapterName = netAdapter
 
 			for i := 0; i < numTries; i++ {
-				networkIDMsg := fmt.Sprintf("net%v", i)
-				By(fmt.Sprintf("HNS network %s was just created", networkIDMsg))
-				configuration.Name = networkIDMsg
+				name := fmt.Sprintf("net%v", i)
+				configuration.Name = name
+				By(fmt.Sprintf("Creating HNS network %s", name))
 				netID, err := CreateHNSNetwork(configuration)
-				Expect(err).ToNot(HaveOccurred(), networkIDMsg)
+				Expect(err).ToNot(HaveOccurred(), name)
 				netIDs = append(netIDs, netID)
 				conn, err := net.Dial("tcp", targetAddr)
-				Expect(err).ToNot(HaveOccurred(), networkIDMsg)
+				Expect(err).ToNot(HaveOccurred(), name)
 				if conn != nil {
 					conn.Close()
 				}
 			}
 
 			for i, netID := range netIDs {
-				networkIDMsg := fmt.Sprintf("net%v", i)
-				By(fmt.Sprintf("HNS network %s was just deleted", networkIDMsg))
+				name := fmt.Sprintf("net%v", i)
+				By(fmt.Sprintf("Deleting HNS network %s", name))
 				err := DeleteHNSNetwork(netID)
-				Expect(err).ToNot(HaveOccurred(), networkIDMsg)
+				Expect(err).ToNot(HaveOccurred(), name)
 				conn, err := net.Dial("tcp", targetAddr)
-				Expect(err).ToNot(HaveOccurred(), networkIDMsg)
+				Expect(err).ToNot(HaveOccurred(), name)
 				if conn != nil {
 					conn.Close()
 				}
@@ -482,10 +483,11 @@ var _ = Describe("HNS race conditions workarounds", func() {
 			// `HNS failed with error : Unspecified error`
 			configuration.NetworkAdapterName = netAdapter
 			for i := 0; i < numTries; i++ {
-				networkIDMsg := fmt.Sprintf("net%v", i)
-				By(fmt.Sprintf("HNS network %s was just created", networkIDMsg))
+				name := fmt.Sprintf("net%v", i)
+				configuration.Name = name
+				By(fmt.Sprintf("Creating HNS network %s", name))
 				netID, err := CreateHNSNetwork(configuration)
-				Expect(err).ToNot(HaveOccurred(), networkIDMsg)
+				Expect(err).ToNot(HaveOccurred(), name)
 				hcsshim.HNSNetworkRequest("DELETE", netID, "")
 			}
 		})
