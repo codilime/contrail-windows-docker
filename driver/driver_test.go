@@ -66,6 +66,8 @@ func cleanupAll() {
 	Expect(err).ToNot(HaveOccurred())
 	err = common.HardResetHNS()
 	Expect(err).ToNot(HaveOccurred())
+	err = common.WaitForInterface(netAdapter)
+	Expect(err).ToNot(HaveOccurred())
 
 	docker := getDockerClient()
 	cleanupAllDockerNetworksAndContainers(docker)
@@ -191,6 +193,9 @@ var _ = Describe("On requests from docker daemon", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		err = common.HardResetHNS()
+		Expect(err).ToNot(HaveOccurred())
+
+		err = common.WaitForInterface(netAdapter)
 		Expect(err).ToNot(HaveOccurred())
 	})
 

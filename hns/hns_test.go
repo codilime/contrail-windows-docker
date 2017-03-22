@@ -43,10 +43,14 @@ func TestHNS(t *testing.T) {
 var _ = BeforeSuite(func() {
 	err := common.HardResetHNS()
 	Expect(err).ToNot(HaveOccurred())
+	err = common.WaitForInterface(netAdapter)
+	Expect(err).ToNot(HaveOccurred())
 })
 
 var _ = AfterSuite(func() {
 	err := common.HardResetHNS()
+	Expect(err).ToNot(HaveOccurred())
+	err = common.WaitForInterface(netAdapter)
 	Expect(err).ToNot(HaveOccurred())
 })
 
@@ -387,6 +391,8 @@ var _ = Describe("HNS race conditions workarounds", func() {
 
 		targetAddr = fmt.Sprintf("%s:%v", controllerAddr, controllerPort)
 		err := common.HardResetHNS()
+		Expect(err).ToNot(HaveOccurred())
+		err = common.WaitForInterface(netAdapter)
 		Expect(err).ToNot(HaveOccurred())
 	})
 

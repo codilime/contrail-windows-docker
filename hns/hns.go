@@ -2,9 +2,6 @@ package hns
 
 import (
 	"encoding/json"
-	"errors"
-	"net"
-	"time"
 
 	"github.com/Microsoft/hcsshim"
 	log "github.com/Sirupsen/logrus"
@@ -30,7 +27,7 @@ func CreateHNSNetwork(configuration *hcsshim.HNSNetwork) (string, error) {
 	// specified network adapter. This adapter will temporarily lose network connectivity
 	// while it reacquires IPv4. We need to wait for it.
 	// https://github.com/Microsoft/hcsshim/issues/108
-	if err := waitForInterface(common.HNSTransparentInterfaceName); err != nil {
+	if err := common.WaitForInterface(common.HNSTransparentInterfaceName); err != nil {
 		log.Errorln(err)
 		return "", err
 	}
@@ -73,55 +70,13 @@ func DeleteHNSNetwork(hnsID string) error {
 		// also deleted. During this period, the adapter will temporarily lose network
 		// connectivity while it reacquires IPv4. We need to wait for it.
 		// https://github.com/Microsoft/hcsshim/issues/95
-		if err := waitForInterface(toDelete.NetworkAdapterName); err != nil {
+		if err := common.WaitForInterface(toDelete.NetworkAdapterName); err != nil {
 			log.Errorln(err)
 			return err
 		}
 	}
 
 	return nil
-}
-
-func waitForInterface(ifname string) error {
-	pollingStart := time.Now()
-	for {
-		queryStart := time.Now()
-		iface, err := net.InterfaceByName(ifname)
-		if err != nil {
-			log.Warnf("Error when getting interface %s, but maybe it will appear soon: %s",
-				ifname, err)
-		} else {
-			addrs, err := iface.Addrs()
-			if err != nil {
-				return err
-			}
-
-			// We print query time because it turns out that above operations actually take quite a
-			// while (1-400ms), and the time depends (I think) on whether underlying interface
-			// configs are being changed. For example, query usually takes ~10ms, but if it's about
-			// to change, it can take up to 400ms. In other words, there must be some kind of mutex
-			// there. This information could be useful for debugging.
-			log.Debugf("Current %s addresses: %s. Query took %s", ifname,
-				addrs, time.Since(queryStart))
-
-			// We're essentialy waiting for adapter to reacquire IPv4 (that's how they do it
-			// in Microsoft: https://github.com/Microsoft/hcsshim/issues/108)
-			for _, addr := range addrs {
-				ip, err, _ := net.ParseCIDR(addr.String())
-				if err != nil {
-					if ip.To4() != nil {
-						log.Debugf("Waited %s for IP reacquisition", time.Since(pollingStart))
-						return nil
-					}
-				}
-			}
-		}
-
-		if time.Since(pollingStart) > time.Millisecond*common.AdapterReconnectTimeout {
-			return errors.New("Waited for net adapter to reconnect for too long.")
-		}
-		time.Sleep(time.Millisecond * common.AdapterPollingRate)
-	}
 }
 
 func ListHNSNetworks() ([]hcsshim.HNSNetwork, error) {
