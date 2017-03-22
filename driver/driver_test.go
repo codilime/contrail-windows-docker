@@ -187,16 +187,13 @@ var _ = Describe("On requests from docker daemon", func() {
 	})
 	AfterEach(func() {
 		cleanupAllDockerNetworksAndContainers(docker)
-		err := common.StopDocker()
+		err := common.RestartDocker()
 		Expect(err).ToNot(HaveOccurred())
 
 		err = contrailDriver.StopServing()
 		Expect(err).ToNot(HaveOccurred())
 
 		err = common.HardResetHNS()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = common.StartDocker()
 		Expect(err).ToNot(HaveOccurred())
 	})
 

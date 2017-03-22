@@ -50,22 +50,6 @@ func HardResetHNS() error {
 	return nil
 }
 
-func StopDocker() error {
-	log.Infoln("Stopping docker")
-	if err := callPowershell("Stop-Service", "docker"); err != nil {
-		return errors.New(fmt.Sprintf("When stopping docker: %s", err))
-	}
-	return nil
-}
-
-func StartDocker() error {
-	log.Infoln("Starting docker")
-	if err := callPowershell("Start-Service", "docker"); err != nil {
-		return errors.New(fmt.Sprintf("When starting docker: %s", err))
-	}
-	return nil
-}
-
 func RestartDocker() error {
 	log.Infoln("Restarting docker")
 	if err := callPowershell("Restart-Service", "docker"); err != nil {
