@@ -33,6 +33,7 @@ type ContrailDriver struct {
 	hnsMgr         *hnsManager.HNSManager
 	networkAdapter string
 	listener       net.Listener
+	pipeAddr       string
 }
 
 type NetworkMeta struct {
@@ -46,6 +47,7 @@ func NewDriver(adapter string, c *controller.Controller) *ContrailDriver {
 		controller:     c,
 		hnsMgr:         &hnsManager.HNSManager{},
 		networkAdapter: adapter,
+		pipeAddr:       "//./pipe/" + common.DriverName,
 	}
 	return d
 }
@@ -66,8 +68,7 @@ func (d *ContrailDriver) StartServing() error {
 		OutputBufferSize:   4096,
 	}
 
-	pipeAddr := "//./pipe/" + common.DriverName
-	if d.listener, err = winio.ListenPipe(pipeAddr, &pipeConfig); err != nil {
+	if d.listener, err = winio.ListenPipe(d.pipeAddr, &pipeConfig); err != nil {
 		return err
 	}
 
@@ -85,7 +86,7 @@ func (d *ContrailDriver) StartServing() error {
 
 	// wait for listener goroutine to spin up
 	timeout := time.Second * 5
-	conn, err := winio.DialPipe(pipeAddr, &timeout)
+	conn, err := winio.DialPipe(d.pipeAddr, &timeout)
 	if err != nil {
 		return err
 	}
@@ -93,7 +94,7 @@ func (d *ContrailDriver) StartServing() error {
 		conn.Close()
 	}
 
-	log.Infoln("Started serving on ", pipeAddr)
+	log.Infoln("Started serving on ", d.pipeAddr)
 
 	return nil
 }
@@ -139,6 +140,23 @@ func (d *ContrailDriver) StopServing() error {
 	if err := d.listener.Close(); err != nil {
 		log.Errorln(err)
 		return err
+	}
+
+	// wait for pipe to actually close in Windows
+	log.Infoln("Waiting for pipe to be closed in OS")
+	timeout := time.Second * 1
+	startTime := time.Now()
+	for {
+		if time.Since(startTime) > time.Second*2 {
+			break
+		}
+		conn, err := winio.DialPipe(d.pipeAddr, &timeout)
+		if conn != nil {
+			conn.Close()
+		}
+		if err == nil {
+			time.Sleep(300 * time.Millisecond)
+		}
 	}
 
 	log.Infoln("Stopped serving")
