@@ -103,15 +103,16 @@ func (d *ContrailDriver) StartServing() error {
 	go h.Serve(d.listener)
 
 	// wait for listener goroutine to spin up
-	timeout := time.Second * 5
-	conn, err := winio.DialPipe(d.pipeAddr, &timeout)
-	if err != nil {
-		return err
-	}
-	if conn != nil {
-		conn.Close()
-	}
+	// timeout := time.Second * 5
+	// conn, err := winio.DialPipe(d.pipeAddr, &timeout)
+	// if err != nil {
+	// 	return err
+	// }
+	// if conn != nil {
+	// 	conn.Close()
+	// }
 
+	time.Sleep(time.Second * 1)
 	log.Infoln("Started serving on ", d.pipeAddr)
 
 	return nil
