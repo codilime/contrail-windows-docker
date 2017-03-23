@@ -55,7 +55,7 @@ func HardResetHNS() error {
 func RestartDocker() error {
 	log.Infoln("Restarting docker")
 	if err := callPowershell("Restart-Service", "docker"); err != nil {
-		return err
+		return errors.New(fmt.Sprintf("When restarting docker: %s", err))
 	}
 	return nil
 }
