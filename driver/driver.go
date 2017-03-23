@@ -68,8 +68,25 @@ func (d *ContrailDriver) StartServing() error {
 		OutputBufferSize:   4096,
 	}
 
-	if d.listener, err = winio.ListenPipe(d.pipeAddr, &pipeConfig); err != nil {
-		return err
+	retryCnt := 0
+	for {
+		d.listener, err = winio.ListenPipe(d.pipeAddr, &pipeConfig)
+		if err != nil {
+			switch err.(type) {
+			case *os.PathError:
+				// If pipe was just closed, it seems like OS temporarily changes its permissions while it
+				// cleans up. Retry a couple times if that's the case.
+				if retryCnt > 3 {
+					return err
+				}
+				log.Warn("Got error when trying to create pipe listener, retrying...:", err)
+				retryCnt++
+			default:
+				return err
+			}
+		} else {
+			break
+		}
 	}
 
 	if err := os.MkdirAll(common.PluginSpecDir(), 0755); err != nil {
@@ -140,25 +157,6 @@ func (d *ContrailDriver) StopServing() error {
 	if err := d.listener.Close(); err != nil {
 		log.Errorln(err)
 		return err
-	}
-
-	// wait for pipe to actually close in Windows
-	log.Infoln("Waiting for pipe to be closed in OS")
-	timeout := time.Second * 1
-	startTime := time.Now()
-	for {
-		if time.Since(startTime) > time.Second*2 {
-			break
-		}
-		conn, err := winio.DialPipe(d.pipeAddr, &timeout)
-		if conn != nil {
-			conn.Close()
-		}
-		if err == nil {
-			time.Sleep(300 * time.Millisecond)
-		} else {
-			break
-		}
 	}
 
 	log.Infoln("Stopped serving")
