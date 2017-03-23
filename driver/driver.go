@@ -80,6 +80,7 @@ func (d *ContrailDriver) StartServing() error {
 					return err
 				}
 				log.Warn("Got error when trying to create pipe listener, retrying...:", err)
+				time.Sleep(time.Second * 1)
 				retryCnt++
 			default:
 				return err
