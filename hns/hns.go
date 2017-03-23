@@ -2,10 +2,10 @@ package hns
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/Microsoft/hcsshim"
 	log "github.com/Sirupsen/logrus"
+	"github.com/codilime/contrail-windows-docker/common"
 )
 
 func CreateHNSNetwork(configuration *hcsshim.HNSNetwork) (string, error) {
@@ -16,24 +16,66 @@ func CreateHNSNetwork(configuration *hcsshim.HNSNetwork) (string, error) {
 		return "", err
 	}
 	log.Debugln("Config:", string(configBytes))
+
 	response, err := hcsshim.HNSNetworkRequest("POST", "", string(configBytes))
 	if err != nil {
 		log.Errorln(err)
 		return "", err
 	}
-	// Annoying HNS issue, sleep as a workaround.
+
+	// When the first HNS network is created, a vswitch is also created and attached to
+	// specified network adapter. This adapter will temporarily lose network connectivity
+	// while it reacquires IPv4. We need to wait for it.
 	// https://github.com/Microsoft/hcsshim/issues/108
-	time.Sleep(time.Second * 2)
+	if err := common.WaitForInterface(common.HNSTransparentInterfaceName); err != nil {
+		log.Errorln(err)
+		return "", err
+	}
+
 	return response.Id, nil
 }
 
 func DeleteHNSNetwork(hnsID string) error {
 	log.Infoln("Deleting HNS network", hnsID)
-	_, err := hcsshim.HNSNetworkRequest("DELETE", hnsID, "")
+
+	toDelete, err := GetHNSNetwork(hnsID)
 	if err != nil {
 		log.Errorln(err)
 		return err
 	}
+
+	networks, err := ListHNSNetworks()
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+
+	adapterStillInUse := false
+	for _, network := range networks {
+		if network.Id != toDelete.Id &&
+			network.NetworkAdapterName == toDelete.NetworkAdapterName {
+			adapterStillInUse = true
+			break
+		}
+	}
+
+	_, err = hcsshim.HNSNetworkRequest("DELETE", hnsID, "")
+	if err != nil {
+		log.Errorln(err)
+		return err
+	}
+
+	if !adapterStillInUse {
+		// If the last network that uses an adapter is deleted, then the underlying vswitch is
+		// also deleted. During this period, the adapter will temporarily lose network
+		// connectivity while it reacquires IPv4. We need to wait for it.
+		// https://github.com/Microsoft/hcsshim/issues/95
+		if err := common.WaitForInterface(toDelete.NetworkAdapterName); err != nil {
+			log.Errorln(err)
+			return err
+		}
+	}
+
 	return nil
 }
 

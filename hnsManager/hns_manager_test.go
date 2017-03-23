@@ -29,6 +29,8 @@ func TestHNSManager(t *testing.T) {
 var _ = BeforeSuite(func() {
 	err := common.HardResetHNS()
 	Expect(err).ToNot(HaveOccurred())
+	err = common.WaitForInterface(netAdapter)
+	Expect(err).ToNot(HaveOccurred())
 })
 
 var _ = Describe("HNS manager", func() {
@@ -48,6 +50,8 @@ var _ = Describe("HNS manager", func() {
 
 	AfterEach(func() {
 		err := common.HardResetHNS()
+		Expect(err).ToNot(HaveOccurred())
+		err = common.WaitForInterface(netAdapter)
 		Expect(err).ToNot(HaveOccurred())
 	})
 

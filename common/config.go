@@ -18,6 +18,17 @@ const (
 	// RootNetworkName is a name of root HNS network created solely for the purpose of
 	// having a virtual switch
 	RootNetworkName = "ContrailRootNetwork"
+
+	// AdapterReconnectTimeout is a time (in ms) to wait for adapter to reacquire IP after a new
+	// HNS network is created. https://github.com/Microsoft/hcsshim/issues/108
+	AdapterReconnectTimeout = 15000
+
+	// AdapterPollingRate is rate (in ms) of polling of network adapter while waiting for it to
+	// reacquire IP.
+	AdapterPollingRate = 300
+
+	// HNSTransparentInterfaceName is the name of transparent HNS vswitch interface name
+	HNSTransparentInterfaceName = "vEthernet (HNSTransparent)"
 )
 
 // PluginSpecDir returns path to directory where docker daemon looks for plugin spec files.

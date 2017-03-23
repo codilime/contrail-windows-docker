@@ -29,6 +29,7 @@ _testmain.go
 *.exe
 *.test
 *.prof
+*.coverprofile
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out

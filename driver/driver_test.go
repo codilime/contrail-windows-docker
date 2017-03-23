@@ -62,9 +62,11 @@ var _ = AfterSuite(func() {
 })
 
 func cleanupAll() {
-	err := common.HardResetHNS()
+	err := common.RestartDocker()
 	Expect(err).ToNot(HaveOccurred())
-	err = common.RestartDocker()
+	err = common.HardResetHNS()
+	Expect(err).ToNot(HaveOccurred())
+	err = common.WaitForInterface(netAdapter)
 	Expect(err).ToNot(HaveOccurred())
 
 	docker := getDockerClient()
@@ -191,6 +193,9 @@ var _ = Describe("On requests from docker daemon", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		err = common.HardResetHNS()
+		Expect(err).ToNot(HaveOccurred())
+
+		err = common.WaitForInterface(netAdapter)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
