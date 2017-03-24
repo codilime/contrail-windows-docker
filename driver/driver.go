@@ -160,7 +160,7 @@ func (d *ContrailDriver) StopServing() error {
 		log.Errorln(err)
 		return err
 	}
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Second * 10)
 	log.Infoln("Stopped serving")
 
 	return nil

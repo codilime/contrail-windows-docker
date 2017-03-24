@@ -97,7 +97,9 @@ var _ = Describe("Contrail Network Driver", func() {
 
 		conn, err := sockets.DialPipe("//./pipe/"+common.DriverName, timeout)
 		Expect(err).ToNot(HaveOccurred())
-		conn.Close()
+		if conn != nil {
+			conn.Close()
+		}
 
 		err = contrailDriver.StopServing()
 		Expect(err).ToNot(HaveOccurred())
