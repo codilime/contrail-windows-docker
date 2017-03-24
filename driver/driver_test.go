@@ -95,15 +95,20 @@ var _ = Describe("Contrail Network Driver", func() {
 		err := contrailDriver.StartServing()
 		Expect(err).ToNot(HaveOccurred())
 
-		d, err := sockets.DialPipe("//./pipe/"+common.DriverName, timeout)
+		conn, err := sockets.DialPipe("//./pipe/"+common.DriverName, timeout)
 		Expect(err).ToNot(HaveOccurred())
-		d.Close()
+		if conn != nil {
+			conn.Close()
+		}
 
 		err = contrailDriver.StopServing()
 		Expect(err).ToNot(HaveOccurred())
 
-		_, err = sockets.DialPipe("//./pipe/"+common.DriverName, timeout)
+		conn, err = sockets.DialPipe("//./pipe/"+common.DriverName, timeout)
 		Expect(err).To(HaveOccurred())
+		if conn != nil {
+			conn.Close()
+		}
 	})
 
 	It("creates a spec file for duration of listening", func() {
@@ -780,12 +785,14 @@ func removeDockerNetwork(docker *dockerClient.Client, dockerNetID string) error 
 }
 
 func cleanupAllDockerNetworksAndContainers(docker *dockerClient.Client) {
+	log.Infoln("Cleaning up docker containers")
 	containers, err := docker.ContainerList(context.Background(), dockerTypes.ContainerListOptions{All: true})
 	Expect(err).ToNot(HaveOccurred())
 	for _, c := range containers {
 		log.Debugln("Stopping and removing container", c.ID)
 		stopAndRemoveDockerContainer(docker, c.ID)
 	}
+	log.Infoln("Cleaning up docker networks")
 	nets, err := docker.NetworkList(context.Background(), dockerTypes.NetworkListOptions{})
 	Expect(err).ToNot(HaveOccurred())
 	for _, net := range nets {

@@ -33,6 +33,7 @@ type ContrailDriver struct {
 	hnsMgr         *hnsManager.HNSManager
 	networkAdapter string
 	listener       net.Listener
+	pipeAddr       string
 }
 
 type NetworkMeta struct {
@@ -46,6 +47,7 @@ func NewDriver(adapter string, c *controller.Controller) *ContrailDriver {
 		controller:     c,
 		hnsMgr:         &hnsManager.HNSManager{},
 		networkAdapter: adapter,
+		pipeAddr:       "//./pipe/" + common.DriverName,
 	}
 	return d
 }
@@ -66,9 +68,26 @@ func (d *ContrailDriver) StartServing() error {
 		OutputBufferSize:   4096,
 	}
 
-	pipeAddr := "//./pipe/" + common.DriverName
-	if d.listener, err = winio.ListenPipe(pipeAddr, &pipeConfig); err != nil {
-		return err
+	retryCnt := 0
+	for {
+		d.listener, err = winio.ListenPipe(d.pipeAddr, &pipeConfig)
+		if err != nil {
+			switch err.(type) {
+			case *os.PathError:
+				// If pipe was just closed, it seems like OS temporarily changes its permissions while it
+				// cleans up. Retry a couple times if that's the case.
+				if retryCnt > 3 {
+					return err
+				}
+				log.Warn("Got error when trying to create pipe listener, retrying...:", err)
+				time.Sleep(time.Second * 1)
+				retryCnt++
+			default:
+				return err
+			}
+		} else {
+			break
+		}
 	}
 
 	if err := os.MkdirAll(common.PluginSpecDir(), 0755); err != nil {
@@ -83,10 +102,18 @@ func (d *ContrailDriver) StartServing() error {
 	h := network.NewHandler(d)
 	go h.Serve(d.listener)
 
-	// wait for listener goroutine to spin up. I don't see more elegant way to do this.
-	time.Sleep(time.Second * 1)
+	// wait for listener goroutine to spin up
+	// timeout := time.Second * 5
+	// conn, err := winio.DialPipe(d.pipeAddr, &timeout)
+	// if err != nil {
+	// 	return err
+	// }
+	// if conn != nil {
+	// 	conn.Close()
+	// }
 
-	log.Infoln("Started serving on ", pipeAddr)
+	time.Sleep(time.Second * 1)
+	log.Infoln("Started serving on ", d.pipeAddr)
 
 	return nil
 }
@@ -123,13 +150,17 @@ func (d *ContrailDriver) createRootNetwork() error {
 }
 
 func (d *ContrailDriver) StopServing() error {
-	_ = os.Remove(common.PluginSpecFilePath())
+	log.Infoln("Removing spec file")
+	if err := os.Remove(common.PluginSpecFilePath()); err != nil {
+		log.Errorln(err)
+	}
 
+	log.Infoln("Closing npipe listener")
 	if err := d.listener.Close(); err != nil {
 		log.Errorln(err)
 		return err
 	}
-
+	time.Sleep(time.Second * 10)
 	log.Infoln("Stopped serving")
 
 	return nil
