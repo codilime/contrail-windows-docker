@@ -93,62 +93,12 @@ func (d *ContrailDriver) StartServing() error {
 	// thread safe, but I tried other ways to do it and was not successful.
 	<-startedServing
 
-	if err := d.waitForPipe(); err != nil {
+	if err := d.waitForPipeFileToAppear(); err != nil {
 		return err
 	}
 
 	log.Infoln("Started serving on ", d.pipeAddr)
 
-	return nil
-}
-
-func (d *ContrailDriver) waitForPipe() error {
-
-	timeStarted := time.Now()
-	for {
-		if time.Since(timeStarted) > common.PipePollingTimeout {
-			return errors.New("Waited for pipe file for too long.")
-		}
-
-		_, err := os.Stat(d.pipeAddr)
-
-		if !os.IsNotExist(err) {
-			break
-		}
-
-		time.Sleep(time.Millisecond * common.PipePollingRate)
-	}
-	return nil
-}
-
-func (d *ContrailDriver) createRootNetwork() error {
-	rootNetwork, err := hns.GetHNSNetworkByName(common.RootNetworkName)
-	if err != nil {
-		return err
-	}
-	if rootNetwork == nil {
-
-		subnets := []hcsshim.Subnet{
-			{
-				AddressPrefix:  "0.0.0.0/24",
-				GatewayAddress: "0.0.0.0",
-			},
-		}
-		configuration := &hcsshim.HNSNetwork{
-			Name:               common.RootNetworkName,
-			Type:               "transparent",
-			NetworkAdapterName: d.networkAdapter,
-			Subnets:            subnets,
-		}
-		rootNetID, err := hns.CreateHNSNetwork(configuration)
-		if err != nil {
-			return err
-		}
-
-		log.Infoln("Created root HNS network:", rootNetID)
-	} else {
-		log.Infoln("Existing root HNS network found:", rootNetwork.Id)
-	}
 	return nil
 }
 
@@ -161,6 +111,10 @@ func (d *ContrailDriver) StopServing() error {
 	log.Infoln("Closing npipe listener")
 	if err := d.listener.Close(); err != nil {
 		log.Errorln(err)
+		return err
+	}
+
+	if err := d.waitForPipeFileToDisappear(); err != nil {
 		return err
 	}
 
@@ -513,6 +467,63 @@ func (d *ContrailDriver) ProgramExternalConnectivity(req *network.ProgramExterna
 func (d *ContrailDriver) RevokeExternalConnectivity(req *network.RevokeExternalConnectivityRequest) error {
 	log.Debugln("=== RevokeExternalConnectivity")
 	log.Debugln(req)
+	return nil
+}
+
+func (d *ContrailDriver) createRootNetwork() error {
+	rootNetwork, err := hns.GetHNSNetworkByName(common.RootNetworkName)
+	if err != nil {
+		return err
+	}
+	if rootNetwork == nil {
+
+		subnets := []hcsshim.Subnet{
+			{
+				AddressPrefix:  "0.0.0.0/24",
+				GatewayAddress: "0.0.0.0",
+			},
+		}
+		configuration := &hcsshim.HNSNetwork{
+			Name:               common.RootNetworkName,
+			Type:               "transparent",
+			NetworkAdapterName: d.networkAdapter,
+			Subnets:            subnets,
+		}
+		rootNetID, err := hns.CreateHNSNetwork(configuration)
+		if err != nil {
+			return err
+		}
+
+		log.Infoln("Created root HNS network:", rootNetID)
+	} else {
+		log.Infoln("Existing root HNS network found:", rootNetwork.Id)
+	}
+	return nil
+}
+
+func (d *ContrailDriver) waitForPipeFileToAppear() error {
+	return d.waitForPipe(true)
+}
+
+func (d *ContrailDriver) waitForPipeFileToDisappear() error {
+	return d.waitForPipe(false)
+}
+
+func (d *ContrailDriver) waitForPipe(waitUntilExists bool) error {
+	timeStarted := time.Now()
+	for {
+		if time.Since(timeStarted) > common.PipePollingTimeout {
+			return errors.New("Waited for pipe file for too long.")
+		}
+
+		_, err := os.Stat(d.pipeAddr)
+
+		if !os.IsNotExist(err) == waitUntilExists {
+			break
+		}
+
+		time.Sleep(time.Millisecond * common.PipePollingRate)
+	}
 	return nil
 }
 
