@@ -24,6 +24,7 @@ import (
 	"github.com/codilime/contrail-windows-docker/hnsManager"
 	dockerTypes "github.com/docker/docker/api/types"
 	dockerClient "github.com/docker/docker/client"
+	"github.com/docker/go-connections/sockets"
 	"github.com/docker/go-plugins-helpers/network"
 	"github.com/docker/libnetwork/netlabel"
 )
@@ -93,7 +94,7 @@ func (d *ContrailDriver) StartServing() error {
 	// thread safe, but I tried other ways to do it and was not successful.
 	<-startedServing
 
-	if err := d.waitForPipeFileToAppear(); err != nil {
+	if err := d.waitForPipeToStart(); err != nil {
 		return err
 	}
 
@@ -114,7 +115,7 @@ func (d *ContrailDriver) StopServing() error {
 		return err
 	}
 
-	if err := d.waitForPipeFileToDisappear(); err != nil {
+	if err := d.waitForPipeToStop(); err != nil {
 		return err
 	}
 
@@ -501,11 +502,11 @@ func (d *ContrailDriver) createRootNetwork() error {
 	return nil
 }
 
-func (d *ContrailDriver) waitForPipeFileToAppear() error {
+func (d *ContrailDriver) waitForPipeToStart() error {
 	return d.waitForPipe(true)
 }
 
-func (d *ContrailDriver) waitForPipeFileToDisappear() error {
+func (d *ContrailDriver) waitForPipeToStop() error {
 	return d.waitForPipe(false)
 }
 
@@ -518,8 +519,32 @@ func (d *ContrailDriver) waitForPipe(waitUntilExists bool) error {
 
 		_, err := os.Stat(d.pipeAddr)
 
-		if !os.IsNotExist(err) == waitUntilExists {
+		if fileExists := !os.IsNotExist(err); fileExists == waitUntilExists {
 			break
+		}
+
+		time.Sleep(time.Millisecond * common.PipePollingRate)
+	}
+
+	if waitUntilExists {
+		return d.waitUntilPipeDialable()
+	}
+
+	return nil
+}
+
+func (d *ContrailDriver) waitUntilPipeDialable() error {
+	timeStarted := time.Now()
+	for {
+		if time.Since(timeStarted) > common.PipePollingTimeout {
+			return errors.New("Waited for pipe file for too long.")
+		}
+
+		timeout := time.Second * 5
+		conn, err := sockets.DialPipe(d.pipeAddr, timeout)
+		if err == nil {
+			conn.Close()
+			return nil
 		}
 
 		time.Sleep(time.Millisecond * common.PipePollingRate)
