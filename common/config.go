@@ -29,6 +29,12 @@ const (
 
 	// HNSTransparentInterfaceName is the name of transparent HNS vswitch interface name
 	HNSTransparentInterfaceName = "vEthernet (HNSTransparent)"
+
+	// PipePollingTimeout is time (in ms) to wait for named pipe to appear in the filesystem
+	PipePollingTimeout = 15000
+
+	// PipePollingRate is rate (in ms) of polling named pipe if it appeared in the filesystem yet
+	PipePollingRate = 300
 )
 
 // PluginSpecDir returns path to directory where docker daemon looks for plugin spec files.

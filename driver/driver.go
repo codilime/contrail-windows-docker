@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 
 	"context"
 
@@ -92,8 +93,31 @@ func (d *ContrailDriver) StartServing() error {
 	// thread safe, but I tried other ways to do it and was not successful.
 	<-startedServing
 
+	if err := d.waitForPipe(); err != nil {
+		return err
+	}
+
 	log.Infoln("Started serving on ", d.pipeAddr)
 
+	return nil
+}
+
+func (d *ContrailDriver) waitForPipe() error {
+
+	timeStarted := time.Now()
+	for {
+		if time.Since(timeStarted) > common.PipePollingTimeout {
+			return errors.New("Waited for pipe file for too long.")
+		}
+
+		_, err := os.Stat(d.pipeAddr)
+
+		if !os.IsNotExist(err) {
+			break
+		}
+
+		time.Sleep(time.Millisecond * common.PipePollingRate)
+	}
 	return nil
 }
 
