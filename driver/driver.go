@@ -537,7 +537,7 @@ func (d *ContrailDriver) waitUntilPipeDialable() error {
 	timeStarted := time.Now()
 	for {
 		if time.Since(timeStarted) > common.PipePollingTimeout {
-			return errors.New("Waited for pipe file for too long.")
+			return errors.New("Waited for pipe to be dialable for too long.")
 		}
 
 		timeout := time.Second * 5
