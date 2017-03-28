@@ -513,7 +513,7 @@ func (d *ContrailDriver) waitForPipeToStop() error {
 func (d *ContrailDriver) waitForPipe(waitUntilExists bool) error {
 	timeStarted := time.Now()
 	for {
-		if time.Since(timeStarted) > common.PipePollingTimeout {
+		if time.Since(timeStarted) > time.Millisecond*common.PipePollingTimeout {
 			return errors.New("Waited for pipe file for too long.")
 		}
 
@@ -536,7 +536,7 @@ func (d *ContrailDriver) waitForPipe(waitUntilExists bool) error {
 func (d *ContrailDriver) waitUntilPipeDialable() error {
 	timeStarted := time.Now()
 	for {
-		if time.Since(timeStarted) > common.PipePollingTimeout {
+		if time.Since(timeStarted) > time.Millisecond*common.PipePollingTimeout {
 			return errors.New("Waited for pipe to be dialable for too long.")
 		}
 
@@ -549,7 +549,6 @@ func (d *ContrailDriver) waitUntilPipeDialable() error {
 
 		time.Sleep(time.Millisecond * common.PipePollingRate)
 	}
-	return nil
 }
 
 func (d *ContrailDriver) networkMetaFromDockerNetwork(dockerNetID string) (*NetworkMeta,
