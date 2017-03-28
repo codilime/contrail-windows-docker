@@ -522,7 +522,7 @@ func (d *ContrailDriver) waitForPipe(waitUntilExists bool) error {
 		if fileExists := !os.IsNotExist(err); fileExists == waitUntilExists {
 			break
 		}
-
+		asdfasdfasdf
 		time.Sleep(time.Millisecond * common.PipePollingRate)
 	}
 
