@@ -116,7 +116,7 @@ func (d *ContrailDriver) StopServing() error {
 	}
 
 	if err := d.waitForPipeToStop(); err != nil {
-		return err
+		log.Warnf("Failed to properly close named pipe, but will continue anyways: %s", err)
 	}
 
 	log.Infoln("Stopped serving")

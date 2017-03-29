@@ -134,6 +134,10 @@ var _ = Describe("Contrail Network Driver", func() {
 		docker := getDockerClient()
 		_ = createValidDockerNetwork(docker)
 
+		// we need to cleanup here, because otherwise docker keeps the named pipe file open,
+		// so we can't remove it
+		cleanupAllDockerNetworksAndContainers(docker)
+
 		err = contrailDriver.StopServing()
 		Expect(err).ToNot(HaveOccurred())
 
