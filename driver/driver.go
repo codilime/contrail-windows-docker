@@ -530,6 +530,8 @@ func (d *ContrailDriver) waitForPipe(waitUntilExists bool) error {
 		return d.waitUntilPipeDialable()
 	}
 
+	time.Sleep(time.Second * 1)
+
 	return nil
 }
 
