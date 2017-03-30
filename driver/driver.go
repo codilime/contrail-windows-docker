@@ -511,26 +511,26 @@ func (d *ContrailDriver) waitForPipeToStop() error {
 }
 
 func (d *ContrailDriver) waitForPipe(waitUntilExists bool) error {
-	timeStarted := time.Now()
-	for {
-		if time.Since(timeStarted) > time.Millisecond*common.PipePollingTimeout {
-			return errors.New("Waited for pipe file for too long.")
-		}
+	// timeStarted := time.Now()
+	// for {
+	// 	if time.Since(timeStarted) > time.Millisecond*common.PipePollingTimeout {
+	// 		return errors.New("Waited for pipe file for too long.")
+	// 	}
 
-		_, err := os.Stat(d.pipeAddr)
+	// 	_, err := os.Stat(d.pipeAddr)
 
-		if fileExists := !os.IsNotExist(err); fileExists == waitUntilExists {
-			break
-		}
+	// 	if fileExists := !os.IsNotExist(err); fileExists == waitUntilExists {
+	// 		break
+	// 	}
 
-		time.Sleep(time.Millisecond * common.PipePollingRate)
-	}
+	// 	time.Sleep(time.Millisecond * common.PipePollingRate)
+	// }
 
 	if waitUntilExists {
 		return d.waitUntilPipeDialable()
 	}
 
-	time.Sleep(time.Second * 1)
+	//time.Sleep(time.Second * 1)
 
 	return nil
 }
