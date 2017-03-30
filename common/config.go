@@ -32,7 +32,7 @@ const (
 
 	// PipePollingTimeout is time (in ms) to wait for named pipe to appear/disappear in the
 	// filesystem
-	PipePollingTimeout = 15000
+	PipePollingTimeout = 5000
 
 	// PipePollingRate is rate (in ms) of polling named pipe if it appeared/disappeared in the
 	// filesystem yet
