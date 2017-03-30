@@ -34,7 +34,7 @@ type ContrailDriver struct {
 	hnsMgr             *hnsManager.HNSManager
 	networkAdapter     string
 	listener           net.Listener
-	pipeAddr           string
+	PipeAddr           string
 	stopChan           chan interface{}
 	stoppedServingChan chan interface{}
 	IsServing          bool
@@ -51,7 +51,7 @@ func NewDriver(adapter string, c *controller.Controller) *ContrailDriver {
 		controller:         c,
 		hnsMgr:             &hnsManager.HNSManager{},
 		networkAdapter:     adapter,
-		pipeAddr:           "//./pipe/" + common.DriverName,
+		PipeAddr:           "//./pipe/" + common.DriverName,
 		stopChan:           make(chan interface{}, 1),
 		stoppedServingChan: make(chan interface{}, 1),
 		IsServing:          false,
@@ -88,7 +88,7 @@ func (d *ContrailDriver) StartServing() error {
 			OutputBufferSize:   4096,
 		}
 
-		d.listener, err = winio.ListenPipe(d.pipeAddr, &pipeConfig)
+		d.listener, err = winio.ListenPipe(d.PipeAddr, &pipeConfig)
 		if err != nil {
 			failedChan <- errors.New(fmt.Sprintln("When setting up listener:", err))
 			return
@@ -142,7 +142,7 @@ func (d *ContrailDriver) StartServing() error {
 
 	select {
 	case <-startedServingChan:
-		log.Infoln("Started serving on ", d.pipeAddr)
+		log.Infoln("Started serving on ", d.PipeAddr)
 		return nil
 	case err := <-failedChan:
 		log.Error(err)
@@ -508,6 +508,9 @@ func (d *ContrailDriver) RevokeExternalConnectivity(req *network.RevokeExternalC
 }
 
 func (d *ContrailDriver) createRootNetwork() error {
+	// HNS automatically creates a new vswitch if the first HNS network is created. We want to
+	// control this behaviour. That's why we create a dummy root HNS network.
+
 	rootNetwork, err := hns.GetHNSNetworkByName(common.RootNetworkName)
 	if err != nil {
 		return err
@@ -553,8 +556,10 @@ func (d *ContrailDriver) waitForPipe(waitUntilExists bool) error {
 			return errors.New("Waited for pipe file for too long.")
 		}
 
-		_, err := os.Stat(d.pipeAddr)
+		_, err := os.Stat(d.PipeAddr)
 
+		// if waitUntilExists is true, we wait for the file to appear in filesystem.
+		// else, we wait for the file to disappear from the filesystem.
 		if fileExists := !os.IsNotExist(err); fileExists == waitUntilExists {
 			break
 		} else {
@@ -581,7 +586,7 @@ func (d *ContrailDriver) waitUntilPipeDialable() error {
 		}
 
 		timeout := time.Millisecond * 10
-		conn, err := sockets.DialPipe(d.pipeAddr, timeout)
+		conn, err := sockets.DialPipe(d.PipeAddr, timeout)
 		if err == nil {
 			conn.Close()
 			return nil

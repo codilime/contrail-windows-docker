@@ -103,20 +103,16 @@ var _ = Describe("Contrail Network Driver", func() {
 		err := contrailDriver.StartServing()
 		Expect(err).ToNot(HaveOccurred())
 
-		conn, err := sockets.DialPipe("//./pipe/"+common.DriverName, timeout)
+		conn, err := sockets.DialPipe(contrailDriver.PipeAddr, timeout)
 		Expect(err).ToNot(HaveOccurred())
-		if conn != nil {
 			conn.Close()
-		}
 
 		err = contrailDriver.StopServing()
 		Expect(err).ToNot(HaveOccurred())
 
-		conn, err = sockets.DialPipe("//./pipe/"+common.DriverName, timeout)
+		conn, err = sockets.DialPipe(contrailDriver.PipeAddr, timeout)
 		Expect(err).To(HaveOccurred())
-		if conn != nil {
 			conn.Close()
-		}
 	})
 
 	It("creates a spec file for duration of listening", func() {
