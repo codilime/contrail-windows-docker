@@ -90,6 +90,14 @@ var _ = Describe("Contrail Network Driver", func() {
 	BeforeEach(func() {
 		contrailDriver, contrailController, project = startDriver()
 	})
+	AfterEach(func() {
+		if contrailDriver.IsServing {
+			err := contrailDriver.StopServing()
+			Expect(err).ToNot(HaveOccurred())
+		}
+
+		cleanupAll()
+	})
 
 	It("can start and stop listening on a named pipe", func() {
 		err := contrailDriver.StartServing()

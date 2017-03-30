@@ -30,11 +30,14 @@ import (
 )
 
 type ContrailDriver struct {
-	controller     *controller.Controller
-	hnsMgr         *hnsManager.HNSManager
-	networkAdapter string
-	listener       net.Listener
-	pipeAddr       string
+	controller         *controller.Controller
+	hnsMgr             *hnsManager.HNSManager
+	networkAdapter     string
+	listener           net.Listener
+	pipeAddr           string
+	stopChan           chan interface{}
+	stoppedServingChan chan interface{}
+	IsServing          bool
 }
 
 type NetworkMeta struct {
@@ -45,79 +48,112 @@ type NetworkMeta struct {
 func NewDriver(adapter string, c *controller.Controller) *ContrailDriver {
 
 	d := &ContrailDriver{
-		controller:     c,
-		hnsMgr:         &hnsManager.HNSManager{},
-		networkAdapter: adapter,
-		pipeAddr:       "//./pipe/" + common.DriverName,
+		controller:         c,
+		hnsMgr:             &hnsManager.HNSManager{},
+		networkAdapter:     adapter,
+		pipeAddr:           "//./pipe/" + common.DriverName,
+		stopChan:           make(chan interface{}, 1),
+		stoppedServingChan: make(chan interface{}, 1),
+		IsServing:          false,
 	}
 	return d
 }
 
 func (d *ContrailDriver) StartServing() error {
 
+	if d.IsServing {
+		return errors.New("Already serving.")
+	}
+
 	err := d.createRootNetwork()
 	if err != nil {
 		return err
 	}
 
-	pipeConfig := winio.PipeConfig{
-		// This will set permissions for Service, System, Adminstrator group and account to
-		// have full access
-		SecurityDescriptor: "D:(A;ID;FA;;;SY)(A;ID;FA;;;BA)(A;ID;FA;;;LA)(A;ID;FA;;;LS)",
-		MessageMode:        true,
-		InputBufferSize:    4096,
-		OutputBufferSize:   4096,
-	}
+	startedServingChan := make(chan interface{}, 1)
+	failedChan := make(chan error, 1)
 
-	d.listener, err = winio.ListenPipe(d.pipeAddr, &pipeConfig)
-	if err != nil {
-		return err
-	}
-
-	if err := os.MkdirAll(common.PluginSpecDir(), 0755); err != nil {
-		return err
-	}
-
-	url := "npipe://" + d.listener.Addr().String()
-	if err := ioutil.WriteFile(common.PluginSpecFilePath(), []byte(url), 0644); err != nil {
-		return err
-	}
-
-	h := network.NewHandler(d)
-
-	startedServing := make(chan interface{}, 1)
 	go func() {
-		startedServing <- 1
-		h.Serve(d.listener)
-	}()
-	// wait for listener goroutine to spin up before moving on. Note: this is not entirely
-	// thread safe, but I tried other ways to do it and was not successful.
-	<-startedServing
 
-	if err := d.waitForPipeToStart(); err != nil {
+		defer func() {
+			d.stoppedServingChan <- true
+		}()
+
+		pipeConfig := winio.PipeConfig{
+			// This will set permissions for Service, System, Adminstrator group and account to
+			// have full access
+			SecurityDescriptor: "D:(A;ID;FA;;;SY)(A;ID;FA;;;BA)(A;ID;FA;;;LA)(A;ID;FA;;;LS)",
+			MessageMode:        true,
+			InputBufferSize:    4096,
+			OutputBufferSize:   4096,
+		}
+
+		d.listener, err = winio.ListenPipe(d.pipeAddr, &pipeConfig)
+		if err != nil {
+			failedChan <- errors.New(fmt.Sprintln("When setting up listener:", err))
+			return
+		}
+
+		if err := os.MkdirAll(common.PluginSpecDir(), 0755); err != nil {
+			failedChan <- errors.New(fmt.Sprintln("When setting up plugin spec directory:", err))
+			return
+		}
+
+		url := "npipe://" + d.listener.Addr().String()
+		if err := ioutil.WriteFile(common.PluginSpecFilePath(), []byte(url), 0644); err != nil {
+			failedChan <- errors.New(fmt.Sprintln("When creating spec file:", err))
+			return
+		}
+
+		h := network.NewHandler(d)
+
+		go h.Serve(d.listener)
+
+		if err := d.waitForPipeToStart(); err != nil {
+			failedChan <- errors.New(fmt.Sprintln("When waiting for pipe to start:", err))
+			return
+		}
+
+		d.IsServing = true
+		startedServingChan <- true
+
+		<-d.stopChan
+
+		log.Infoln("Removing spec file")
+		if err := os.Remove(common.PluginSpecFilePath()); err != nil {
+			log.Warnln("When removing spec file:", err)
+		}
+
+		log.Infoln("Closing npipe listener")
+		if err := d.listener.Close(); err != nil {
+			log.Warnln("When closing listener:", err)
+		}
+
+		// wait a little bit for connections to stop
+		time.Sleep(1 * time.Second)
+
+		if err := d.waitForPipeToStop(); err != nil {
+			log.Warnln("Failed to properly close named pipe, but will continue anyways:", err)
+		}
+
+		d.IsServing = false
+		d.stoppedServingChan <- true
+	}()
+
+	select {
+	case <-startedServingChan:
+		log.Infoln("Started serving on ", d.pipeAddr)
+		return nil
+	case err := <-failedChan:
+		log.Error(err)
 		return err
 	}
-
-	log.Infoln("Started serving on ", d.pipeAddr)
-
-	return nil
 }
 
 func (d *ContrailDriver) StopServing() error {
-	log.Infoln("Removing spec file")
-	if err := os.Remove(common.PluginSpecFilePath()); err != nil {
-		log.Errorln(err)
-	}
+	d.stopChan <- true
 
-	log.Infoln("Closing npipe listener")
-	if err := d.listener.Close(); err != nil {
-		log.Errorln(err)
-		return err
-	}
-
-	if err := d.waitForPipeToStop(); err != nil {
-		log.Warnf("Failed to properly close named pipe, but will continue anyways: %s", err)
-	}
+	<-d.stoppedServingChan
 
 	log.Infoln("Stopped serving")
 
@@ -521,16 +557,18 @@ func (d *ContrailDriver) waitForPipe(waitUntilExists bool) error {
 
 		if fileExists := !os.IsNotExist(err); fileExists == waitUntilExists {
 			break
+		} else {
+			log.Errorf("Waiting for pipe file, but: %s", err)
 		}
 
 		time.Sleep(time.Millisecond * common.PipePollingRate)
 	}
 
+	time.Sleep(time.Second * 1)
+
 	if waitUntilExists {
 		return d.waitUntilPipeDialable()
 	}
-
-	time.Sleep(time.Second * 1)
 
 	return nil
 }
@@ -542,12 +580,14 @@ func (d *ContrailDriver) waitUntilPipeDialable() error {
 			return errors.New("Waited for pipe to be dialable for too long.")
 		}
 
-		timeout := time.Second * 5
+		timeout := time.Millisecond * 10
 		conn, err := sockets.DialPipe(d.pipeAddr, timeout)
 		if err == nil {
 			conn.Close()
 			return nil
 		}
+
+		log.Errorf("Waiting until dialable, but: %s", err)
 
 		time.Sleep(time.Millisecond * common.PipePollingRate)
 	}
