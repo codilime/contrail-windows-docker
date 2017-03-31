@@ -90,20 +90,33 @@ var _ = Describe("Contrail Network Driver", func() {
 	BeforeEach(func() {
 		contrailDriver, contrailController, project = startDriver()
 	})
+	AfterEach(func() {
+		if contrailDriver.IsServing {
+			err := contrailDriver.StopServing()
+			Expect(err).ToNot(HaveOccurred())
+		}
+
+		cleanupAll()
+	})
 
 	It("can start and stop listening on a named pipe", func() {
 		err := contrailDriver.StartServing()
 		Expect(err).ToNot(HaveOccurred())
 
-		d, err := sockets.DialPipe("//./pipe/"+common.DriverName, timeout)
+		conn, err := sockets.DialPipe(contrailDriver.PipeAddr, timeout)
 		Expect(err).ToNot(HaveOccurred())
-		d.Close()
+		if conn != nil {
+			conn.Close()
+		}
 
 		err = contrailDriver.StopServing()
 		Expect(err).ToNot(HaveOccurred())
 
-		_, err = sockets.DialPipe("//./pipe/"+common.DriverName, timeout)
+		conn, err = sockets.DialPipe(contrailDriver.PipeAddr, timeout)
 		Expect(err).To(HaveOccurred())
+		if conn != nil {
+			conn.Close()
+		}
 	})
 
 	It("creates a spec file for duration of listening", func() {
@@ -128,6 +141,10 @@ var _ = Describe("Contrail Network Driver", func() {
 		_ = createContrailNetwork(contrailController)
 		docker := getDockerClient()
 		_ = createValidDockerNetwork(docker)
+
+		// we need to cleanup here, because otherwise docker keeps the named pipe file open,
+		// so we can't remove it
+		cleanupAllDockerNetworksAndContainers(docker)
 
 		err = contrailDriver.StopServing()
 		Expect(err).ToNot(HaveOccurred())
@@ -780,12 +797,14 @@ func removeDockerNetwork(docker *dockerClient.Client, dockerNetID string) error 
 }
 
 func cleanupAllDockerNetworksAndContainers(docker *dockerClient.Client) {
+	log.Infoln("Cleaning up docker containers")
 	containers, err := docker.ContainerList(context.Background(), dockerTypes.ContainerListOptions{All: true})
 	Expect(err).ToNot(HaveOccurred())
 	for _, c := range containers {
 		log.Debugln("Stopping and removing container", c.ID)
 		stopAndRemoveDockerContainer(docker, c.ID)
 	}
+	log.Infoln("Cleaning up docker networks")
 	nets, err := docker.NetworkList(context.Background(), dockerTypes.NetworkListOptions{})
 	Expect(err).ToNot(HaveOccurred())
 	for _, net := range nets {

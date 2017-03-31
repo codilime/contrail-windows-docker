@@ -24,15 +24,20 @@ import (
 	"github.com/codilime/contrail-windows-docker/hnsManager"
 	dockerTypes "github.com/docker/docker/api/types"
 	dockerClient "github.com/docker/docker/client"
+	"github.com/docker/go-connections/sockets"
 	"github.com/docker/go-plugins-helpers/network"
 	"github.com/docker/libnetwork/netlabel"
 )
 
 type ContrailDriver struct {
-	controller     *controller.Controller
-	hnsMgr         *hnsManager.HNSManager
-	networkAdapter string
-	listener       net.Listener
+	controller         *controller.Controller
+	hnsMgr             *hnsManager.HNSManager
+	networkAdapter     string
+	listener           net.Listener
+	PipeAddr           string
+	stopChan           chan interface{}
+	stoppedServingChan chan interface{}
+	IsServing          bool
 }
 
 type NetworkMeta struct {
@@ -43,92 +48,112 @@ type NetworkMeta struct {
 func NewDriver(adapter string, c *controller.Controller) *ContrailDriver {
 
 	d := &ContrailDriver{
-		controller:     c,
-		hnsMgr:         &hnsManager.HNSManager{},
-		networkAdapter: adapter,
+		controller:         c,
+		hnsMgr:             &hnsManager.HNSManager{},
+		networkAdapter:     adapter,
+		PipeAddr:           "//./pipe/" + common.DriverName,
+		stopChan:           make(chan interface{}, 1),
+		stoppedServingChan: make(chan interface{}, 1),
+		IsServing:          false,
 	}
 	return d
 }
 
 func (d *ContrailDriver) StartServing() error {
 
+	if d.IsServing {
+		return errors.New("Already serving.")
+	}
+
 	err := d.createRootNetwork()
 	if err != nil {
 		return err
 	}
 
-	pipeConfig := winio.PipeConfig{
-		// This will set permissions for Service, System, Adminstrator group and account to
-		// have full access
-		SecurityDescriptor: "D:(A;ID;FA;;;SY)(A;ID;FA;;;BA)(A;ID;FA;;;LA)(A;ID;FA;;;LS)",
-		MessageMode:        true,
-		InputBufferSize:    4096,
-		OutputBufferSize:   4096,
-	}
+	startedServingChan := make(chan interface{}, 1)
+	failedChan := make(chan error, 1)
 
-	pipeAddr := "//./pipe/" + common.DriverName
-	if d.listener, err = winio.ListenPipe(pipeAddr, &pipeConfig); err != nil {
-		return err
-	}
+	go func() {
 
-	if err := os.MkdirAll(common.PluginSpecDir(), 0755); err != nil {
-		return err
-	}
+		defer func() {
+			d.stoppedServingChan <- true
+		}()
 
-	url := "npipe://" + d.listener.Addr().String()
-	if err := ioutil.WriteFile(common.PluginSpecFilePath(), []byte(url), 0644); err != nil {
-		return err
-	}
-
-	h := network.NewHandler(d)
-	go h.Serve(d.listener)
-
-	// wait for listener goroutine to spin up. I don't see more elegant way to do this.
-	time.Sleep(time.Second * 1)
-
-	log.Infoln("Started serving on ", pipeAddr)
-
-	return nil
-}
-
-func (d *ContrailDriver) createRootNetwork() error {
-	rootNetwork, err := hns.GetHNSNetworkByName(common.RootNetworkName)
-	if err != nil {
-		return err
-	}
-	if rootNetwork == nil {
-
-		subnets := []hcsshim.Subnet{
-			{
-				AddressPrefix:  "0.0.0.0/24",
-				GatewayAddress: "0.0.0.0",
-			},
+		pipeConfig := winio.PipeConfig{
+			// This will set permissions for Service, System, Adminstrator group and account to
+			// have full access
+			SecurityDescriptor: "D:(A;ID;FA;;;SY)(A;ID;FA;;;BA)(A;ID;FA;;;LA)(A;ID;FA;;;LS)",
+			MessageMode:        true,
+			InputBufferSize:    4096,
+			OutputBufferSize:   4096,
 		}
-		configuration := &hcsshim.HNSNetwork{
-			Name:               common.RootNetworkName,
-			Type:               "transparent",
-			NetworkAdapterName: d.networkAdapter,
-			Subnets:            subnets,
-		}
-		rootNetID, err := hns.CreateHNSNetwork(configuration)
+
+		d.listener, err = winio.ListenPipe(d.PipeAddr, &pipeConfig)
 		if err != nil {
-			return err
+			failedChan <- errors.New(fmt.Sprintln("When setting up listener:", err))
+			return
 		}
 
-		log.Infoln("Created root HNS network:", rootNetID)
-	} else {
-		log.Infoln("Existing root HNS network found:", rootNetwork.Id)
+		if err := os.MkdirAll(common.PluginSpecDir(), 0755); err != nil {
+			failedChan <- errors.New(fmt.Sprintln("When setting up plugin spec directory:", err))
+			return
+		}
+
+		url := "npipe://" + d.listener.Addr().String()
+		if err := ioutil.WriteFile(common.PluginSpecFilePath(), []byte(url), 0644); err != nil {
+			failedChan <- errors.New(fmt.Sprintln("When creating spec file:", err))
+			return
+		}
+
+		h := network.NewHandler(d)
+
+		go h.Serve(d.listener)
+
+		if err := d.waitForPipeToStart(); err != nil {
+			failedChan <- errors.New(fmt.Sprintln("When waiting for pipe to start:", err))
+			return
+		}
+
+		d.IsServing = true
+		startedServingChan <- true
+
+		<-d.stopChan
+
+		log.Infoln("Removing spec file")
+		if err := os.Remove(common.PluginSpecFilePath()); err != nil {
+			log.Warnln("When removing spec file:", err)
+		}
+
+		log.Infoln("Closing npipe listener")
+		if err := d.listener.Close(); err != nil {
+			log.Warnln("When closing listener:", err)
+		}
+
+		// wait a little bit for connections to stop
+		time.Sleep(1 * time.Second)
+
+		if err := d.waitForPipeToStop(); err != nil {
+			log.Warnln("Failed to properly close named pipe, but will continue anyways:", err)
+		}
+
+		d.IsServing = false
+		d.stoppedServingChan <- true
+	}()
+
+	select {
+	case <-startedServingChan:
+		log.Infoln("Started serving on ", d.PipeAddr)
+		return nil
+	case err := <-failedChan:
+		log.Error(err)
+		return err
 	}
-	return nil
 }
 
 func (d *ContrailDriver) StopServing() error {
-	_ = os.Remove(common.PluginSpecFilePath())
+	d.stopChan <- true
 
-	if err := d.listener.Close(); err != nil {
-		log.Errorln(err)
-		return err
-	}
+	<-d.stoppedServingChan
 
 	log.Infoln("Stopped serving")
 
@@ -480,6 +505,97 @@ func (d *ContrailDriver) RevokeExternalConnectivity(req *network.RevokeExternalC
 	log.Debugln("=== RevokeExternalConnectivity")
 	log.Debugln(req)
 	return nil
+}
+
+func (d *ContrailDriver) createRootNetwork() error {
+	// HNS automatically creates a new vswitch if the first HNS network is created. We want to
+	// control this behaviour. That's why we create a dummy root HNS network.
+
+	rootNetwork, err := hns.GetHNSNetworkByName(common.RootNetworkName)
+	if err != nil {
+		return err
+	}
+	if rootNetwork == nil {
+
+		subnets := []hcsshim.Subnet{
+			{
+				AddressPrefix:  "0.0.0.0/24",
+				GatewayAddress: "0.0.0.0",
+			},
+		}
+		configuration := &hcsshim.HNSNetwork{
+			Name:               common.RootNetworkName,
+			Type:               "transparent",
+			NetworkAdapterName: d.networkAdapter,
+			Subnets:            subnets,
+		}
+		rootNetID, err := hns.CreateHNSNetwork(configuration)
+		if err != nil {
+			return err
+		}
+
+		log.Infoln("Created root HNS network:", rootNetID)
+	} else {
+		log.Infoln("Existing root HNS network found:", rootNetwork.Id)
+	}
+	return nil
+}
+
+func (d *ContrailDriver) waitForPipeToStart() error {
+	return d.waitForPipe(true)
+}
+
+func (d *ContrailDriver) waitForPipeToStop() error {
+	return d.waitForPipe(false)
+}
+
+func (d *ContrailDriver) waitForPipe(waitUntilExists bool) error {
+	timeStarted := time.Now()
+	for {
+		if time.Since(timeStarted) > time.Millisecond*common.PipePollingTimeout {
+			return errors.New("Waited for pipe file for too long.")
+		}
+
+		_, err := os.Stat(d.PipeAddr)
+
+		// if waitUntilExists is true, we wait for the file to appear in filesystem.
+		// else, we wait for the file to disappear from the filesystem.
+		if fileExists := !os.IsNotExist(err); fileExists == waitUntilExists {
+			break
+		} else {
+			log.Errorf("Waiting for pipe file, but: %s", err)
+		}
+
+		time.Sleep(time.Millisecond * common.PipePollingRate)
+	}
+
+	time.Sleep(time.Second * 1)
+
+	if waitUntilExists {
+		return d.waitUntilPipeDialable()
+	}
+
+	return nil
+}
+
+func (d *ContrailDriver) waitUntilPipeDialable() error {
+	timeStarted := time.Now()
+	for {
+		if time.Since(timeStarted) > time.Millisecond*common.PipePollingTimeout {
+			return errors.New("Waited for pipe to be dialable for too long.")
+		}
+
+		timeout := time.Millisecond * 10
+		conn, err := sockets.DialPipe(d.PipeAddr, timeout)
+		if err == nil {
+			conn.Close()
+			return nil
+		}
+
+		log.Errorf("Waiting until dialable, but: %s", err)
+
+		time.Sleep(time.Millisecond * common.PipePollingRate)
+	}
 }
 
 func (d *ContrailDriver) networkMetaFromDockerNetwork(dockerNetID string) (*NetworkMeta,
