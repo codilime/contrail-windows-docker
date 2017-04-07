@@ -17,6 +17,7 @@ import (
 	"github.com/codilime/contrail-windows-docker/common"
 	"github.com/codilime/contrail-windows-docker/controller"
 	"github.com/codilime/contrail-windows-docker/hns"
+	"github.com/codilime/contrail-windows-docker/hyperv"
 	dockerTypes "github.com/docker/docker/api/types"
 	dockerTypesContainer "github.com/docker/docker/api/types/container"
 	dockerTypesNetwork "github.com/docker/docker/api/types/network"
@@ -186,6 +187,87 @@ var _ = Describe("Contrail Network Driver", func() {
 
 		err = contrailDriver.StopServing()
 		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("enables the Extension", func() {
+		By("starting to serve enables the Extension")
+		err := contrailDriver.StartServing()
+		Expect(err).ToNot(HaveOccurred())
+
+		enabled, err := hyperv.IsExtensionEnabled(netAdapter)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(enabled).To(BeTrue())
+
+		err = contrailDriver.StopServing()
+		Expect(err).ToNot(HaveOccurred())
+
+		By("stopping to serve does not disable the Extension")
+		enabled, err = hyperv.IsExtensionEnabled(netAdapter)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(enabled).To(BeTrue())
+
+		By("starting to serve again doesn't break")
+		err = contrailDriver.StartServing()
+		Expect(err).ToNot(HaveOccurred())
+
+		enabled, err = hyperv.IsExtensionEnabled(netAdapter)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(enabled).To(BeTrue())
+
+		err = contrailDriver.StopServing()
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("reenables Extension if it was disabled", func() {
+		By("starting to serve so that root hns network is created")
+		err := contrailDriver.StartServing()
+		Expect(err).ToNot(HaveOccurred())
+
+		enabled, err := hyperv.IsExtensionEnabled(netAdapter)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(enabled).To(BeTrue())
+
+		err = contrailDriver.StopServing()
+		Expect(err).ToNot(HaveOccurred())
+
+		By("manually disabling the Extension")
+		err = hyperv.DisableExtension(netAdapter)
+		Expect(err).ToNot(HaveOccurred())
+
+		By("starting to serve again should reenable the Extension")
+		err = contrailDriver.StartServing()
+		Expect(err).ToNot(HaveOccurred())
+
+		enabled, err = hyperv.IsExtensionEnabled(netAdapter)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(enabled).To(BeTrue())
+	})
+
+	It("doesn't change Running state of Extension", func() {
+		err := contrailDriver.StartServing()
+		Expect(err).ToNot(HaveOccurred())
+
+		running, err := hyperv.IsExtensionRunning(netAdapter)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(running).To(BeTrue())
+
+		err = contrailDriver.StopServing()
+		Expect(err).ToNot(HaveOccurred())
+
+		By("trying again doesn't break it")
+		err = contrailDriver.StartServing()
+		Expect(err).ToNot(HaveOccurred())
+
+		running, err = hyperv.IsExtensionRunning(netAdapter)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(running).To(BeTrue())
+
+		err = contrailDriver.StopServing()
+		Expect(err).ToNot(HaveOccurred())
+
+		running, err = hyperv.IsExtensionRunning(netAdapter)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(running).To(BeTrue())
 	})
 })
 

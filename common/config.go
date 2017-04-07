@@ -37,6 +37,9 @@ const (
 	// PipePollingRate is rate (in ms) of polling named pipe if it appeared/disappeared in the
 	// filesystem yet
 	PipePollingRate = 300
+
+	// HyperVExtensionName is the name of vRouter Hyper-V Extension
+	HyperVExtensionName = "vRouter forwarding extension"
 )
 
 // PluginSpecDir returns path to directory where docker daemon looks for plugin spec files.

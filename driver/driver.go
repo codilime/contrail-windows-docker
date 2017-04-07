@@ -22,6 +22,7 @@ import (
 	"github.com/codilime/contrail-windows-docker/controller"
 	"github.com/codilime/contrail-windows-docker/hns"
 	"github.com/codilime/contrail-windows-docker/hnsManager"
+	"github.com/codilime/contrail-windows-docker/hyperv"
 	dockerTypes "github.com/docker/docker/api/types"
 	dockerClient "github.com/docker/docker/client"
 	"github.com/docker/go-connections/sockets"
@@ -65,9 +66,28 @@ func (d *ContrailDriver) StartServing() error {
 		return errors.New("Already serving.")
 	}
 
-	err := d.createRootNetwork()
+	if err := d.createRootNetwork(); err != nil {
+		return err
+	}
+
+	running, err := hyperv.IsExtensionRunning(d.networkAdapter)
 	if err != nil {
 		return err
+	}
+
+	if !running {
+		return errors.New("Extension doesn't seem to be running. Maybe try reinstalling?")
+	}
+
+	enabled, err := hyperv.IsExtensionEnabled(d.networkAdapter)
+	if err != nil {
+		return err
+	}
+
+	if !enabled {
+		if err := hyperv.EnableExtension(d.networkAdapter); err != nil {
+			return err
+		}
 	}
 
 	startedServingChan := make(chan interface{}, 1)
@@ -88,6 +108,7 @@ func (d *ContrailDriver) StartServing() error {
 			OutputBufferSize:   4096,
 		}
 
+		var err error
 		d.listener, err = winio.ListenPipe(d.PipeAddr, &pipeConfig)
 		if err != nil {
 			failedChan <- errors.New(fmt.Sprintln("When setting up listener:", err))

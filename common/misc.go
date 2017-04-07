@@ -5,35 +5,26 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
 
-func callPowershell(cmds ...string) error {
-	c := []string{"-NonInteractive"}
-	for _, cmd := range cmds {
-		c = append(c, cmd)
-	}
-	return exec.Command("powershell", c...).Run()
-}
-
 func HardResetHNS() error {
 	log.Infoln("Resetting HNS")
 	log.Debugln("Removing NAT")
-	if err := callPowershell("Get-NetNat", "|", "Remove-NetNat"); err != nil {
-		log.Debugln("Could not remove nat network.")
+	if _, _, err := CallPowershell("Get-NetNat", "|", "Remove-NetNat"); err != nil {
+		log.Debugln("Could not remove nat network:", err)
 	}
 	log.Debugln("Removing container networks")
-	if err := callPowershell("Get-ContainerNetwork", "|", "Remove-ContainerNetwork",
+	if _, _, err := CallPowershell("Get-ContainerNetwork", "|", "Remove-ContainerNetwork",
 		"-Force"); err != nil {
-		log.Debugln("Could not remove container network.")
+		log.Debugln("Could not remove container network:", err)
 	}
 	log.Debugln("Stopping HNS")
-	if err := callPowershell("Stop-Service", "hns"); err != nil {
-		log.Debugln("HNS is already stopped.")
+	if _, _, err := CallPowershell("Stop-Service", "hns"); err != nil {
+		log.Debugln("HNS is already stopped:", err)
 	}
 	log.Debugln("Removing HNS program data")
 
@@ -42,20 +33,20 @@ func HardResetHNS() error {
 		return errors.New("Invalid program data env variable")
 	}
 	hnsDataDir := filepath.Join(programData, "Microsoft", "Windows", "HNS", "HNS.data")
-	if err := callPowershell("Remove-Item", hnsDataDir); err != nil {
-		return errors.New(fmt.Sprintf("Error during removing HNS program data: %s", err))
+	if _, _, err := CallPowershell("Remove-Item", hnsDataDir); err != nil {
+		return fmt.Errorf("Error during removing HNS program data: %s", err)
 	}
 	log.Debugln("Starting HNS")
-	if err := callPowershell("Start-Service", "hns"); err != nil {
-		return errors.New(fmt.Sprintf("Error when starting HNS: %s", err))
+	if _, _, err := CallPowershell("Start-Service", "hns"); err != nil {
+		return fmt.Errorf("Error when starting HNS: %s", err)
 	}
 	return nil
 }
 
 func RestartDocker() error {
 	log.Infoln("Restarting docker")
-	if err := callPowershell("Restart-Service", "docker"); err != nil {
-		return errors.New(fmt.Sprintf("When restarting docker: %s", err))
+	if _, _, err := CallPowershell("Restart-Service", "docker"); err != nil {
+		return fmt.Errorf("When restarting docker: %s", err)
 	}
 	return nil
 }
