@@ -32,6 +32,8 @@ func CreateHNSNetwork(configuration *hcsshim.HNSNetwork) (string, error) {
 		return "", err
 	}
 
+	log.Infoln("Created HNS network with ID:", response.Id)
+
 	return response.Id, nil
 }
 
@@ -126,6 +128,7 @@ func CreateHNSEndpoint(configuration *hcsshim.HNSEndpoint) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	log.Infoln("Created HNS endpoint with ID:", response.Id)
 	return response.Id, nil
 }
 
