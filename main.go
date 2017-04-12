@@ -17,21 +17,27 @@ func main() {
 		"IP address of Contrail Controller API")
 	var controllerPort = flag.Int("controllerPort", 8082,
 		"port of Contrail Controller API")
+	var logLevelString = flag.String("logLevel", "Info",
+		"log verbosity (possible values: Debug|Info|Warn|Error|Fatal|Panic)")
 	flag.Parse()
 
-	var d *driver.ContrailDriver
-	var c *controller.Controller
-	var err error
+	logLevel, err := log.ParseLevel(*logLevelString)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	log.SetLevel(logLevel)
 
 	keys := &controller.KeystoneEnvs{}
 	keys.LoadFromEnvironment()
 
-	if c, err = controller.NewController(*controllerIP, *controllerPort, keys); err != nil {
+	c, err := controller.NewController(*controllerIP, *controllerPort, keys)
+	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	d = driver.NewDriver(*adapter, c)
+	d := driver.NewDriver(*adapter, c)
 	if err = d.StartServing(); err != nil {
 		log.Error(err)
 	}
