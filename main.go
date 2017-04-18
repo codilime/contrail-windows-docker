@@ -40,10 +40,10 @@ func main() {
 	d := driver.NewDriver(*adapter, c)
 	if err = d.StartServing(); err != nil {
 		log.Error(err)
+	} else {
+		defer d.StopServing()
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, os.Interrupt)
+		<-sigChan
 	}
-	defer d.StopServing()
-
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt)
-	<-sigChan
 }
