@@ -96,6 +96,7 @@ func (d *ContrailDriver) StartServing() error {
 	go func() {
 
 		defer func() {
+			d.IsServing = false
 			d.stoppedServingChan <- true
 		}()
 
@@ -156,9 +157,6 @@ func (d *ContrailDriver) StartServing() error {
 		if err := d.waitForPipeToStop(); err != nil {
 			log.Warnln("Failed to properly close named pipe, but will continue anyways:", err)
 		}
-
-		d.IsServing = false
-		d.stoppedServingChan <- true
 	}()
 
 	select {
@@ -172,11 +170,11 @@ func (d *ContrailDriver) StartServing() error {
 }
 
 func (d *ContrailDriver) StopServing() error {
-	d.stopChan <- true
-
-	<-d.stoppedServingChan
-
-	log.Infoln("Stopped serving")
+	if d.IsServing {
+		d.stopChan <- true
+		<-d.stoppedServingChan
+		log.Infoln("Stopped serving")
+	}
 
 	return nil
 }
