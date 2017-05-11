@@ -30,7 +30,7 @@
       <Directory Id="TARGETDIR" Name="SourceDir">
 
          <Directory Id="$(var.Program_Files)">
-            <Directory Id="INSTALLDIR" Name="{{.Product}}">
+            <Directory Id="INSTALLDIR" Name="Juniper Networks">
                {{if gt (.Files.Items | len) 0}}
                <Component Id="ApplicationFiles" Guid="{{.Files.GUID}}">
                   {{range $i, $e := .Files.Items}}
