@@ -43,14 +43,14 @@ func TestHNS(t *testing.T) {
 var _ = BeforeSuite(func() {
 	err := common.HardResetHNS()
 	Expect(err).ToNot(HaveOccurred())
-	err = common.WaitForInterface(netAdapter)
+	err = common.WaitForInterface(common.AdapterName(netAdapter))
 	Expect(err).ToNot(HaveOccurred())
 })
 
 var _ = AfterSuite(func() {
 	err := common.HardResetHNS()
 	Expect(err).ToNot(HaveOccurred())
-	err = common.WaitForInterface(netAdapter)
+	err = common.WaitForInterface(common.AdapterName(netAdapter))
 	Expect(err).ToNot(HaveOccurred())
 })
 
@@ -80,7 +80,8 @@ var _ = Describe("HNS wrapper", func() {
 			expectNumberOfEndpoints(0)
 
 			Expect(testHnsNetID).To(Equal(""))
-			testHnsNetID = MockHNSNetwork(testNetName, netAdapter, subnetCIDR, defaultGW)
+			testHnsNetID = MockHNSNetwork(common.AdapterName(netAdapter), testNetName, subnetCIDR,
+				defaultGW)
 			Expect(testHnsNetID).ToNot(Equal(""))
 
 			net, err := GetHNSNetwork(testHnsNetID)
@@ -212,8 +213,9 @@ var _ = Describe("HNS wrapper", func() {
 		Context("There's a second HNS network", func() {
 			secondHNSNetID := ""
 			BeforeEach(func() {
-				secondHNSNetID = MockHNSNetwork("other_net_name", netAdapter, subnetCIDR,
-					defaultGW)
+				secondHNSNetID = MockHNSNetwork(common.AdapterName(netAdapter), "other_net_name",
+					subnetCIDR, defaultGW)
+
 			})
 			AfterEach(func() {
 				err := DeleteHNSNetwork(secondHNSNetID)
@@ -392,7 +394,7 @@ var _ = Describe("HNS race conditions workarounds", func() {
 		targetAddr = fmt.Sprintf("%s:%v", controllerAddr, controllerPort)
 		err := common.HardResetHNS()
 		Expect(err).ToNot(HaveOccurred())
-		err = common.WaitForInterface(netAdapter)
+		err = common.WaitForInterface(common.AdapterName(netAdapter))
 		Expect(err).ToNot(HaveOccurred())
 	})
 

@@ -72,7 +72,8 @@ func DeleteHNSNetwork(hnsID string) error {
 		// also deleted. During this period, the adapter will temporarily lose network
 		// connectivity while it reacquires IPv4. We need to wait for it.
 		// https://github.com/Microsoft/hcsshim/issues/95
-		if err := common.WaitForInterface(toDelete.NetworkAdapterName); err != nil {
+		if err := common.WaitForInterface(
+			common.AdapterName(toDelete.NetworkAdapterName)); err != nil {
 			log.Errorln(err)
 			return err
 		}

@@ -29,7 +29,7 @@ func TestHNSManager(t *testing.T) {
 var _ = BeforeSuite(func() {
 	err := common.HardResetHNS()
 	Expect(err).ToNot(HaveOccurred())
-	err = common.WaitForInterface(netAdapter)
+	err = common.WaitForInterface(common.AdapterName(netAdapter))
 	Expect(err).ToNot(HaveOccurred())
 })
 
@@ -51,13 +51,13 @@ var _ = Describe("HNS manager", func() {
 	AfterEach(func() {
 		err := common.HardResetHNS()
 		Expect(err).ToNot(HaveOccurred())
-		err = common.WaitForInterface(netAdapter)
+		err = common.WaitForInterface(common.AdapterName(netAdapter))
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	Context("specified network does not exist", func() {
 		Specify("creating a new HNS network works", func() {
-			_, err := hnsMgr.CreateNetwork(netAdapter, tenantName, networkName,
+			_, err := hnsMgr.CreateNetwork(common.AdapterName(netAdapter), tenantName, networkName,
 				subnetCIDR, defaultGW)
 			Expect(err).ToNot(HaveOccurred())
 		})
@@ -72,12 +72,13 @@ var _ = Describe("HNS manager", func() {
 		var existingNetID string
 		BeforeEach(func() {
 			hnsNetName := fmt.Sprintf("Contrail:%s:%s", tenantName, networkName)
-			existingNetID = hns.MockHNSNetwork(hnsNetName, netAdapter, subnetCIDR, defaultGW)
+			existingNetID = hns.MockHNSNetwork(common.AdapterName(netAdapter), hnsNetName,
+				subnetCIDR, defaultGW)
 		})
 
 		Specify("creating a new network with same params returns error", func() {
-			net, err := hnsMgr.CreateNetwork(netAdapter, tenantName, networkName,
-				subnetCIDR, defaultGW)
+			net, err := hnsMgr.CreateNetwork(common.AdapterName(netAdapter), tenantName,
+				networkName, subnetCIDR, defaultGW)
 			Expect(err).To(HaveOccurred())
 			Expect(net).To(BeNil())
 		})
@@ -133,7 +134,7 @@ var _ = Describe("HNS manager", func() {
 				"some_other_name",
 			}
 			for _, n := range names {
-				hns.MockHNSNetwork(n, netAdapter, subnetCIDR, defaultGW)
+				hns.MockHNSNetwork(common.AdapterName(netAdapter), n, subnetCIDR, defaultGW)
 			}
 		})
 		Specify("Listing only Contrail networks works", func() {
