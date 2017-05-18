@@ -538,8 +538,7 @@ func (d *ContrailDriver) createRootNetwork() error {
 
 		subnets := []hcsshim.Subnet{
 			{
-				AddressPrefix:  "0.0.0.0/24",
-				GatewayAddress: "0.0.0.0",
+				AddressPrefix: "0.0.0.0/24",
 			},
 		}
 		configuration := &hcsshim.HNSNetwork{
