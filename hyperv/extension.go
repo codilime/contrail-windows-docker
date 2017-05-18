@@ -57,7 +57,7 @@ func inspectExtensionProperty(vswitchName common.VSwitchName, property string) (
 func callOnSwitch(vswitchName common.VSwitchName, command string, optionals ...string) (string,
 	error) {
 	c := []string{command,
-		"-VMSwitchName", string(vswitchName),
+		"-VMSwitchName", fmt.Sprintf("\"%s\"", string(vswitchName)),
 		"-Name", fmt.Sprintf("\"%s\"", common.HyperVExtensionName)}
 	for _, opt := range optionals {
 		c = append(c, opt)

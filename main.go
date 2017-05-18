@@ -4,6 +4,7 @@ import (
 	"flag"
 	"os"
 	"os/signal"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codilime/contrail-windows-docker/controller"
@@ -19,9 +20,14 @@ func main() {
 		"port of Contrail Controller API")
 	var logLevelString = flag.String("logLevel", "Info",
 		"log verbosity (possible values: Debug|Info|Warn|Error|Fatal|Panic)")
-	var vswitchName = flag.String("vswitchName", "Layered Ethernet0",
-		"name of Transparent virtual switch (use Get-VMSwitch to check how it's called on your OS)")
+	var vswitchNameWildcard = flag.String("vswitchName", "Layered <adapter>",
+		"Name of Transparent virtual switch. Special wildcard \"<adapter>\" will be interpretted "+
+			"as value of netAdapter parameter. For example, if netAdapter is \"Ethernet0\", then "+
+			"vswitchName will equal \"Layered Ethernet0\". You can use Get-VMSwitch PowerShell "+
+			"command to check how the switch is called on your version of OS.")
 	flag.Parse()
+
+	vswitchName := strings.Replace(*vswitchNameWildcard, "<adapter>", *adapter, -1)
 
 	logLevel, err := log.ParseLevel(*logLevelString)
 	if err != nil {
@@ -39,7 +45,7 @@ func main() {
 		return
 	}
 
-	d := driver.NewDriver(*adapter, *vswitchName, c)
+	d := driver.NewDriver(*adapter, vswitchName, c)
 	if err = d.StartServing(); err != nil {
 		log.Error(err)
 	} else {

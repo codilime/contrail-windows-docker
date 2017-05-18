@@ -32,6 +32,7 @@ import (
 
 var netAdapter string
 var vswitchName string
+var vswitchNameWildcard string
 var controllerAddr string
 var controllerPort int
 var useActualController bool
@@ -39,8 +40,12 @@ var useActualController bool
 func init() {
 	flag.StringVar(&netAdapter, "netAdapter", "Ethernet0",
 		"Network adapter to connect HNS switch to")
-	flag.String("vswitchName", "Layered Ethernet0",
-		"Name of Transparent virtual switch (use Get-VMSwitch to check how it's called on your OS)")
+	flag.StringVar(&vswitchNameWildcard, "vswitchName", "Layered <adapter>",
+		"Name of Transparent virtual switch. Special wildcard \"<adapter>\" will be interpretted "+
+			"as value of netAdapter parameter. For example, if netAdapter is \"Ethernet0\", then "+
+			"vswitchName will equal \"Layered Ethernet0\". You can use Get-VMSwitch PowerShell "+
+			"command to check how the switch is called on your version of OS.")
+
 	flag.StringVar(&controllerAddr, "controllerAddr",
 		"10.7.0.54", "Contrail controller addr")
 	flag.IntVar(&controllerPort, "controllerPort", 8082, "Contrail controller port")
@@ -58,6 +63,7 @@ func TestDriver(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
+	vswitchName = strings.Replace(vswitchNameWildcard, "<adapter>", netAdapter, -1)
 	cleanupAll()
 })
 
