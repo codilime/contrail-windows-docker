@@ -33,7 +33,8 @@ import (
 type ContrailDriver struct {
 	controller         *controller.Controller
 	hnsMgr             *hnsManager.HNSManager
-	networkAdapter     string
+	networkAdapter     common.AdapterName
+	vswitchName        common.VSwitchName
 	listener           net.Listener
 	PipeAddr           string
 	stopChan           chan interface{}
@@ -46,12 +47,13 @@ type NetworkMeta struct {
 	network string
 }
 
-func NewDriver(adapter string, c *controller.Controller) *ContrailDriver {
+func NewDriver(adapter, vswitchName string, c *controller.Controller) *ContrailDriver {
 
 	d := &ContrailDriver{
 		controller:         c,
 		hnsMgr:             &hnsManager.HNSManager{},
-		networkAdapter:     adapter,
+		networkAdapter:     common.AdapterName(adapter),
+		vswitchName:        common.VSwitchName(vswitchName),
 		PipeAddr:           "//./pipe/" + common.DriverName,
 		stopChan:           make(chan interface{}, 1),
 		stoppedServingChan: make(chan interface{}, 1),
@@ -70,7 +72,7 @@ func (d *ContrailDriver) StartServing() error {
 		return err
 	}
 
-	running, err := hyperv.IsExtensionRunning(d.networkAdapter)
+	running, err := hyperv.IsExtensionRunning(d.vswitchName, d.networkAdapter)
 	if err != nil {
 		return err
 	}
@@ -79,13 +81,13 @@ func (d *ContrailDriver) StartServing() error {
 		return errors.New("Extension doesn't seem to be running. Maybe try reinstalling?")
 	}
 
-	enabled, err := hyperv.IsExtensionEnabled(d.networkAdapter)
+	enabled, err := hyperv.IsExtensionEnabled(d.vswitchName, d.networkAdapter)
 	if err != nil {
 		return err
 	}
 
 	if !enabled {
-		if err := hyperv.EnableExtension(d.networkAdapter); err != nil {
+		if err := hyperv.EnableExtension(d.vswitchName, d.networkAdapter); err != nil {
 			return err
 		}
 	}

@@ -20,8 +20,8 @@ func contrailHNSNetName(tenant, netName string) string {
 	return fmt.Sprintf("%s:%s:%s", common.HNSNetworkPrefix, tenant, netName)
 }
 
-func (m *HNSManager) CreateNetwork(netAdapter, tenantName, networkName, subnetCIDR,
-	defaultGW string) (*hcsshim.HNSNetwork, error) {
+func (m *HNSManager) CreateNetwork(netAdapter common.AdapterName, tenantName, networkName,
+	subnetCIDR, defaultGW string) (*hcsshim.HNSNetwork, error) {
 
 	hnsNetName := contrailHNSNetName(tenantName, networkName)
 
@@ -40,7 +40,7 @@ func (m *HNSManager) CreateNetwork(netAdapter, tenantName, networkName, subnetCI
 	configuration := &hcsshim.HNSNetwork{
 		Name:               hnsNetName,
 		Type:               "transparent",
-		NetworkAdapterName: netAdapter,
+		NetworkAdapterName: string(netAdapter),
 		Subnets:            subnets,
 	}
 

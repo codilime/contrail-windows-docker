@@ -19,6 +19,8 @@ func main() {
 		"port of Contrail Controller API")
 	var logLevelString = flag.String("logLevel", "Info",
 		"log verbosity (possible values: Debug|Info|Warn|Error|Fatal|Panic)")
+	var vswitchName = flag.String("vswitchName", "Layered Ethernet0",
+		"name of Transparent virtual switch (use Get-VMSwitch to check how it's called on your OS)")
 	flag.Parse()
 
 	logLevel, err := log.ParseLevel(*logLevelString)
@@ -37,7 +39,7 @@ func main() {
 		return
 	}
 
-	d := driver.NewDriver(*adapter, c)
+	d := driver.NewDriver(*adapter, *vswitchName, c)
 	if err = d.StartServing(); err != nil {
 		log.Error(err)
 	} else {

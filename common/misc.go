@@ -11,6 +11,9 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+type VSwitchName string
+type AdapterName string
+
 func HardResetHNS() error {
 	log.Infoln("Resetting HNS")
 	log.Debugln("Removing NAT")
