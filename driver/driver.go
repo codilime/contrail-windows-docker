@@ -72,7 +72,7 @@ func (d *ContrailDriver) StartServing() error {
 		return err
 	}
 
-	running, err := hyperv.IsExtensionRunning(d.vswitchName, d.networkAdapter)
+	running, err := hyperv.IsExtensionRunning(d.vswitchName)
 	if err != nil {
 		return err
 	}
@@ -81,13 +81,13 @@ func (d *ContrailDriver) StartServing() error {
 		return errors.New("Extension doesn't seem to be running. Maybe try reinstalling?")
 	}
 
-	enabled, err := hyperv.IsExtensionEnabled(d.vswitchName, d.networkAdapter)
+	enabled, err := hyperv.IsExtensionEnabled(d.vswitchName)
 	if err != nil {
 		return err
 	}
 
 	if !enabled {
-		if err := hyperv.EnableExtension(d.vswitchName, d.networkAdapter); err != nil {
+		if err := hyperv.EnableExtension(d.vswitchName); err != nil {
 			return err
 		}
 	}
@@ -254,7 +254,8 @@ func (d *ContrailDriver) CreateNetwork(req *network.CreateNetworkRequest) error 
 	return err
 }
 
-func (d *ContrailDriver) AllocateNetwork(req *network.AllocateNetworkRequest) (*network.AllocateNetworkResponse, error) {
+func (d *ContrailDriver) AllocateNetwork(req *network.AllocateNetworkRequest) (
+	*network.AllocateNetworkResponse, error) {
 	log.Debugln("=== AllocateNetwork")
 	log.Debugln(req)
 	// This method is used in swarm, in remote plugins. We don't implement it.
@@ -306,7 +307,8 @@ func (d *ContrailDriver) FreeNetwork(req *network.FreeNetworkRequest) error {
 	return errors.New("FreeNetwork is not implemented")
 }
 
-func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (*network.CreateEndpointResponse, error) {
+func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (
+	*network.CreateEndpointResponse, error) {
 	log.Debugln("=== CreateEndpoint")
 	log.Debugln(req)
 	log.Debugln(req.Interface)
@@ -516,13 +518,15 @@ func (d *ContrailDriver) DiscoverDelete(req *network.DiscoveryNotification) erro
 	return nil
 }
 
-func (d *ContrailDriver) ProgramExternalConnectivity(req *network.ProgramExternalConnectivityRequest) error {
+func (d *ContrailDriver) ProgramExternalConnectivity(
+	req *network.ProgramExternalConnectivityRequest) error {
 	log.Debugln("=== ProgramExternalConnectivity")
 	log.Debugln(req)
 	return nil
 }
 
-func (d *ContrailDriver) RevokeExternalConnectivity(req *network.RevokeExternalConnectivityRequest) error {
+func (d *ContrailDriver) RevokeExternalConnectivity(
+	req *network.RevokeExternalConnectivityRequest) error {
 	log.Debugln("=== RevokeExternalConnectivity")
 	log.Debugln(req)
 	return nil
@@ -546,7 +550,7 @@ func (d *ContrailDriver) createRootNetwork() error {
 		configuration := &hcsshim.HNSNetwork{
 			Name:               common.RootNetworkName,
 			Type:               "transparent",
-			NetworkAdapterName: d.networkAdapter,
+			NetworkAdapterName: string(d.networkAdapter),
 			Subnets:            subnets,
 		}
 		rootNetID, err := hns.CreateHNSNetwork(configuration)

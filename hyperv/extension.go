@@ -7,27 +7,27 @@ import (
 	"github.com/codilime/contrail-windows-docker/common"
 )
 
-func EnableExtension(vswitchName common.VSwitchName, netAdapterName common.AdapterName) error {
+func EnableExtension(vswitchName common.VSwitchName) error {
 	log.Infoln("Enabling vRouter Hyper-V Extension")
-	if out, err := callOnSwitch(vswitchName, netAdapterName, "Enable-VMSwitchExtension"); err != nil {
+	if out, err := callOnSwitch(vswitchName, "Enable-VMSwitchExtension"); err != nil {
 		log.Errorf("When enabling Hyper-V Extension: %s", err, out)
 		return err
 	}
 	return nil
 }
 
-func DisableExtension(vswitchName common.VSwitchName, netAdapterName common.AdapterName) error {
+func DisableExtension(vswitchName common.VSwitchName) error {
 	log.Infoln("Disabling vRouter Hyper-V Extension")
-	if out, err := callOnSwitch(vswitchName, netAdapterName, "Disable-VMSwitchExtension"); err != nil {
+	if out, err := callOnSwitch(vswitchName, "Disable-VMSwitchExtension"); err != nil {
 		log.Errorf("When disabling Hyper-V Extension: %s", err, out)
 		return err
 	}
 	return nil
 }
 
-func IsExtensionEnabled(vswitchName common.VSwitchName, netAdapterName common.AdapterName) (bool,
+func IsExtensionEnabled(vswitchName common.VSwitchName) (bool,
 	error) {
-	out, err := inspectExtensionProperty(vswitchName, netAdapterName, "Enabled")
+	out, err := inspectExtensionProperty(vswitchName, "Enabled")
 	if err != nil {
 		log.Errorf("When inspecting Hyper-V Extension: %s", err, out)
 		return false, err
@@ -35,9 +35,9 @@ func IsExtensionEnabled(vswitchName common.VSwitchName, netAdapterName common.Ad
 	return out == "True", nil
 }
 
-func IsExtensionRunning(vswitchName common.VSwitchName, netAdapterName common.AdapterName) (bool,
+func IsExtensionRunning(vswitchName common.VSwitchName) (bool,
 	error) {
-	out, err := inspectExtensionProperty(vswitchName, netAdapterName, "Running")
+	out, err := inspectExtensionProperty(vswitchName, "Running")
 	if err != nil {
 		log.Errorf("When inspecting Hyper-V Extension: %s", err, out)
 		return false, err
@@ -45,18 +45,17 @@ func IsExtensionRunning(vswitchName common.VSwitchName, netAdapterName common.Ad
 	return out == "True", nil
 }
 
-func inspectExtensionProperty(vswitchName common.VSwitchName, netAdapterName common.AdapterName,
-	property string) (string, error) {
+func inspectExtensionProperty(vswitchName common.VSwitchName, property string) (string, error) {
 	log.Infoln("Inspecting vRouter Hyper-V Extension for property:", property)
 	// we use -Expand, because otherwise, we get an object instead of single string value
-	out, err := callOnSwitch(vswitchName, netAdapterName, "Get-VMSwitchExtension", "|", "Select",
+	out, err := callOnSwitch(vswitchName, "Get-VMSwitchExtension", "|", "Select",
 		"-Expand", fmt.Sprintf("\"%s\"", property))
 	log.Debugln("Inspect result:", out)
 	return out, err
 }
 
-func callOnSwitch(vswitchName common.VSwitchName, netAdapterName common.AdapterName,
-	command string, optionals ...string) (string, error) {
+func callOnSwitch(vswitchName common.VSwitchName, command string, optionals ...string) (string,
+	error) {
 	c := []string{command,
 		"-VMSwitchName", string(vswitchName),
 		"-Name", fmt.Sprintf("\"%s\"", common.HyperVExtensionName)}

@@ -54,11 +54,11 @@ func RestartDocker() error {
 	return nil
 }
 
-func WaitForInterface(ifname string) error {
+func WaitForInterface(ifname AdapterName) error {
 	pollingStart := time.Now()
 	for {
 		queryStart := time.Now()
-		iface, err := net.InterfaceByName(ifname)
+		iface, err := net.InterfaceByName(string(ifname))
 		if err != nil {
 			log.Warnf("Error when getting interface %s, but maybe it will appear soon: %s",
 				ifname, err)

@@ -31,6 +31,7 @@ import (
 )
 
 var netAdapter string
+var vswitchName string
 var controllerAddr string
 var controllerPort int
 var useActualController bool
@@ -38,6 +39,8 @@ var useActualController bool
 func init() {
 	flag.StringVar(&netAdapter, "netAdapter", "Ethernet0",
 		"Network adapter to connect HNS switch to")
+	flag.String("vswitchName", "Layered Ethernet0",
+		"Name of Transparent virtual switch (use Get-VMSwitch to check how it's called on your OS)")
 	flag.StringVar(&controllerAddr, "controllerAddr",
 		"10.7.0.54", "Contrail controller addr")
 	flag.IntVar(&controllerPort, "controllerPort", 8082, "Contrail controller port")
@@ -67,7 +70,7 @@ func cleanupAll() {
 	Expect(err).ToNot(HaveOccurred())
 	err = common.HardResetHNS()
 	Expect(err).ToNot(HaveOccurred())
-	err = common.WaitForInterface(netAdapter)
+	err = common.WaitForInterface(common.AdapterName(netAdapter))
 	Expect(err).ToNot(HaveOccurred())
 
 	docker := getDockerClient()
@@ -194,7 +197,7 @@ var _ = Describe("Contrail Network Driver", func() {
 		err := contrailDriver.StartServing()
 		Expect(err).ToNot(HaveOccurred())
 
-		enabled, err := hyperv.IsExtensionEnabled(netAdapter)
+		enabled, err := hyperv.IsExtensionEnabled(common.VSwitchName(vswitchName))
 		Expect(err).ToNot(HaveOccurred())
 		Expect(enabled).To(BeTrue())
 
@@ -202,7 +205,7 @@ var _ = Describe("Contrail Network Driver", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		By("stopping to serve does not disable the Extension")
-		enabled, err = hyperv.IsExtensionEnabled(netAdapter)
+		enabled, err = hyperv.IsExtensionEnabled(common.VSwitchName(vswitchName))
 		Expect(err).ToNot(HaveOccurred())
 		Expect(enabled).To(BeTrue())
 
@@ -210,7 +213,7 @@ var _ = Describe("Contrail Network Driver", func() {
 		err = contrailDriver.StartServing()
 		Expect(err).ToNot(HaveOccurred())
 
-		enabled, err = hyperv.IsExtensionEnabled(netAdapter)
+		enabled, err = hyperv.IsExtensionEnabled(common.VSwitchName(vswitchName))
 		Expect(err).ToNot(HaveOccurred())
 		Expect(enabled).To(BeTrue())
 
@@ -223,7 +226,7 @@ var _ = Describe("Contrail Network Driver", func() {
 		err := contrailDriver.StartServing()
 		Expect(err).ToNot(HaveOccurred())
 
-		enabled, err := hyperv.IsExtensionEnabled(netAdapter)
+		enabled, err := hyperv.IsExtensionEnabled(common.VSwitchName(vswitchName))
 		Expect(err).ToNot(HaveOccurred())
 		Expect(enabled).To(BeTrue())
 
@@ -231,14 +234,14 @@ var _ = Describe("Contrail Network Driver", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		By("manually disabling the Extension")
-		err = hyperv.DisableExtension(netAdapter)
+		err = hyperv.DisableExtension(common.VSwitchName(vswitchName))
 		Expect(err).ToNot(HaveOccurred())
 
 		By("starting to serve again should reenable the Extension")
 		err = contrailDriver.StartServing()
 		Expect(err).ToNot(HaveOccurred())
 
-		enabled, err = hyperv.IsExtensionEnabled(netAdapter)
+		enabled, err = hyperv.IsExtensionEnabled(common.VSwitchName(vswitchName))
 		Expect(err).ToNot(HaveOccurred())
 		Expect(enabled).To(BeTrue())
 	})
@@ -247,7 +250,7 @@ var _ = Describe("Contrail Network Driver", func() {
 		err := contrailDriver.StartServing()
 		Expect(err).ToNot(HaveOccurred())
 
-		running, err := hyperv.IsExtensionRunning(netAdapter)
+		running, err := hyperv.IsExtensionRunning(common.VSwitchName(vswitchName))
 		Expect(err).ToNot(HaveOccurred())
 		Expect(running).To(BeTrue())
 
@@ -258,14 +261,14 @@ var _ = Describe("Contrail Network Driver", func() {
 		err = contrailDriver.StartServing()
 		Expect(err).ToNot(HaveOccurred())
 
-		running, err = hyperv.IsExtensionRunning(netAdapter)
+		running, err = hyperv.IsExtensionRunning(common.VSwitchName(vswitchName))
 		Expect(err).ToNot(HaveOccurred())
 		Expect(running).To(BeTrue())
 
 		err = contrailDriver.StopServing()
 		Expect(err).ToNot(HaveOccurred())
 
-		running, err = hyperv.IsExtensionRunning(netAdapter)
+		running, err = hyperv.IsExtensionRunning(common.VSwitchName(vswitchName))
 		Expect(err).ToNot(HaveOccurred())
 		Expect(running).To(BeTrue())
 	})
@@ -294,7 +297,7 @@ var _ = Describe("On requests from docker daemon", func() {
 		err = common.HardResetHNS()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = common.WaitForInterface(netAdapter)
+		err = common.WaitForInterface(common.AdapterName(netAdapter))
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -802,7 +805,7 @@ func startDriver() (*ContrailDriver, *controller.Controller, *types.Project) {
 	} else {
 		c, p = controller.NewMockedClientAndProject(tenantName)
 	}
-	d := NewDriver(netAdapter, c)
+	d := NewDriver(netAdapter, vswitchName, c)
 
 	return d, c, p
 }

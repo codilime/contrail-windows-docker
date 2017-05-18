@@ -2,10 +2,11 @@ package hns
 
 import (
 	"github.com/Microsoft/hcsshim"
+	"github.com/codilime/contrail-windows-docker/common"
 	. "github.com/onsi/gomega"
 )
 
-func MockHNSNetwork(name, netAdapter, subnetCIDR, defaultGW string) string {
+func MockHNSNetwork(netAdapter common.AdapterName, name, subnetCIDR, defaultGW string) string {
 	subnets := []hcsshim.Subnet{
 		{
 			AddressPrefix:  subnetCIDR,
@@ -15,7 +16,7 @@ func MockHNSNetwork(name, netAdapter, subnetCIDR, defaultGW string) string {
 	netConfig := &hcsshim.HNSNetwork{
 		Name:               name,
 		Type:               "transparent",
-		NetworkAdapterName: netAdapter,
+		NetworkAdapterName: string(netAdapter),
 		Subnets:            subnets,
 	}
 	var err error
