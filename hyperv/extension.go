@@ -10,7 +10,7 @@ import (
 func EnableExtension(vswitchName common.VSwitchName) error {
 	log.Infoln("Enabling vRouter Hyper-V Extension")
 	if out, err := callOnSwitch(vswitchName, "Enable-VMSwitchExtension"); err != nil {
-		log.Errorf("When enabling Hyper-V Extension: %s", err, out)
+		log.Errorf("When enabling Hyper-V Extension: %s, %s", err, out)
 		return err
 	}
 	return nil
@@ -19,7 +19,7 @@ func EnableExtension(vswitchName common.VSwitchName) error {
 func DisableExtension(vswitchName common.VSwitchName) error {
 	log.Infoln("Disabling vRouter Hyper-V Extension")
 	if out, err := callOnSwitch(vswitchName, "Disable-VMSwitchExtension"); err != nil {
-		log.Errorf("When disabling Hyper-V Extension: %s", err, out)
+		log.Errorf("When disabling Hyper-V Extension: %s, %s", err, out)
 		return err
 	}
 	return nil
@@ -29,7 +29,7 @@ func IsExtensionEnabled(vswitchName common.VSwitchName) (bool,
 	error) {
 	out, err := inspectExtensionProperty(vswitchName, "Enabled")
 	if err != nil {
-		log.Errorf("When inspecting Hyper-V Extension: %s", err, out)
+		log.Errorf("When inspecting Hyper-V Extension: %s, %s", err, out)
 		return false, err
 	}
 	return out == "True", nil
@@ -39,7 +39,7 @@ func IsExtensionRunning(vswitchName common.VSwitchName) (bool,
 	error) {
 	out, err := inspectExtensionProperty(vswitchName, "Running")
 	if err != nil {
-		log.Errorf("When inspecting Hyper-V Extension: %s", err, out)
+		log.Errorf("When inspecting Hyper-V Extension: %s, %s", err, out)
 		return false, err
 	}
 	return out == "True", nil

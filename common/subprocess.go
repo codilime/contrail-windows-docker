@@ -10,14 +10,10 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-func CallPowershell(args ...string) (string, string, error) {
-	c := []string{"-NonInteractive"}
-	for _, arg := range args {
-		c = append(c, arg)
-	}
-	cmd := exec.Command("powershell", c...)
+func Call(command string, args ...string) (string, string, error) {
+	cmd := exec.Command(command, args...)
 
-	log.Debugf("Running Powershell command: %s. ", strings.Join(c[1:], " "))
+	log.Debugf("Running %s: %s. ", command, strings.Join(args, " "))
 
 	stdoutPipe, stderrPipe, err := setupOutputCollection(cmd)
 	if err != nil {
@@ -44,9 +40,18 @@ func CallPowershell(args ...string) (string, string, error) {
 		return "", "", err
 	}
 
-	printDebugInfo(c, stdout, stderr)
+	printDebugInfo(stdout, stderr)
 
 	return stdout, stderr, nil
+}
+
+func CallPowershell(args ...string) (string, string, error) {
+	c := []string{"-NonInteractive"}
+	for _, arg := range args {
+		c = append(c, arg)
+	}
+
+	return Call("powershell", c...)
 }
 
 func setupOutputCollection(cmd *exec.Cmd) (io.ReadCloser, io.ReadCloser, error) {
@@ -75,7 +80,7 @@ func collectOutput(stdoutPipe, stderrPipe io.ReadCloser) (string, string, error)
 	return fmt.Sprintf("%s", outBuf), fmt.Sprintf("%s", errBuf), nil
 }
 
-func printDebugInfo(cmds []string, stdout, stderr string) {
+func printDebugInfo(stdout, stderr string) {
 	logMsg := ""
 	if stdout != "" {
 		logMsg += fmt.Sprintf("stdout: %s;", stdout)

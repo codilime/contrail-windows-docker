@@ -40,6 +40,9 @@ const (
 
 	// HyperVExtensionName is the name of vRouter Hyper-V Extension
 	HyperVExtensionName = "vRouter forwarding extension"
+
+	// AgentAPIWrapperScriptPath is path to python script that calls vRouter Agent API
+	AgentAPIWrapperScriptPath = "./agent_api.py"
 )
 
 // PluginSpecDir returns path to directory where docker daemon looks for plugin spec files.
