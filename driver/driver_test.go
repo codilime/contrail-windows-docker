@@ -95,6 +95,11 @@ const (
 	timeout     = time.Second * 5
 )
 
+type OneTimeListener struct {
+	net.Listener
+	Received chan (interface{})
+}
+
 var _ = Describe("Contrail Network Driver", func() {
 
 	BeforeEach(func() {
@@ -469,19 +474,22 @@ var _ = Describe("On requests from docker daemon", func() {
 			containerID := ""
 			dockerNetID := ""
 
-			var mockAgentListener net.Listener
+			var mockAgentListener *OneTimeListener
 
 			BeforeEach(func() {
-				var err error
-				mockAgentListener, err = net.Listen("tcp", ":9090") // agent api port
-				Expect(err).ToNot(HaveOccurred())
-				Expect(mockAgentListener).ToNot(BeNil())
-
+				mockAgentListener = startMockAgentListener()
 				_, dockerNetID, containerID = setupNetworksAndEndpoints(contrailController, docker)
 			})
-			AfterEach(func() {
+			AfterEach(func(done Done) {
+				// Done channel in test suite is ginkgo feature for setting timeouts
+				// https://onsi.github.io/ginkgo/#asynchronous-tests
+				log.Debugln("Waiting for request")
+				<-mockAgentListener.Received
+				log.Debugln("Done waiting for request")
+
 				mockAgentListener.Close()
 				mockAgentListener = nil
+				close(done)
 			})
 			It("allocates Contrail resources", func() {
 				net, err := types.VirtualNetworkByName(contrailController.ApiClient,
@@ -531,17 +539,6 @@ var _ = Describe("On requests from docker daemon", func() {
 				formattedMac := strings.Replace(strings.ToUpper(mac), ":", "-", -1)
 				Expect(ep.MacAddress).To(Equal(formattedMac))
 				Expect(ep.GatewayAddress).To(Equal(gw))
-			})
-			FIt("blergh configures vRouter agent", func(done Done) {
-				// Done channel in test suite is ginkgo feature for setting timeouts
-				// https://onsi.github.io/ginkgo/#asynchronous-tests
-
-				// TODO to revisit when agent is working, for now, use a mocked socket
-
-				conn, err := mockAgentListener.Accept()
-				Expect(err).ToNot(HaveOccurred())
-				Expect(conn).ToNot(BeNil())
-				close(done)
 			})
 		})
 
@@ -961,4 +958,24 @@ func setupNetworksAndEndpoints(c *controller.Controller, docker *dockerClient.Cl
 	containerID, err := runDockerContainer(docker)
 	Expect(err).ToNot(HaveOccurred())
 	return contrailNet, dockerNetID, containerID
+}
+
+func startMockAgentListener() *OneTimeListener {
+	cl := OneTimeListener{}
+	var err error
+	cl.Listener, err = net.Listen("tcp", ":9090") // agent api port
+	Expect(err).ToNot(HaveOccurred())
+	Expect(cl.Listener).ToNot(BeNil())
+
+	cl.Received = make(chan interface{}, 1)
+
+	go func() {
+		conn, err := cl.Accept()
+		log.Debugln("Request received!")
+		cl.Received <- 1
+		log.Debugln("Sent info about receiveing the request")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(conn).ToNot(BeNil())
+	}()
+	return &cl
 }
