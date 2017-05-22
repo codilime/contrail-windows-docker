@@ -532,7 +532,7 @@ var _ = Describe("On requests from docker daemon", func() {
 				Expect(ep.MacAddress).To(Equal(formattedMac))
 				Expect(ep.GatewayAddress).To(Equal(gw))
 			})
-			FIt("configures vRouter agent", func(done Done) {
+			FIt("blergh configures vRouter agent", func(done Done) {
 				// Done channel in test suite is ginkgo feature for setting timeouts
 				// https://onsi.github.io/ginkgo/#asynchronous-tests
 
