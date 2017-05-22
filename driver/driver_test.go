@@ -469,8 +469,19 @@ var _ = Describe("On requests from docker daemon", func() {
 			containerID := ""
 			dockerNetID := ""
 
+			var mockAgentListener net.Listener
+
 			BeforeEach(func() {
+				var err error
+				mockAgentListener, err = net.Listen("tcp", ":9090") // agent api port
+				Expect(err).ToNot(HaveOccurred())
+				Expect(mockAgentListener).ToNot(BeNil())
+
 				_, dockerNetID, containerID = setupNetworksAndEndpoints(contrailController, docker)
+			})
+			AfterEach(func() {
+				mockAgentListener.Close()
+				mockAgentListener = nil
 			})
 			It("allocates Contrail resources", func() {
 				net, err := types.VirtualNetworkByName(contrailController.ApiClient,
@@ -521,7 +532,17 @@ var _ = Describe("On requests from docker daemon", func() {
 				Expect(ep.MacAddress).To(Equal(formattedMac))
 				Expect(ep.GatewayAddress).To(Equal(gw))
 			})
-			PIt("configures vRouter agent", func() {})
+			FIt("configures vRouter agent", func(done Done) {
+				// Done channel in test suite is ginkgo feature for setting timeouts
+				// https://onsi.github.io/ginkgo/#asynchronous-tests
+
+				// TODO to revisit when agent is working, for now, use a mocked socket
+
+				conn, err := mockAgentListener.Accept()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(conn).ToNot(BeNil())
+				close(done)
+			})
 		})
 
 		Context("Contrail and docker networks exists, HNS network doesn't", func() {

@@ -421,9 +421,8 @@ func (d *ContrailDriver) DeleteEndpoint(req *network.DeleteEndpointRequest) erro
 	// containerID := req.Options["vmname"]
 	containerID := req.EndpointID
 
+	// TODO JW-429
 	// ifaces = contrailInstance.GetVirtualMachineInterfaces()
-
-	// // TODO: test this when Agent is ready
 	// agent.DeletePort(contrailVif.GetUuid())
 
 	contrailInstance, err := types.VirtualMachineByName(d.controller.ApiClient, containerID)
