@@ -6,7 +6,7 @@ import (
 )
 
 func AddPort(vmUuid, vifUuid, ifName, mac, dockerID string) error {
-	stdout, stderr, err := common.Call("python", common.AgentAPIWrapperScriptPath,
+	stdout, stderr, err := common.Call("python", common.AgentAPIWrapperScriptPath(),
 		"add", vmUuid, vifUuid, ifName, mac, dockerID)
 	log.Debugln("Called Agent API wrapper: ", stdout)
 	if err != nil {
@@ -17,7 +17,7 @@ func AddPort(vmUuid, vifUuid, ifName, mac, dockerID string) error {
 }
 
 func DeletePort(vifUuid string) error {
-	stdout, stderr, err := common.Call("python", common.AgentAPIWrapperScriptPath,
+	stdout, stderr, err := common.Call("python", common.AgentAPIWrapperScriptPath(),
 		"delete", vifUuid)
 	log.Debugln("Called Agent API wrapper: ", stdout)
 	if err != nil {
