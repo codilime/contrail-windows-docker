@@ -3,6 +3,8 @@ package common
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/kardianos/osext"
 )
 
 const (
@@ -57,6 +59,6 @@ func PluginSpecFilePath() string {
 
 // AgentAPIWrapperScriptPath is path to python script that calls vRouter Agent API
 func AgentAPIWrapperScriptPath() string {
-	executable, _ := os.Executable()
+	executable, _ := osext.Executable()
 	return filepath.Join(filepath.Dir(executable), AgentAPIWrapperScriptFileName)
 }
