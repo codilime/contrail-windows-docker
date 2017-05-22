@@ -481,7 +481,7 @@ var _ = Describe("On requests from docker daemon", func() {
 				_, dockerNetID, containerID = setupNetworksAndEndpoints(contrailController, docker)
 			})
 			AfterEach(func(done Done) {
-				// Done channel in test suite is ginkgo feature for setting timeouts
+				// Done channel is ginkgo feature for setting timeouts
 				// https://onsi.github.io/ginkgo/#asynchronous-tests
 				log.Debugln("Waiting for request")
 				<-mockAgentListener.Received
@@ -961,21 +961,26 @@ func setupNetworksAndEndpoints(c *controller.Controller, docker *dockerClient.Cl
 }
 
 func startMockAgentListener() *OneTimeListener {
-	cl := OneTimeListener{}
+	listener := OneTimeListener{}
 	var err error
-	cl.Listener, err = net.Listen("tcp", ":9090") // agent api port
+	listener.Listener, err = net.Listen("tcp", ":9090") // agent api port
 	Expect(err).ToNot(HaveOccurred())
-	Expect(cl.Listener).ToNot(BeNil())
+	Expect(listener.Listener).ToNot(BeNil())
 
-	cl.Received = make(chan interface{}, 1)
+	listener.Received = make(chan interface{}, 1)
 
 	go func() {
-		conn, err := cl.Accept()
-		log.Debugln("Request received!")
-		cl.Received <- 1
+		conn, err := listener.Accept()
+		buf := make([]byte, 2046)
+		bytesRead, err := conn.Read(buf)
+		if err != nil {
+			log.Errorln("Failed to read request", err)
+		}
+		log.Debugln("Received message:", string(buf[:bytesRead]))
+		listener.Received <- 1
 		log.Debugln("Sent info about receiveing the request")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(conn).ToNot(BeNil())
 	}()
-	return &cl
+	return &listener
 }

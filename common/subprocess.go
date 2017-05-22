@@ -30,10 +30,7 @@ func Call(command string, args ...string) (string, string, error) {
 		return "", "", err
 	}
 
-	// we drop the last two characters, because they are just newline
-	if len(stdout) > 2 {
-		stdout = stdout[:len(stdout)-2]
-	}
+	stdout = strings.TrimSpace(stdout)
 
 	err = cmd.Wait()
 	if err != nil {
