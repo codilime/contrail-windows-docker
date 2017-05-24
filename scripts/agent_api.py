@@ -15,7 +15,7 @@ PORT_TYPE = 'NovaVMPort'
 
 
 def main():
-    operation = sys.argv[0]
+    operation = sys.argv[1]
 
     # TODO: ContrailVRouterApi has semaphores, but we call it like a batch command.
     # Therefore, we need to make sure that proper synchronization is realized in driver, so that
@@ -26,14 +26,14 @@ def main():
 
     if operation == "add":
         try:
-            (operation, vmUuid, vifUuid, ifName, mac, dockerID) = sys.argv
+            (_, operation, vmUuid, vifUuid, ifName, mac, dockerID) = sys.argv
             api.add_port(vmUuid, vifUuid, ifName, mac, port_type=PORT_TYPE,
                 display_name=args.dockerId)
         except Exception:
             print("MOCK: not reporting FAIL, since agent is not implemented yet.")
     elif operation == "delete":
         try:
-            (operation, vmUuid) = sys.argv
+            (_, operation, vmUuid) = sys.argv
             api.delete_port(vifUuid)
         except Exception:
             print("MOCK not reporting FAIL, since agent is not implemented yet.")
