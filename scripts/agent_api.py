@@ -27,13 +27,12 @@ def main():
     if operation == "add":
         try:
             (_, operation, vmUuid, vifUuid, ifName, mac, dockerID) = sys.argv
-            api.add_port(vmUuid, vifUuid, ifName, mac, port_type=PORT_TYPE,
-                display_name=args.dockerId)
+            api.add_port(vmUuid, vifUuid, ifName, mac, port_type=PORT_TYPE, display_name=dockerID)
         except Exception:
             print("MOCK: not reporting FAIL, since agent is not implemented yet.")
     elif operation == "delete":
         try:
-            (_, operation, vmUuid) = sys.argv
+            (_, operation, vifUuid) = sys.argv
             api.delete_port(vifUuid)
         except Exception:
             print("MOCK not reporting FAIL, since agent is not implemented yet.")
