@@ -3,6 +3,8 @@ package common
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/kardianos/osext"
 )
 
 const (
@@ -40,6 +42,9 @@ const (
 
 	// HyperVExtensionName is the name of vRouter Hyper-V Extension
 	HyperVExtensionName = "vRouter forwarding extension"
+
+	// AgentAPIWrapperScriptFileName is a file name of python script that calls vRouter Agent API
+	AgentAPIWrapperScriptFileName = "agent_api.py"
 )
 
 // PluginSpecDir returns path to directory where docker daemon looks for plugin spec files.
@@ -50,4 +55,10 @@ func PluginSpecDir() string {
 // PluginSpecFilePath returns path to plugin spec file.
 func PluginSpecFilePath() string {
 	return filepath.Join(PluginSpecDir(), DriverName+".spec")
+}
+
+// AgentAPIWrapperScriptPath is path to python script that calls vRouter Agent API
+func AgentAPIWrapperScriptPath() string {
+	executable, _ := osext.Executable()
+	return filepath.Join(filepath.Dir(executable), AgentAPIWrapperScriptFileName)
 }

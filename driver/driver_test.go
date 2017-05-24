@@ -95,6 +95,11 @@ const (
 	timeout     = time.Second * 5
 )
 
+type OneTimeListener struct {
+	net.Listener
+	Received chan (interface{})
+}
+
 var _ = Describe("Contrail Network Driver", func() {
 
 	BeforeEach(func() {
@@ -469,8 +474,22 @@ var _ = Describe("On requests from docker daemon", func() {
 			containerID := ""
 			dockerNetID := ""
 
+			var mockAgentListener *OneTimeListener
+
 			BeforeEach(func() {
+				mockAgentListener = startMockAgentListener()
 				_, dockerNetID, containerID = setupNetworksAndEndpoints(contrailController, docker)
+			})
+			AfterEach(func(done Done) {
+				// Done channel is ginkgo feature for setting timeouts
+				// https://onsi.github.io/ginkgo/#asynchronous-tests
+				log.Debugln("Waiting for request")
+				<-mockAgentListener.Received
+				log.Debugln("Done waiting for request")
+
+				mockAgentListener.Close()
+				mockAgentListener = nil
+				close(done)
 			})
 			It("allocates Contrail resources", func() {
 				net, err := types.VirtualNetworkByName(contrailController.ApiClient,
@@ -521,7 +540,6 @@ var _ = Describe("On requests from docker daemon", func() {
 				Expect(ep.MacAddress).To(Equal(formattedMac))
 				Expect(ep.GatewayAddress).To(Equal(gw))
 			})
-			PIt("configures vRouter agent", func() {})
 		})
 
 		Context("Contrail and docker networks exists, HNS network doesn't", func() {
@@ -940,4 +958,29 @@ func setupNetworksAndEndpoints(c *controller.Controller, docker *dockerClient.Cl
 	containerID, err := runDockerContainer(docker)
 	Expect(err).ToNot(HaveOccurred())
 	return contrailNet, dockerNetID, containerID
+}
+
+func startMockAgentListener() *OneTimeListener {
+	listener := OneTimeListener{}
+	var err error
+	listener.Listener, err = net.Listen("tcp", ":9090") // agent api port
+	Expect(err).ToNot(HaveOccurred())
+	Expect(listener.Listener).ToNot(BeNil())
+
+	listener.Received = make(chan interface{}, 1)
+
+	go func() {
+		conn, err := listener.Accept()
+		buf := make([]byte, 2046)
+		bytesRead, err := conn.Read(buf)
+		if err != nil {
+			log.Errorln("Failed to read request", err)
+		}
+		log.Debugln("Received message:", string(buf[:bytesRead]))
+		listener.Received <- 1
+		log.Debugln("Sent info about receiveing the request")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(conn).ToNot(BeNil())
+	}()
+	return &listener
 }

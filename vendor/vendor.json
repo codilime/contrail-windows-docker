@@ -747,6 +747,12 @@
 			"revisionTime": "2017-03-08T19:39:51Z"
 		},
 		{
+			"checksumSHA1": "dL5YO2zqgZ1nqLas0RUbVeSslHQ=",
+			"path": "github.com/kardianos/osext",
+			"revision": "ae77be60afb1dcacde03767a8c37337fad28ac14",
+			"revisionTime": "2017-05-10T13:15:34Z"
+		},
+		{
 			"checksumSHA1": "VKkPpY76yiACP3I7Wpa4GiqGnhI=",
 			"path": "github.com/mattn/go-shellwords",
 			"revision": "005a0944d84452842197c2108bd9168ced206f78",

@@ -18,6 +18,7 @@ import (
 	"github.com/Microsoft/go-winio"
 	"github.com/Microsoft/hcsshim"
 	log "github.com/Sirupsen/logrus"
+	"github.com/codilime/contrail-windows-docker/agent"
 	"github.com/codilime/contrail-windows-docker/common"
 	"github.com/codilime/contrail-windows-docker/controller"
 	"github.com/codilime/contrail-windows-docker/hns"
@@ -346,7 +347,7 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (
 		return nil, err
 	}
 
-	_, err = d.controller.GetOrCreateInstance(contrailVif, containerID)
+	contrailVM, err := d.controller.GetOrCreateInstance(contrailVif, containerID)
 	if err != nil {
 		return nil, err
 	}
@@ -385,12 +386,14 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (
 		GatewayAddress:     contrailGateway,
 	}
 
-	_, err = hns.CreateHNSEndpoint(hnsEndpointConfig)
+	hnsEndpointID, err := hns.CreateHNSEndpoint(hnsEndpointConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO JW-12: talk to vRouter here
+	// TODO: test this when Agent is ready
+	ifName := d.generateFriendlyName(hnsEndpointID)
+	agent.AddPort(contrailVM.GetUuid(), contrailVif.GetUuid(), ifName, contrailMac, containerID)
 
 	contrailIpam, err := d.controller.GetIpamSubnet(contrailNetwork)
 	if err != nil {
@@ -417,6 +420,10 @@ func (d *ContrailDriver) DeleteEndpoint(req *network.DeleteEndpointRequest) erro
 	// We need something like:
 	// containerID := req.Options["vmname"]
 	containerID := req.EndpointID
+
+	// TODO JW-429
+	// ifaces = contrailInstance.GetVirtualMachineInterfaces()
+	// agent.DeletePort(contrailVif.GetUuid())
 
 	contrailInstance, err := types.VirtualMachineByName(d.controller.ApiClient, containerID)
 	if err != nil {
@@ -694,4 +701,19 @@ func (d *ContrailDriver) hnsNetworksMeta() ([]NetworkMeta, error) {
 		})
 	}
 	return meta, nil
+}
+
+func (d *ContrailDriver) generateFriendlyName(hnsEndpointID string) string {
+	// Here's how the Forwarding Extension (kernel) can identify interfaces based on their
+	// friendly names.
+	// Windows Containers have NIC names like "NIC ID abcdef", where abcdef are the first 6 chars
+	// of their HNS endpoint ID.
+	// Hyper-V Containers have NIC names consisting of two uuids, probably representing utitlity
+	// VM's interface and endpoint's interface:
+	// "227301f6-bee9-4ae2-8a93-5e900cde3f47--910c5490-bff8-45e3-a2a0-0114ed9903e0"
+	// The second UUID (after the "--") is the HNS endpoints ID.
+
+	// For now, we will always send the name in the Windows Containers format, because it probably
+	// has enough information to recognize it in kernel (6 first chars of UUID should be enough):
+	return fmt.Sprintf("NIC ID %s", hnsEndpointID[0:6])
 }
