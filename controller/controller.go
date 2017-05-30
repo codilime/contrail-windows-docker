@@ -22,19 +22,20 @@ type Controller struct {
 }
 
 type KeystoneEnvs struct {
-	os_auth_url    string
-	os_username    string
-	os_tenant_name string
-	os_password    string
-	os_token       string
+	Os_auth_url    string
+	Os_username    string
+	Os_tenant_name string
+	Os_password    string
+	Os_token       string
 }
 
 func (k *KeystoneEnvs) LoadFromEnvironment() {
-	k.os_auth_url = os.Getenv("OS_AUTH_URL")
-	k.os_username = os.Getenv("OS_USERNAME")
-	k.os_tenant_name = os.Getenv("OS_TENANT_NAME")
-	k.os_password = os.Getenv("OS_PASSWORD")
-	k.os_token = os.Getenv("OS_TOKEN")
+
+	k.Os_auth_url = k.GetenvIfNil(k.Os_auth_url, "OS_AUTH_URL")
+	k.Os_username = k.GetenvIfNil(k.Os_username, "OS_USERNAME")
+	k.Os_tenant_name = k.GetenvIfNil(k.Os_tenant_name, "OS_TENANT_NAME")
+	k.Os_password = k.GetenvIfNil(k.Os_password, "OS_PASSWORD")
+	k.Os_token = k.GetenvIfNil(k.Os_token, "OS_TOKEN")
 
 	// print a warning for every empty variable
 	keysReflection := reflect.ValueOf(*k)
@@ -43,19 +44,27 @@ func (k *KeystoneEnvs) LoadFromEnvironment() {
 			log.Warn("Keystone variable empty: ", keysReflection.Type().Field(i).Name)
 		}
 	}
+	log.Infoln(k)
+}
+
+func (k *KeystoneEnvs) GetenvIfNil(currentVal, envVar string) string {
+	if currentVal == "" {
+		return os.Getenv(envVar)
+	}
+	return currentVal
 }
 
 func NewController(ip string, port int, keys *KeystoneEnvs) (*Controller, error) {
 	client := &Controller{}
 	client.ApiClient = contrail.NewClient(ip, port)
 
-	if keys.os_auth_url == "" {
+	if keys.Os_auth_url == "" {
 		// this corner case is not handled by keystone.Authenticate. Causes panic.
 		return nil, errors.New("Empty Keystone auth URL")
 	}
 
-	keystone := contrail.NewKeystoneClient(keys.os_auth_url, keys.os_tenant_name,
-		keys.os_username, keys.os_password, keys.os_token)
+	keystone := contrail.NewKeystoneClient(keys.Os_auth_url, keys.Os_tenant_name,
+		keys.Os_username, keys.Os_password, keys.Os_token)
 	err := keystone.Authenticate()
 	if err != nil {
 		log.Errorln("Keystone error:", err)
