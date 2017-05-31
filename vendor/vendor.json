@@ -1041,6 +1041,18 @@
 			"revisionTime": "2016-12-14T18:38:57Z"
 		},
 		{
+			"checksumSHA1": "IRqLaXM/VQRzkbXPuiqOxTb2W0Y=",
+			"path": "golang.org/x/sys/windows/svc",
+			"revision": "d75a52659825e75fff6158388dddc6a5b04f9ba5",
+			"revisionTime": "2016-12-14T18:38:57Z"
+		},
+		{
+			"checksumSHA1": "1ouiyoHRaaMDNeq/nap9B0UuQw4=",
+			"path": "golang.org/x/sys/windows/svc/debug",
+			"revision": "d75a52659825e75fff6158388dddc6a5b04f9ba5",
+			"revisionTime": "2016-12-14T18:38:57Z"
+		},
+		{
 			"checksumSHA1": "DtkCwWzGWBqCA+8PgmMl1IDyzBo=",
 			"path": "gopkg.in/yaml.v2",
 			"revision": "4c78c975fe7c825c6d1466c42be594d1d6f3aba6",
