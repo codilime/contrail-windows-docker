@@ -47,6 +47,9 @@ func main() {
 			"as value of netAdapter parameter. For example, if netAdapter is \"Ethernet0\", then "+
 			"vswitchName will equal \"Layered Ethernet0\". You can use Get-VMSwitch PowerShell "+
 			"command to check how the switch is called on your version of OS.")
+	var forceAsInteractive = flag.Bool("forceAsInteractive", false,
+		"if true, will act as if ran from interactive mode. This is useful when running this "+
+			"service from remote powershell session, because they're not interactive.")
 	var os_auth_url = flag.String("os_auth_url", "", "Keystone auth url. If empty, will read "+
 		"from environment variable")
 	var os_username = flag.String("os_username", "", "Contrail username. If empty, "+
@@ -58,6 +61,10 @@ func main() {
 	var os_token = flag.String("os_token", "", "Keystone token. If empty, will read "+
 		"environment variable")
 	flag.Parse()
+
+	if *forceAsInteractive {
+		isInteractive = true
+	}
 
 	vswitchName := strings.Replace(*vswitchNameWildcard, "<adapter>", *adapter, -1)
 
