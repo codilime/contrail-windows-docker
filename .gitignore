@@ -41,4 +41,4 @@ _testmain.go
 .vscode/launch.json
 
 ### Delve debugger temporary executable ###
-debug
+/debug
