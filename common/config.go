@@ -17,6 +17,9 @@ const (
 	// HNSNetworkPrefix is a prefix given too all HNS network names managed by the driver
 	HNSNetworkPrefix = "Contrail"
 
+	// WinServiceName is the name of the Windows Service that the driver is ran as
+	WinServiceName = "ContrailDockerDriver"
+
 	// RootNetworkName is a name of root HNS network created solely for the purpose of
 	// having a virtual switch
 	RootNetworkName = "ContrailRootNetwork"
