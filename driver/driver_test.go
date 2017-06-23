@@ -89,9 +89,9 @@ var project *types.Project
 
 const (
 	tenantName  = "agatka"
-	networkName = "test_net"
-	subnetCIDR  = "10.10.10.0/24"
-	defaultGW   = "10.10.10.1"
+	networkName = "test_net_2"
+	subnetCIDR  = "10.20.20.0/24"
+	defaultGW   = "10.20.20.1"
 	timeout     = time.Second * 5
 )
 
