@@ -144,18 +144,18 @@ func (d *ContrailDriver) StartServing() error {
 
 		<-d.stopChan
 
-		log.Infoln("Removing spec file")
-		if err := os.Remove(common.PluginSpecFilePath()); err != nil {
-			log.Warnln("When removing spec file:", err)
-		}
-
 		log.Infoln("Closing npipe listener")
 		if err := d.listener.Close(); err != nil {
 			log.Warnln("When closing listener:", err)
 		}
 
-		// wait a little bit for connections to stop
-		time.Sleep(1 * time.Second)
+		log.Infoln("Removing spec file")
+		if err := os.Remove(common.PluginSpecFilePath()); err != nil {
+			log.Warnln("When removing spec file:", err)
+		}
+
+		// // wait a little bit for connections to stop
+		// time.Sleep(1 * time.Second)
 
 		if err := d.waitForPipeToStop(); err != nil {
 			log.Warnln("Failed to properly close named pipe, but will continue anyways:", err)
