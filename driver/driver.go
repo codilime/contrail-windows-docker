@@ -119,6 +119,9 @@ func (d *ContrailDriver) StartServing() error {
 			return
 		}
 
+		h := network.NewHandler(d)
+		go h.Serve(d.listener)
+
 		if err := os.MkdirAll(common.PluginSpecDir(), 0755); err != nil {
 			failedChan <- errors.New(fmt.Sprintln("When setting up plugin spec directory:", err))
 			return
@@ -130,10 +133,6 @@ func (d *ContrailDriver) StartServing() error {
 			return
 		}
 
-		h := network.NewHandler(d)
-
-		go h.Serve(d.listener)
-
 		if err := d.waitForPipeToStart(); err != nil {
 			failedChan <- errors.New(fmt.Sprintln("When waiting for pipe to start:", err))
 			return
@@ -144,18 +143,15 @@ func (d *ContrailDriver) StartServing() error {
 
 		<-d.stopChan
 
-		log.Infoln("Removing spec file")
-		if err := os.Remove(common.PluginSpecFilePath()); err != nil {
-			log.Warnln("When removing spec file:", err)
-		}
-
 		log.Infoln("Closing npipe listener")
 		if err := d.listener.Close(); err != nil {
 			log.Warnln("When closing listener:", err)
 		}
 
-		// wait a little bit for connections to stop
-		time.Sleep(1 * time.Second)
+		log.Infoln("Removing spec file")
+		if err := os.Remove(common.PluginSpecFilePath()); err != nil {
+			log.Warnln("When removing spec file:", err)
+		}
 
 		if err := d.waitForPipeToStop(); err != nil {
 			log.Warnln("Failed to properly close named pipe, but will continue anyways:", err)
