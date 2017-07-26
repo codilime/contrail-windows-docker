@@ -387,10 +387,6 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (
 		return nil, err
 	}
 
-	// TODO: test this when Agent is ready
-	ifName := d.generateFriendlyName(hnsEndpointID)
-	agent.AddPort(contrailVM.GetUuid(), contrailVif.GetUuid(), ifName, contrailMac, containerID)
-
 	contrailIpam, err := d.controller.GetIpamSubnet(contrailNetwork)
 	if err != nil {
 		return nil, err
@@ -398,6 +394,11 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (
 
 	epAddressCIDR := fmt.Sprintf("%s/%v", contrailIP.GetInstanceIpAddress(),
 		contrailIpam.Subnet.IpPrefixLen)
+
+	// TODO: test this when Agent is ready
+	ifName := d.generateFriendlyName(hnsEndpointID)
+	agent.AddPort(contrailVM.GetUuid(), contrailVif.GetUuid(), ifName, contrailMac, containerID,
+				  contrailIP.GetInstanceIpAddress(), contrailNetwork.GetUuid())
 
 	r := &network.CreateEndpointResponse{
 		Interface: &network.EndpointInterface{
@@ -711,5 +712,6 @@ func (d *ContrailDriver) generateFriendlyName(hnsEndpointID string) string {
 
 	// For now, we will always send the name in the Windows Containers format, because it probably
 	// has enough information to recognize it in kernel (6 first chars of UUID should be enough):
-	return fmt.Sprintf("NIC ID %s", hnsEndpointID[0:6])
+	containerNicID := strings.Split(hnsEndpointID, "-")[0]
+	return fmt.Sprintf("Container NIC %s", containerNicID)
 }
