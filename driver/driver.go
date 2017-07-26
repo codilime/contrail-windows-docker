@@ -400,6 +400,11 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (
 
 	epAddressCIDR := fmt.Sprintf("%s/%v", instanceIP, contrailIpam.Subnet.IpPrefixLen)
 
+	// TODO: test this when Agent is ready
+	ifName := d.generateFriendlyName(hnsEndpointID)
+	agent.AddPort(contrailVM.GetUuid(), contrailVif.GetUuid(), ifName, contrailMac, containerID,
+				  contrailIP.GetInstanceIpAddress(), contrailNetwork.GetUuid())
+
 	r := &network.CreateEndpointResponse{
 		Interface: &network.EndpointInterface{
 			Address:    epAddressCIDR,

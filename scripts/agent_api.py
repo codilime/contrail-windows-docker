@@ -24,12 +24,14 @@ def main():
 
     if operation == "add":
         try:
-            (operation, vmUuid, vifUuid, ifName, mac, dockerID, ipAddress, vnUuid) = sys.argv[1:]
+            (_, operation, vmUuid, vifUuid, ifName, mac, dockerID) = sys.argv[:7]
+            ip_address = sys.argv[7]
+            vn_id = sys.argv[8]
             api.add_port(vmUuid, vifUuid, ifName, mac, port_type=PORT_TYPE, display_name=dockerID,
-                         ip_address=ipAddress, vn_id=vnUuid)
-        except Exception:
+                         ip_address=ip_address, vn_id=vn_id)
+        except Exception as e:
             print("{}: 'add' exception caught: re raise")
-            raise
+            raise e
     elif operation == "delete":
         try:
             (operation, vifUuid) = sys.argv[1:]

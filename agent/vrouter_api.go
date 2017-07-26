@@ -11,7 +11,8 @@ func AddPort(vmUuid, vifUuid, ifName, mac, dockerID, ipAddress, vnUuid string) e
 	stdout, stderr, err := common.Call("python", common.AgentAPIWrapperScriptPath(),
 		"add", vmUuid, vifUuid, fmt.Sprintf("\"%s\"", ifName), mac, dockerID,
 		ipAddress, vnUuid)
-	log.Debugln("Called Agent API wrapper: stdout: %s, stderr: %s", stdout, stderr)
+	log.Debugln("Called Agent API wrapper: stdout: ", stdout)
+	log.Debugln("Called Agent API wrapper: stderr: ", stderr)
 	if err != nil {
 		log.Errorf("When calling Agent API wrapper script: %s, %s", stdout, stderr)
 		return err
