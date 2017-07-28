@@ -349,7 +349,8 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (
 	}
 
 	contrailIP, err := d.controller.GetOrCreateInstanceIp(contrailNetwork, contrailVif)
-	log.Infoln("Retreived instance IP:", contrailIP.GetInstanceIpAddress())
+	instanceIP := contrailIP.GetInstanceIpAddress()
+	log.Infoln("Retreived instance IP:", instanceIP)
 	if err != nil {
 		return nil, err
 	}
@@ -377,7 +378,7 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (
 	hnsEndpointConfig := &hcsshim.HNSEndpoint{
 		VirtualNetworkName: hnsNet.Name,
 		Name:               req.EndpointID,
-		IPAddress:          net.ParseIP(contrailIP.GetInstanceIpAddress()),
+		IPAddress:          net.ParseIP(instanceIP),
 		MacAddress:         formattedMac,
 		GatewayAddress:     contrailGateway,
 	}
@@ -392,13 +393,12 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (
 		return nil, err
 	}
 
-	epAddressCIDR := fmt.Sprintf("%s/%v", contrailIP.GetInstanceIpAddress(),
-		contrailIpam.Subnet.IpPrefixLen)
-
 	// TODO: test this when Agent is ready
 	ifName := d.generateFriendlyName(hnsEndpointID)
 	agent.AddPort(contrailVM.GetUuid(), contrailVif.GetUuid(), ifName, contrailMac, containerID,
-				  contrailIP.GetInstanceIpAddress(), contrailNetwork.GetUuid())
+				  instanceIP, contrailNetwork.GetUuid())
+
+	epAddressCIDR := fmt.Sprintf("%s/%v", instanceIP, contrailIpam.Subnet.IpPrefixLen)
 
 	r := &network.CreateEndpointResponse{
 		Interface: &network.EndpointInterface{

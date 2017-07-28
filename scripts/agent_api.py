@@ -24,17 +24,15 @@ def main():
 
     if operation == "add":
         try:
-            (_, operation, vmUuid, vifUuid, ifName, mac, dockerID) = sys.argv[:7]
-            ip_address = sys.argv[7]
-            vn_id = sys.argv[8]
+            (operation, vmUuid, vifUuid, ifName, mac, dockerID, ipAddress, vnUuid) = sys.argv[1:]
             api.add_port(vmUuid, vifUuid, ifName, mac, port_type=PORT_TYPE, display_name=dockerID,
-                         ip_address=ip_address, vn_id=vn_id)
-        except Exception as e:
+                         ip_address=ipAddress, vn_id=vnUuid)
+        except Exception:
             print("{}: 'add' exception caught: re raise")
-            raise e
+            raise
     elif operation == "delete":
         try:
-            (_, operation, vifUuid) = sys.argv
+            (operation, vifUuid) = sys.argv[1:]
             api.delete_port(vifUuid)
         except Exception:
             print("MOCK not reporting FAIL, since agent is not implemented yet.")
