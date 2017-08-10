@@ -349,7 +349,8 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (
 	}
 
 	contrailIP, err := d.controller.GetOrCreateInstanceIp(contrailNetwork, contrailVif)
-	log.Infoln("Retreived instance IP:", contrailIP.GetInstanceIpAddress())
+	instanceIP := contrailIP.GetInstanceIpAddress()
+	log.Infoln("Retreived instance IP:", instanceIP)
 	if err != nil {
 		return nil, err
 	}
@@ -377,7 +378,7 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (
 	hnsEndpointConfig := &hcsshim.HNSEndpoint{
 		VirtualNetworkName: hnsNet.Name,
 		Name:               req.EndpointID,
-		IPAddress:          net.ParseIP(contrailIP.GetInstanceIpAddress()),
+		IPAddress:          net.ParseIP(instanceIP),
 		MacAddress:         formattedMac,
 		GatewayAddress:     contrailGateway,
 	}
@@ -387,17 +388,17 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (
 		return nil, err
 	}
 
-	// TODO: test this when Agent is ready
-	ifName := d.generateFriendlyName(hnsEndpointID)
-	agent.AddPort(contrailVM.GetUuid(), contrailVif.GetUuid(), ifName, contrailMac, containerID)
-
 	contrailIpam, err := d.controller.GetIpamSubnet(contrailNetwork)
 	if err != nil {
 		return nil, err
 	}
 
-	epAddressCIDR := fmt.Sprintf("%s/%v", contrailIP.GetInstanceIpAddress(),
-		contrailIpam.Subnet.IpPrefixLen)
+	// TODO: test this when Agent is ready
+	ifName := d.generateFriendlyName(hnsEndpointID)
+	agent.AddPort(contrailVM.GetUuid(), contrailVif.GetUuid(), ifName, contrailMac, containerID,
+				  instanceIP, contrailNetwork.GetUuid())
+
+	epAddressCIDR := fmt.Sprintf("%s/%v", instanceIP, contrailIpam.Subnet.IpPrefixLen)
 
 	r := &network.CreateEndpointResponse{
 		Interface: &network.EndpointInterface{
@@ -711,5 +712,6 @@ func (d *ContrailDriver) generateFriendlyName(hnsEndpointID string) string {
 
 	// For now, we will always send the name in the Windows Containers format, because it probably
 	// has enough information to recognize it in kernel (6 first chars of UUID should be enough):
-	return fmt.Sprintf("NIC ID %s", hnsEndpointID[0:6])
+	containerNicID := strings.Split(hnsEndpointID, "-")[0]
+	return fmt.Sprintf("Container NIC %s", containerNicID)
 }

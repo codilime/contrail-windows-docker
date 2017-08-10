@@ -22,17 +22,17 @@ def main():
     # add/delete operations don't overlap.
     api = ContrailVRouterApi()
 
-    print("MOCK! Always returns success. TODO when Agent is ready.")
-
     if operation == "add":
         try:
-            (_, operation, vmUuid, vifUuid, ifName, mac, dockerID) = sys.argv
-            api.add_port(vmUuid, vifUuid, ifName, mac, port_type=PORT_TYPE, display_name=dockerID)
+            (operation, vmUuid, vifUuid, ifName, mac, dockerID, ipAddress, vnUuid) = sys.argv[1:]
+            api.add_port(vmUuid, vifUuid, ifName, mac, port_type=PORT_TYPE, display_name=dockerID,
+                         ip_address=ipAddress, vn_id=vnUuid)
         except Exception:
-            print("MOCK: not reporting FAIL, since agent is not implemented yet.")
+            print("{}: 'add' exception caught: re raise")
+            raise
     elif operation == "delete":
         try:
-            (_, operation, vifUuid) = sys.argv
+            (operation, vifUuid) = sys.argv[1:]
             api.delete_port(vifUuid)
         except Exception:
             print("MOCK not reporting FAIL, since agent is not implemented yet.")
