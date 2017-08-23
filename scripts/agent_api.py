@@ -24,9 +24,10 @@ def main():
 
     if operation == "add":
         try:
-            (operation, vmUuid, vifUuid, ifName, mac, dockerID, ipAddress, vnUuid) = sys.argv[1:]
-            api.add_port(vmUuid, vifUuid, ifName, mac, port_type=PORT_TYPE, display_name=dockerID,
-                         ip_address=ipAddress, vn_id=vnUuid)
+            (operation, vm_uuid, vif_uuid, if_name, mac, docker_id, ip_address, vn_uuid) = sys.argv[1:]
+            if_name_noquotes = if_name.replace('"', '')
+            api.add_port(vm_uuid, vif_uuid, if_name_noquotes, mac, port_type=PORT_TYPE,
+                         display_name=docker_id, ip_address=ip_address, vn_id=vn_uuid)
         except Exception:
             print("{}: 'add' exception caught: re raise")
             raise
