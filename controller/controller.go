@@ -156,6 +156,21 @@ func (c *Controller) GetOrCreateInstance(vif *types.VirtualMachineInterface, con
 	return createdInstance, nil
 }
 
+func(c *Controller) GetExistingInterface(net *types.VirtualNetwork, tenantName,
+	containerId string) (*types.VirtualMachineInterface, error) {
+
+	fqName := fmt.Sprintf("%s:%s:%s", common.DomainName, tenantName, containerId)
+	iface, err := types.VirtualMachineInterfaceByName(c.ApiClient, fqName)
+	if err != nil {
+		return nil, err
+	}
+	if iface != nil {
+		return iface, nil
+	}
+
+	return nil, errors.New("Interface does not exist")
+}
+
 func (c *Controller) GetOrCreateInterface(net *types.VirtualNetwork, tenantName,
 	containerId string) (*types.VirtualMachineInterface, error) {
 
