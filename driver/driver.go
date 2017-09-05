@@ -435,7 +435,7 @@ func (d *ContrailDriver) DeleteEndpoint(req *network.DeleteEndpointRequest) erro
 		return err
 	}
 
-	agent.DeletePort(contrailVif.GetUuid())
+	go agent.DeletePort(contrailVif.GetUuid())
 
 	contrailInstance, err := types.VirtualMachineByName(d.controller.ApiClient, containerID)
 	if err != nil {
