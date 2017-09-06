@@ -3,6 +3,7 @@ package controller
 import (
 	"flag"
 	"testing"
+	"fmt"
 
 	contrail "github.com/Juniper/contrail-go-api"
 	"github.com/Juniper/contrail-go-api/types"
@@ -260,6 +261,12 @@ var _ = Describe("Controller", func() {
 		Context("when vif doesn't exist in Contrail", func() {
 			It("returns error", func() {
 				_, err := client.GetExistingInterface(testNetwork, tenantName, containerID)
+				Expect(err).To(HaveOccurred())
+			})
+			It("does not create vif", func() {
+				_, _ = client.GetExistingInterface(testNetwork, tenantName, containerID)
+				fqName := fmt.Sprintf("%s:%s:%s", common.DomainName, tenantName, containerID)
+				_, err := types.VirtualMachineInterfaceByName(client.ApiClient, fqName)
 				Expect(err).To(HaveOccurred())
 			})
 		})

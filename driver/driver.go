@@ -424,10 +424,10 @@ func (d *ContrailDriver) DeleteEndpoint(req *network.DeleteEndpointRequest) erro
 	}
 
 	contrailNetwork, err := d.controller.GetNetwork(meta.tenant, meta.network)
-	log.Infoln("Retreived Contrail network:", contrailNetwork.GetUuid())
 	if err != nil {
 		return err
 	}
+	log.Infoln("Retreived Contrail network:", contrailNetwork.GetUuid())
 
 	contrailVif, err := d.controller.GetExistingInterface(contrailNetwork, meta.tenant,
 		containerID)

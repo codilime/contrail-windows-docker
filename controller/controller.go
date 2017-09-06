@@ -168,6 +168,7 @@ func(c *Controller) GetExistingInterface(net *types.VirtualNetwork, tenantName,
 		return iface, nil
 	}
 
+	log.Errorf("Failed to get interface which does not exist")
 	return nil, errors.New("Interface does not exist")
 }
 
