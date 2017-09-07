@@ -3,6 +3,7 @@ package controller
 import (
 	"flag"
 	"testing"
+	"fmt"
 
 	contrail "github.com/Juniper/contrail-go-api"
 	"github.com/Juniper/contrail-go-api/types"
@@ -200,7 +201,7 @@ var _ = Describe("Controller", func() {
 		})
 	})
 
-	Describe("getting Contrail virtual interface", func() {
+	Describe("getting or creating Contrail virtual interface", func() {
 		var testNetwork *types.VirtualNetwork
 		BeforeEach(func() {
 			testNetwork = CreateMockedNetworkWithSubnet(client.ApiClient, networkName, subnetCIDR,
@@ -236,6 +237,37 @@ var _ = Describe("Controller", func() {
 					iface.GetUuid())
 				Expect(err).ToNot(HaveOccurred())
 				Expect(existingIface.GetUuid()).To(Equal(iface.GetUuid()))
+			})
+		})
+	})
+
+	Describe("getting existing Contrail virtual interface", func() {
+		var testNetwork *types.VirtualNetwork
+		BeforeEach(func() {
+			testNetwork = CreateMockedNetworkWithSubnet(client.ApiClient, networkName, subnetCIDR,
+				project)
+		})
+		Context("when vif already exists in Contrail", func() {
+			It("returns existing vif", func() {
+				testInterface := CreateMockedInterface(client.ApiClient, testNetwork, tenantName,
+					containerID)
+				
+				iface, err := client.GetExistingInterface(testNetwork, tenantName, containerID)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(iface).ToNot(BeNil())
+				Expect(iface.GetUuid()).To(Equal(testInterface.GetUuid()))
+			})
+		})
+		Context("when vif doesn't exist in Contrail", func() {
+			It("returns error", func() {
+				_, err := client.GetExistingInterface(testNetwork, tenantName, containerID)
+				Expect(err).To(HaveOccurred())
+			})
+			It("does not create vif", func() {
+				_, _ = client.GetExistingInterface(testNetwork, tenantName, containerID)
+				fqName := fmt.Sprintf("%s:%s:%s", common.DomainName, tenantName, containerID)
+				_, err := types.VirtualMachineInterfaceByName(client.ApiClient, fqName)
+				Expect(err).To(HaveOccurred())
 			})
 		})
 	})

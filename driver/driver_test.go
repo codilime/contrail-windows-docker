@@ -582,8 +582,10 @@ var _ = Describe("On requests from docker daemon", func() {
 		var contrailInst *types.VirtualMachine
 		var contrailVif *types.VirtualMachineInterface
 		var contrailIP *types.InstanceIp
+		var mockAgentListener *OneTimeListener
 
 		BeforeEach(func() {
+			mockAgentListener = startMockAgentListener()
 			_, dockerNetID, containerID = setupNetworksAndEndpoints(contrailController, docker)
 			_, hnsEndpointID = getTheOnlyHNSEndpoint(contrailDriver)
 
@@ -606,6 +608,17 @@ var _ = Describe("On requests from docker daemon", func() {
 			contrailIP, err = types.InstanceIpByName(contrailController.ApiClient, vmName)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(contrailIP).ToNot(BeNil())
+		})
+		AfterEach(func(done Done) {
+			// Done channel is ginkgo feature for setting timeouts
+			// https://onsi.github.io/ginkgo/#asynchronous-tests
+			log.Debugln("Waiting for request")
+			<-mockAgentListener.Received
+			log.Debugln("Done waiting for request")
+
+			mockAgentListener.Close()
+			mockAgentListener = nil
+			close(done)
 		})
 
 		assertRemovesDockerEndpoint := func() {
@@ -640,7 +653,6 @@ var _ = Describe("On requests from docker daemon", func() {
 			It("removes docker endpoint", assertRemovesDockerEndpoint)
 			It("removes HNS endpoint", assertRemovesHNSEndpoint)
 			It("removes virtual-machine and its children in Contrail", assertRemovesContrailVM)
-			PIt("removes port from vRouter Agent", func() {})
 		})
 
 		Context("HNS endpoint doesn't exist", func() {
@@ -651,7 +663,6 @@ var _ = Describe("On requests from docker daemon", func() {
 			})
 			It("removes docker endpoint", assertRemovesDockerEndpoint)
 			It("removes virtual-machine and its children in Contrail", assertRemovesContrailVM)
-			PIt("removes port from vRouter Agent", func() {})
 		})
 
 		Context("virtual-machine in Contrail doesn't exist", func() {
@@ -662,11 +673,6 @@ var _ = Describe("On requests from docker daemon", func() {
 			})
 			It("removes docker endpoint", assertRemovesDockerEndpoint)
 			It("removes HNS endpoint", assertRemovesHNSEndpoint)
-			PIt("removes port from vRouter Agent", func() {})
-		})
-
-		PContext("port doesn't exist in vRouter Agent", func() {
-			PIt("fails", func() {})
 		})
 	})
 
