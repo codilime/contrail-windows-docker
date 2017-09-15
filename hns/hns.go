@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/Microsoft/hcsshim"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/codilime/contrail-windows-docker/common"
 )
 
@@ -155,7 +155,7 @@ func GetHNSEndpoint(endpointID string) (*hcsshim.HNSEndpoint, error) {
 
 func GetHNSEndpointByName(name string) (*hcsshim.HNSEndpoint, error) {
 	log.Infoln("Getting HNS endpoint by name:", name)
-	eps, err := hcsshim.HNSListEndpointRequest("GET", "", "")
+	eps, err := hcsshim.HNSListEndpointRequest()
 	if err != nil {
 		log.Errorln(err)
 		return nil, err
@@ -169,7 +169,7 @@ func GetHNSEndpointByName(name string) (*hcsshim.HNSEndpoint, error) {
 }
 
 func ListHNSEndpoints() ([]hcsshim.HNSEndpoint, error) {
-	endpoints, err := hcsshim.HNSListEndpointRequest("GET", "", "")
+	endpoints, err := hcsshim.HNSListEndpointRequest()
 	if err != nil {
 		return nil, err
 	}

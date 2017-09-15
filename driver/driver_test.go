@@ -13,7 +13,7 @@ import (
 
 	"github.com/Juniper/contrail-go-api/types"
 	"github.com/Microsoft/hcsshim"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/codilime/contrail-windows-docker/common"
 	"github.com/codilime/contrail-windows-docker/controller"
 	"github.com/codilime/contrail-windows-docker/hns"
@@ -81,6 +81,14 @@ func cleanupAll() {
 
 	docker := getDockerClient()
 	cleanupAllDockerNetworksAndContainers(docker)
+}
+
+func getDockerNetwork(docker *dockerClient.Client, dockerNetID string) (dockerTypes.NetworkResource, error) {
+	inspectOptions := dockerTypes.NetworkInspectOptions{
+		Scope:	 "",
+		Verbose: false,
+	}
+	return docker.NetworkInspect(context.Background(), dockerNetID, inspectOptions)
 }
 
 var contrailController *controller.Controller
@@ -409,7 +417,7 @@ var _ = Describe("On requests from docker daemon", func() {
 			Expect(resp).To(BeNil())
 		}
 		assertRemovesDockerNet := func() {
-			_, err := docker.NetworkInspect(context.Background(), dockerNetID, false)
+			_, err := getDockerNetwork(docker, dockerNetID)
 			Expect(err).To(HaveOccurred())
 		}
 		assertDoesNotRemoveContrailNet := func() {
@@ -499,7 +507,7 @@ var _ = Describe("On requests from docker daemon", func() {
 
 				// TODO JW-187. For now, VM name is the same as Endpoint ID, not
 				// Container ID
-				dockerNet, err := docker.NetworkInspect(context.Background(), dockerNetID, false)
+				dockerNet, err := getDockerNetwork(docker, dockerNetID)
 				Expect(err).ToNot(HaveOccurred())
 				vmName := dockerNet.Containers[containerID].EndpointID
 
@@ -591,7 +599,7 @@ var _ = Describe("On requests from docker daemon", func() {
 
 			// TODO JW-187. For now, VM name is the same as Endpoint ID, not
 			// Container ID
-			dockerNet, err := docker.NetworkInspect(context.Background(), dockerNetID, false)
+			dockerNet, err := getDockerNetwork(docker, dockerNetID)
 			Expect(err).ToNot(HaveOccurred())
 			vmName = dockerNet.Containers[containerID].EndpointID
 
@@ -684,7 +692,7 @@ var _ = Describe("On requests from docker daemon", func() {
 
 		BeforeEach(func() {
 			_, dockerNetID, containerID = setupNetworksAndEndpoints(contrailController, docker)
-			dockerNet, err := docker.NetworkInspect(context.Background(), dockerNetID, false)
+			dockerNet, err := getDockerNetwork(docker, dockerNetID)
 			Expect(err).ToNot(HaveOccurred())
 			req = &network.InfoRequest{
 				NetworkID:  dockerNetID,
@@ -723,7 +731,7 @@ var _ = Describe("On requests from docker daemon", func() {
 
 		BeforeEach(func() {
 			_, dockerNetID, containerID = setupNetworksAndEndpoints(contrailController, docker)
-			dockerNet, err := docker.NetworkInspect(context.Background(), dockerNetID, false)
+			dockerNet, err := getDockerNetwork(docker, dockerNetID)
 			Expect(err).ToNot(HaveOccurred())
 			req = &network.JoinRequest{
 				NetworkID:  dockerNetID,
@@ -767,7 +775,7 @@ var _ = Describe("On requests from docker daemon", func() {
 
 		BeforeEach(func() {
 			_, dockerNetID, containerID = setupNetworksAndEndpoints(contrailController, docker)
-			dockerNet, err := docker.NetworkInspect(context.Background(), dockerNetID, false)
+			dockerNet, err := getDockerNetwork(docker, dockerNetID)
 			Expect(err).ToNot(HaveOccurred())
 			req = &network.LeaveRequest{
 				NetworkID:  dockerNetID,
