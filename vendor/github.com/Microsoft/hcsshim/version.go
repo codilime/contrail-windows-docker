@@ -1,5 +1,3 @@
-// +build windows
-
 package hcsshim
 
 // IsTP4 returns whether the currently running Windows build is at least TP4.

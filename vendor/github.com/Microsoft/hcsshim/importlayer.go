@@ -1,5 +1,3 @@
-// +build windows
-
 package hcsshim
 
 import (
@@ -7,10 +5,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"runtime"
 
 	"github.com/Microsoft/go-winio"
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // ImportLayer will take the contents of the folder at importFolderPath and import
@@ -211,6 +208,5 @@ func NewLayerWriter(info DriverInfo, layerID string, parentLayerPaths []string) 
 	if err != nil {
 		return nil, makeError(err, "ImportLayerStart", "")
 	}
-	runtime.SetFinalizer(w, func(w *FilterLayerWriter) { w.Close() })
 	return w, nil
 }

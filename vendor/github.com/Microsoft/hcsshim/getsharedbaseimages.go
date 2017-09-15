@@ -1,8 +1,6 @@
-// +build windows
-
 package hcsshim
 
-import "github.com/Sirupsen/logrus"
+import "github.com/sirupsen/logrus"
 
 // GetSharedBaseImages will enumerate the images stored in the common central
 // image store and return descriptive info about those images for the purpose

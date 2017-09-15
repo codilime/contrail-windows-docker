@@ -1,5 +1,3 @@
-// +build windows
-
 // Shim for the Host Compute Service (HCS) to manage Windows Server
 // containers and Hyper-V containers.
 
@@ -10,7 +8,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 //go:generate go run mksyscall_windows.go -output zhcsshim.go hcsshim.go

@@ -1,16 +1,13 @@
-// +build windows
-
 package hcsshim
 
 import (
 	"encoding/json"
 	"io"
-	"runtime"
 	"sync"
 	"syscall"
 	"time"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 // ContainerError is an error encountered in HCS
@@ -324,15 +321,9 @@ func (process *process) Close() error {
 	}
 
 	process.handle = 0
-	runtime.SetFinalizer(process, nil)
 
 	logrus.Debugf(title+" succeeded processid=%d", process.processID)
 	return nil
-}
-
-// closeProcess wraps process.Close for use by a finalizer
-func closeProcess(process *process) {
-	process.Close()
 }
 
 func (process *process) registerCallback() error {
