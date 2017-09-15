@@ -1,11 +1,9 @@
-// +build windows
-
 package hcsshim
 
 import (
 	"sync"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 var prepareLayerLock sync.Mutex
