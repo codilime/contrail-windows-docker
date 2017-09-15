@@ -17,7 +17,7 @@ import (
 	"github.com/Juniper/contrail-go-api/types"
 	"github.com/Microsoft/go-winio"
 	"github.com/Microsoft/hcsshim"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/codilime/contrail-windows-docker/agent"
 	"github.com/codilime/contrail-windows-docker/common"
 	"github.com/codilime/contrail-windows-docker/controller"
@@ -648,7 +648,11 @@ func (d *ContrailDriver) networkMetaFromDockerNetwork(dockerNetID string) (*Netw
 		return nil, err
 	}
 
-	dockerNetwork, err := docker.NetworkInspect(context.Background(), dockerNetID, false)
+	inspectOptions := dockerTypes.NetworkInspectOptions{
+		Scope:	 "",
+		Verbose: false,
+	}
+	dockerNetwork, err := docker.NetworkInspect(context.Background(), dockerNetID, inspectOptions)
 	if err != nil {
 		return nil, err
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/Juniper/contrail-go-api/config"
 	"github.com/Juniper/contrail-go-api/mocks"
 	"github.com/Juniper/contrail-go-api/types"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/codilime/contrail-windows-docker/common"
 	. "github.com/onsi/gomega"
 )
