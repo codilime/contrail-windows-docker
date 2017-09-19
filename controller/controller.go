@@ -10,8 +10,8 @@ import (
 
 	"github.com/Juniper/contrail-go-api"
 	"github.com/Juniper/contrail-go-api/types"
-	log "github.com/sirupsen/logrus"
 	"github.com/codilime/contrail-windows-docker/common"
+	log "github.com/sirupsen/logrus"
 )
 
 type Info struct {
@@ -190,7 +190,7 @@ func (c *Controller) GetOrCreateInstance(vif *types.VirtualMachineInterface, con
 	return createdInstance, nil
 }
 
-func(c *Controller) GetExistingInterface(net *types.VirtualNetwork, tenantName,
+func (c *Controller) GetExistingInterface(net *types.VirtualNetwork, tenantName,
 	containerId string) (*types.VirtualMachineInterface, error) {
 
 	fqName := fmt.Sprintf("%s:%s:%s", common.DomainName, tenantName, containerId)
@@ -248,7 +248,7 @@ func (c *Controller) GetInterfaceMac(iface *types.VirtualMachineInterface) (stri
 }
 
 func (c *Controller) GetOrCreateInstanceIp(net *types.VirtualNetwork,
-	iface *types.VirtualMachineInterface) (*types.InstanceIp, error) {
+	iface *types.VirtualMachineInterface, subnetUuid string) (*types.InstanceIp, error) {
 	instIp, err := types.InstanceIpByName(c.ApiClient, iface.GetName())
 	if err == nil && instIp != nil {
 		return instIp, nil
@@ -256,6 +256,8 @@ func (c *Controller) GetOrCreateInstanceIp(net *types.VirtualNetwork,
 
 	instIp = &types.InstanceIp{}
 	instIp.SetName(iface.GetName())
+	instIp.SetSubnetUuid(subnetUuid)
+
 	err = instIp.AddVirtualNetwork(net)
 	if err != nil {
 		log.Errorf("Failed to add network to instanceIP object: %v", err)

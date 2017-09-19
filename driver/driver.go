@@ -17,7 +17,6 @@ import (
 	"github.com/Juniper/contrail-go-api/types"
 	"github.com/Microsoft/go-winio"
 	"github.com/Microsoft/hcsshim"
-	log "github.com/sirupsen/logrus"
 	"github.com/codilime/contrail-windows-docker/agent"
 	"github.com/codilime/contrail-windows-docker/common"
 	"github.com/codilime/contrail-windows-docker/controller"
@@ -29,6 +28,7 @@ import (
 	"github.com/docker/go-connections/sockets"
 	"github.com/docker/go-plugins-helpers/network"
 	"github.com/docker/libnetwork/netlabel"
+	log "github.com/sirupsen/logrus"
 )
 
 type ContrailDriver struct {
@@ -344,6 +344,12 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (
 	// containerID := req.Options["vmname"]
 	containerID := req.EndpointID
 
+	contrailIpam, err := d.controller.GetIpamSubnet(contrailNetwork, meta.subnetCIDR)
+	if err != nil {
+		return nil, err
+	}
+	contrailSubnetCIDR := d.getContrailSubnetCIDR(contrailIpam)
+
 	contrailVif, err := d.controller.GetOrCreateInterface(contrailNetwork, meta.tenant,
 		containerID)
 	if err != nil {
@@ -355,18 +361,12 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (
 		return nil, err
 	}
 
-	contrailIP, err := d.controller.GetOrCreateInstanceIp(contrailNetwork, contrailVif)
+	contrailIP, err := d.controller.GetOrCreateInstanceIp(contrailNetwork, contrailVif, contrailIpam.SubnetUuid)
 	instanceIP := contrailIP.GetInstanceIpAddress()
 	log.Infoln("Retreived instance IP:", instanceIP)
 	if err != nil {
 		return nil, err
 	}
-
-	contrailIpam, err := d.controller.GetIpamSubnet(contrailNetwork, meta.subnetCIDR)
-	if err != nil {
-		return nil, err
-	}
-	contrailSubnetCIDR := d.getContrailSubnetCIDR(contrailIpam)
 
 	contrailGateway := contrailIpam.DefaultGateway
 	log.Infoln("Retreived GW address:", contrailGateway)
@@ -657,7 +657,7 @@ func (d *ContrailDriver) networkMetaFromDockerNetwork(dockerNetID string) (*Netw
 	}
 
 	inspectOptions := dockerTypes.NetworkInspectOptions{
-		Scope:	 "",
+		Scope:   "",
 		Verbose: false,
 	}
 	dockerNetwork, err := docker.NetworkInspect(context.Background(), dockerNetID, inspectOptions)
