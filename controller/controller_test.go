@@ -2,8 +2,8 @@ package controller
 
 import (
 	"flag"
-	"testing"
 	"fmt"
+	"testing"
 
 	contrail "github.com/Juniper/contrail-go-api"
 	"github.com/Juniper/contrail-go-api/types"
@@ -306,7 +306,7 @@ var _ = Describe("Controller", func() {
 			It("returns existing vif", func() {
 				testInterface := CreateMockedInterface(client.ApiClient, testNetwork, tenantName,
 					containerID)
-				
+
 				iface, err := client.GetExistingInterface(testNetwork, tenantName, containerID)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(iface).ToNot(BeNil())
@@ -416,7 +416,7 @@ var _ = Describe("Controller", func() {
 					testInterface, testNetwork)
 			})
 			It("returns existing instance IP", func() {
-				instanceIP, err := client.GetOrCreateInstanceIp(testNetwork, testInterface)
+				instanceIP, err := client.GetOrCreateInstanceIp(testNetwork, testInterface, "")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(instanceIP).ToNot(BeNil())
 				Expect(instanceIP.GetUuid()).To(Equal(testInstanceIP.GetUuid()))
@@ -430,7 +430,7 @@ var _ = Describe("Controller", func() {
 		})
 		Context("when instance IP doesn't exist in Contrail", func() {
 			It("creates new instance IP", func() {
-				instanceIP, err := client.GetOrCreateInstanceIp(testNetwork, testInterface)
+				instanceIP, err := client.GetOrCreateInstanceIp(testNetwork, testInterface, "")
 				Expect(err).ToNot(HaveOccurred())
 				Expect(instanceIP).ToNot(BeNil())
 				Expect(instanceIP.GetInstanceIpAddress()).ToNot(Equal(""))
