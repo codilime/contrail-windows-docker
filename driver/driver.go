@@ -321,10 +321,10 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (
 	}
 
 	contrailNetwork, err := d.controller.GetNetwork(meta.tenant, meta.network)
-	log.Infoln("Retreived Contrail network:", contrailNetwork.GetUuid())
 	if err != nil {
 		return nil, err
 	}
+	log.Infoln("Retreived Contrail network:", contrailNetwork.GetUuid())
 
 	// TODO JW-187.
 	// We need to retreive Container ID here and use it instead of EndpointID as
@@ -349,11 +349,11 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (
 	}
 
 	contrailIP, err := d.controller.GetOrCreateInstanceIp(contrailNetwork, contrailVif)
-	instanceIP := contrailIP.GetInstanceIpAddress()
-	log.Infoln("Retreived instance IP:", instanceIP)
 	if err != nil {
 		return nil, err
 	}
+	instanceIP := contrailIP.GetInstanceIpAddress()
+	log.Infoln("Retreived instance IP:", instanceIP)
 
 	contrailGateway, err := d.controller.GetDefaultGatewayIp(contrailNetwork)
 	log.Infoln("Retreived GW address:", contrailGateway)
