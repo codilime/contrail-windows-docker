@@ -132,10 +132,8 @@ func (c *Controller) GetIpamSubnet(net *types.VirtualNetwork, CIDR string) (
 		thisCIDR := fmt.Sprintf("%s/%v", ipam.Subnet.IpPrefix,
 			ipam.Subnet.IpPrefixLen)
 
-		if CIDR != "" {
-			if thisCIDR == CIDR {
-				return &ipam, nil
-			}
+		if thisCIDR == CIDR {
+			return &ipam, nil
 		}
 	}
 

@@ -231,6 +231,8 @@ var _ = Describe("Controller", func() {
 					ipam2, err := client.GetIpamSubnet(testNetwork, cidr2)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(ipam2.DefaultGateway).To(Equal(gw2))
+
+					Expect(ipam1.Subnet.IpPrefix).NotTo(Equal(ipam2.Subnet.IpPrefix))
 				})
 			})
 			Context("user didn't specify a subnet", func() {
