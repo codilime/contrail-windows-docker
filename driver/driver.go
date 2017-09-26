@@ -235,7 +235,7 @@ func (d *ContrailDriver) CreateNetwork(req *network.CreateNetworkRequest) error 
 		return err
 	}
 	if contrailNetwork == nil {
-		return errors.New("Retreived Contrail network is nil")
+		return errors.New("Retrieved Contrail network is nil")
 	}
 
 	log.Infoln("Got Contrail network", contrailNetwork.GetDisplayName())
@@ -328,10 +328,10 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (
 	}
 
 	contrailNetwork, err := d.controller.GetNetwork(meta.tenant, meta.network)
-	log.Infoln("Retreived Contrail network:", contrailNetwork.GetUuid())
 	if err != nil {
 		return nil, err
 	}
+	log.Infoln("Retrieved Contrail network:", contrailNetwork.GetUuid())
 
 	// TODO JW-187.
 	// We need to retreive Container ID here and use it instead of EndpointID as
@@ -362,20 +362,20 @@ func (d *ContrailDriver) CreateEndpoint(req *network.CreateEndpointRequest) (
 	}
 
 	contrailIP, err := d.controller.GetOrCreateInstanceIp(contrailNetwork, contrailVif, contrailIpam.SubnetUuid)
-	instanceIP := contrailIP.GetInstanceIpAddress()
-	log.Infoln("Retreived instance IP:", instanceIP)
 	if err != nil {
 		return nil, err
 	}
+	instanceIP := contrailIP.GetInstanceIpAddress()
+	log.Infoln("Retrieved instance IP:", instanceIP)
 
 	contrailGateway := contrailIpam.DefaultGateway
-	log.Infoln("Retreived GW address:", contrailGateway)
+	log.Infoln("Retrieved GW address:", contrailGateway)
 	if contrailGateway == "" {
 		return nil, errors.New("Default GW is empty")
 	}
 
 	contrailMac, err := d.controller.GetInterfaceMac(contrailVif)
-	log.Infoln("Retreived MAC:", contrailMac)
+	log.Infoln("Retrieved MAC:", contrailMac)
 	if err != nil {
 		return nil, err
 	}
@@ -435,7 +435,7 @@ func (d *ContrailDriver) DeleteEndpoint(req *network.DeleteEndpointRequest) erro
 	if err != nil {
 		return err
 	}
-	log.Infoln("Retreived Contrail network:", contrailNetwork.GetUuid())
+	log.Infoln("Retrieved Contrail network:", contrailNetwork.GetUuid())
 
 	contrailVif, err := d.controller.GetExistingInterface(contrailNetwork, meta.tenant,
 		containerID)
@@ -670,12 +670,12 @@ func (d *ContrailDriver) networkMetaFromDockerNetwork(dockerNetID string) (*Netw
 
 	meta.tenant, exists = dockerNetwork.Options["tenant"]
 	if !exists {
-		return nil, errors.New("Retreived network has no Contrail tenant specified")
+		return nil, errors.New("Retrieved network has no Contrail tenant specified")
 	}
 
 	meta.network, exists = dockerNetwork.Options["network"]
 	if !exists {
-		return nil, errors.New("Retreived network has no Contrail network name specfied")
+		return nil, errors.New("Retrieved network has no Contrail network name specfied")
 	}
 
 	ipamCfg := dockerNetwork.IPAM.Config
