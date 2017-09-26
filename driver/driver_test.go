@@ -4,12 +4,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"strings"
 	"testing"
 	"time"
-
-	"net"
 
 	"github.com/Juniper/contrail-go-api/types"
 	"github.com/Microsoft/hcsshim"
@@ -334,9 +333,15 @@ var _ = Describe("On requests from docker daemon", func() {
 		var genericOptions map[string]interface{}
 
 		BeforeEach(func() {
+			ipamData := []*network.IPAMData{
+				{
+					Pool: subnetCIDR,
+				},
+			}
 			req = &network.CreateNetworkRequest{
 				NetworkID: "MyAwesomeNet",
 				Options:   make(map[string]interface{}),
+				IPv4Data:  ipamData,
 			}
 			genericOptions = make(map[string]interface{})
 		})
@@ -412,7 +417,8 @@ var _ = Describe("On requests from docker daemon", func() {
 		var contrailNet *types.VirtualNetwork
 
 		assertRemovesHNSNet := func() {
-			resp, err := contrailDriver.hnsMgr.GetNetwork(tenantName, networkName)
+			resp, err := contrailDriver.hnsMgr.GetNetwork(tenantName, networkName,
+				subnetCIDR)
 			Expect(err).To(HaveOccurred())
 			Expect(resp).To(BeNil())
 		}
@@ -446,7 +452,7 @@ var _ = Describe("On requests from docker daemon", func() {
 		Context("HNS network doesn't exist", func() {
 			// for example, HNS was hard-reset while docker wasn't.
 			BeforeEach(func() {
-				contrailDriver.hnsMgr.DeleteNetwork(tenantName, networkName)
+				contrailDriver.hnsMgr.DeleteNetwork(tenantName, networkName, subnetCIDR)
 				err := removeDockerNetwork(docker, dockerNetID)
 				Expect(err).ToNot(HaveOccurred())
 			})
@@ -543,7 +549,7 @@ var _ = Describe("On requests from docker daemon", func() {
 				gw := resp.NetworkSettings.Networks[networkName].Gateway
 
 				ep, _ := getTheOnlyHNSEndpoint(contrailDriver)
-				Expect(ep.IPAddress).To(Equal(net.ParseIP(ip)))
+				Expect(ep.IPAddress.String()).To(Equal(ip))
 				formattedMac := strings.Replace(strings.ToUpper(mac), ":", "-", -1)
 				Expect(ep.MacAddress).To(Equal(formattedMac))
 				Expect(ep.GatewayAddress).To(Equal(gw))
@@ -558,7 +564,7 @@ var _ = Describe("On requests from docker daemon", func() {
 				_ = createContrailNetwork(contrailController)
 				_ = createValidDockerNetwork(docker)
 
-				contrailDriver.hnsMgr.DeleteNetwork(tenantName, networkName)
+				contrailDriver.hnsMgr.DeleteNetwork(tenantName, networkName, subnetCIDR)
 			})
 			It("responds with err", func() {
 				var err error
