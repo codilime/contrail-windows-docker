@@ -99,7 +99,7 @@ func (d *ContrailDriver) StartServing() error {
 		}
 
 		if !running {
-			return errors.New("Extension stopped running after enable. " +
+			return errors.New("Extension stopped running after being enabled. " +
 				"Try stopping vRouter agent, docker and removing container networks.")
 		}
 	}
