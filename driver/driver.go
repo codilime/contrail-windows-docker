@@ -92,6 +92,16 @@ func (d *ContrailDriver) StartServing() error {
 		if err := hyperv.EnableExtension(d.vswitchName); err != nil {
 			return err
 		}
+
+		running, err := hyperv.IsExtensionRunning(d.vswitchName)
+		if err != nil {
+			return err
+		}
+
+		if !running {
+			return errors.New("Extension stopped running after enable. " +
+				"Try stopping vRouter agent, docker and removing container networks.")
+		}
 	}
 
 	startedServingChan := make(chan interface{}, 1)
