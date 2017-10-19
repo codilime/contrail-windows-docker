@@ -1,10 +1,11 @@
 package hyperv
 
 import (
+	"errors"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/codilime/contrail-windows-docker/common"
+	log "github.com/sirupsen/logrus"
 )
 
 func EnableExtension(vswitchName common.VSwitchName) error {
@@ -13,6 +14,16 @@ func EnableExtension(vswitchName common.VSwitchName) error {
 		log.Errorf("When enabling Hyper-V Extension: %s, %s", err, out)
 		return err
 	}
+
+	enabled, err := IsExtensionEnabled(vswitchName)
+	if err != nil {
+		return err
+	}
+
+	if !enabled {
+		return errors.New("extension is not enabled after being enabled")
+	}
+
 	return nil
 }
 
