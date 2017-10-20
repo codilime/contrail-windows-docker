@@ -17,13 +17,14 @@ import (
 )
 
 type WinService struct {
-	adapter        string
-	controllerIP   string
-	controllerPort int
-	vswitchName    string
-	logDir         string
-	logLevel       log.Level
-	keys           controller.KeystoneEnvs
+	adapter            string
+	controllerIP       string
+	controllerPort     int
+	vswitchName        string
+	logDir             string
+	logLevel           log.Level
+	keys               controller.KeystoneEnvs
+	tokenRefreshMargin int
 }
 
 func main() {
@@ -60,6 +61,8 @@ func main() {
 		"environment variable")
 	var os_token = flag.String("os_token", "", "Keystone token. If empty, will read "+
 		"environment variable")
+	var tokenRefreshMargin = flag.Int("tokenRefreshMargin", 60, 
+		"Keystone token should be refreshed this amount of seconds before it's expiration date")
 	flag.Parse()
 
 	if *forceAsInteractive {
@@ -101,12 +104,13 @@ func main() {
 	keys.LoadFromEnvironment()
 
 	winService := &WinService{
-		adapter:        *adapter,
-		controllerIP:   *controllerIP,
-		controllerPort: *controllerPort,
-		vswitchName:    vswitchName,
-		logLevel:       logLevel,
-		keys:           *keys,
+		adapter:            *adapter,
+		controllerIP:       *controllerIP,
+		controllerPort:     *controllerPort,
+		vswitchName:        vswitchName,
+		logLevel:           logLevel,
+		keys:               *keys,
+		tokenRefreshMargin: *tokenRefreshMargin,
 	}
 
 	svcRunFunc := debug.Run
@@ -127,7 +131,7 @@ func (ws *WinService) Execute(args []string, winChangeReqChan <-chan svc.ChangeR
 	const cmdsAccepted = svc.AcceptStop | svc.AcceptShutdown
 	winStatusChan <- svc.Status{State: svc.StartPending}
 
-	c, err := controller.NewController(ws.controllerIP, ws.controllerPort, &ws.keys)
+	c, err := controller.NewController(ws.controllerIP, ws.controllerPort, &ws.keys, ws.tokenRefreshMargin)
 	if err != nil {
 		log.Error(err)
 		return

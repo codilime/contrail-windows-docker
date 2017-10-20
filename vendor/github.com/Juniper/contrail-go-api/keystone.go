@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"time"
 	"io/ioutil"
 	"net/http"
 )
@@ -21,6 +22,7 @@ type KeystoneClient struct {
 	osPassword   string
 	osAdminToken string
 
+	tokenRefreshMargin int
 	current *KeystoneToken
 }
 
@@ -39,13 +41,14 @@ type KeystoneToken struct {
 }
 
 // NewKeystoneClient allocates and initializes a KeystoneClient
-func NewKeystoneClient(auth_url, tenant_name, username, password, token string) *KeystoneClient {
+func NewKeystoneClient(auth_url, tenant_name, username, password, token string, tokenRefreshMargin int) *KeystoneClient {
 	return &KeystoneClient{
 		auth_url,
 		tenant_name,
 		username,
 		password,
 		token,
+		tokenRefreshMargin,
 		nil,
 	}
 }
@@ -135,9 +138,24 @@ func (kClient *KeystoneClient) Authenticate() error {
 	return nil
 }
 
+func (kClient *KeystoneClient) needsRefreshing() bool {
+	if kClient.current == nil {
+		return true
+	}
+
+	expires, err := time.Parse(time.RFC3339, kClient.current.Expires)
+	if err != nil {
+		return true
+	}
+
+	now := time.Now().Add(time.Duration(kClient.tokenRefreshMargin) * time.Second)
+
+	return now.UTC().After(expires.UTC())
+}
+
 // AddAuthentication adds the authentication data to the HTTP header.
 func (kClient *KeystoneClient) AddAuthentication(req *http.Request) error {
-	if kClient.current == nil {
+	if kClient.needsRefreshing() {
 		err := kClient.Authenticate()
 		if err != nil {
 			return err

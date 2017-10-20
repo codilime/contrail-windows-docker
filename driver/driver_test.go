@@ -35,6 +35,7 @@ var vswitchNameWildcard string
 var controllerAddr string
 var controllerPort int
 var useActualController bool
+var tokenRefreshMargin int
 
 func init() {
 	flag.StringVar(&netAdapter, "netAdapter", "Ethernet0",
@@ -50,6 +51,8 @@ func init() {
 	flag.IntVar(&controllerPort, "controllerPort", 8082, "Contrail controller port")
 	flag.BoolVar(&useActualController, "useActualController", true,
 		"Whether to use mocked controller or actual.")
+	flag.IntVar(&tokenRefreshMargin, "tokenRefreshMargin", 60,
+		"Keystone token should be refreshed this amount of seconds before it's expiration date")
 
 	log.SetLevel(log.DebugLevel)
 }
@@ -845,7 +848,7 @@ func startDriver() (*ContrailDriver, *controller.Controller, *types.Project) {
 	var p *types.Project
 
 	if useActualController {
-		c, p = controller.NewClientAndProject(tenantName, controllerAddr, controllerPort)
+		c, p = controller.NewClientAndProject(tenantName, controllerAddr, controllerPort, tokenRefreshMargin)
 	} else {
 		c, p = controller.NewMockedClientAndProject(tenantName)
 	}

@@ -54,7 +54,7 @@ func (k *KeystoneEnvs) GetenvIfNil(currentVal, envVar string) string {
 	return currentVal
 }
 
-func NewController(ip string, port int, keys *KeystoneEnvs) (*Controller, error) {
+func NewController(ip string, port int, keys *KeystoneEnvs, tokenRefreshMargin int) (*Controller, error) {
 	client := &Controller{}
 	client.ApiClient = contrail.NewClient(ip, port)
 
@@ -64,7 +64,7 @@ func NewController(ip string, port int, keys *KeystoneEnvs) (*Controller, error)
 	}
 
 	keystone := contrail.NewKeystoneClient(keys.Os_auth_url, keys.Os_tenant_name,
-		keys.Os_username, keys.Os_password, keys.Os_token)
+		keys.Os_username, keys.Os_password, keys.Os_token, tokenRefreshMargin)
 	err := keystone.Authenticate()
 	if err != nil {
 		log.Errorln("Keystone error:", err)

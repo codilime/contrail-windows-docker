@@ -19,6 +19,7 @@ import (
 var controllerAddr string
 var controllerPort int
 var useActualController bool
+var tokenRefreshMargin int
 
 func init() {
 	flag.StringVar(&controllerAddr, "controllerAddr",
@@ -26,6 +27,8 @@ func init() {
 	flag.IntVar(&controllerPort, "controllerPort", 8082, "Contrail controller port")
 	flag.BoolVar(&useActualController, "useActualController", true,
 		"Whether to use mocked controller or actual.")
+	flag.IntVar(&tokenRefreshMargin, "tokenRefreshMargin", 60,
+		"Keystone token should be refreshed this amount of seconds before it's expiration date")
 
 	log.SetLevel(log.DebugLevel)
 }
@@ -51,7 +54,7 @@ const (
 var _ = BeforeSuite(func() {
 	if useActualController {
 		// this cleans up
-		client, _ := NewClientAndProject(tenantName, controllerAddr, controllerPort)
+		client, _ := NewClientAndProject(tenantName, controllerAddr, controllerPort, tokenRefreshMargin)
 		CleanupLingeringVM(client, containerID)
 	}
 })
@@ -63,7 +66,7 @@ var _ = Describe("Controller", func() {
 
 	BeforeEach(func() {
 		if useActualController {
-			client, project = NewClientAndProject(tenantName, controllerAddr, controllerPort)
+			client, project = NewClientAndProject(tenantName, controllerAddr, controllerPort, tokenRefreshMargin)
 		} else {
 			client, project = NewMockedClientAndProject(tenantName)
 		}
@@ -88,7 +91,7 @@ var _ = Describe("Controller", func() {
 
 		// shouldn't error when creating new client and project
 		if useActualController {
-			client, project = NewClientAndProject(tenantName, controllerAddr, controllerPort)
+			client, project = NewClientAndProject(tenantName, controllerAddr, controllerPort, tokenRefreshMargin)
 		} else {
 			client, project = NewMockedClientAndProject(tenantName)
 		}
@@ -453,7 +456,7 @@ var _ = Describe("Authenticating", func() {
 	}
 	DescribeTable("with different keystone env variables",
 		func(t TestCase) {
-			_, err := NewController(controllerAddr, controllerPort, &t.keys)
+			_, err := NewController(controllerAddr, controllerPort, &t.keys, tokenRefreshMargin)
 			if t.shouldErr {
 				Expect(err).To(HaveOccurred())
 			} else {
