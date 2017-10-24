@@ -29,17 +29,13 @@ func Call(command string, args ...string) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-
 	stdout = strings.TrimSpace(stdout)
-
-	err = cmd.Wait()
-	if err != nil {
-		return "", "", err
-	}
 
 	printDebugInfo(stdout, stderr)
 
-	return stdout, stderr, nil
+	err = cmd.Wait()
+
+	return stdout, stderr, err
 }
 
 func CallPowershell(args ...string) (string, string, error) {
