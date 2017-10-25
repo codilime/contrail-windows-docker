@@ -43,9 +43,9 @@ func NewMockedClientAndProject(tenant string) (*Controller, *types.Project) {
 	return c, project
 }
 
-func NewClientAndProject(tenant, controllerAddr string, controllerPort int, tokenRefreshMargin int) (*Controller,
+func NewClientAndProject(tenant, controllerAddr string, controllerPort int) (*Controller,
 	*types.Project) {
-	c, err := NewController(controllerAddr, controllerPort, TestKeystoneEnvs(), tokenRefreshMargin)
+	c, err := NewController(controllerAddr, controllerPort, TestKeystoneEnvs())
 	Expect(err).ToNot(HaveOccurred())
 
 	ForceDeleteProject(c, tenant)

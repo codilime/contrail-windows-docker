@@ -22,8 +22,12 @@ type KeystoneClient struct {
 	osPassword   string
 	osAdminToken string
 
-	tokenRefreshMargin int
 	current *KeystoneToken
+}
+
+type KeepaliveKeystoneClient struct {
+	KeystoneClient
+	nextRefresh time.Time
 }
 
 // KeystoneToken represents an auth token issued by OpenStack keystone service.
@@ -41,15 +45,28 @@ type KeystoneToken struct {
 }
 
 // NewKeystoneClient allocates and initializes a KeystoneClient
-func NewKeystoneClient(auth_url, tenant_name, username, password, token string, tokenRefreshMargin int) *KeystoneClient {
+func NewKeystoneClient(auth_url, tenant_name, username, password, token string) *KeystoneClient {
 	return &KeystoneClient{
 		auth_url,
 		tenant_name,
 		username,
 		password,
 		token,
-		tokenRefreshMargin,
 		nil,
+	}
+}
+
+func NewKeepaliveKeystoneClient(auth_url, tenant_name, username, password, token string) *KeepaliveKeystoneClient {
+	return &KeepaliveKeystoneClient {
+		KeystoneClient{
+			auth_url,
+			tenant_name,
+			username,
+			password,
+			token,
+			nil,
+		},
+		time.Now(),
 	}
 }
 
@@ -138,24 +155,37 @@ func (kClient *KeystoneClient) Authenticate() error {
 	return nil
 }
 
-func (kClient *KeystoneClient) needsRefreshing() bool {
+func (kClient *KeepaliveKeystoneClient) needsRefreshing() bool {
 	if kClient.current == nil {
 		return true
 	}
 
-	expires, err := time.Parse(time.RFC3339, kClient.current.Expires)
-	if err != nil {
-		return true
+	return time.Now().UTC().After(kClient.nextRefresh.UTC())
+}
+
+func (kClient *KeepaliveKeystoneClient) AddAuthentication(req *http.Request) error {
+	if kClient.needsRefreshing() {
+		err := kClient.Authenticate()
+		if err != nil {
+			return err
+		}
+
+		expires, err := time.Parse(time.RFC3339, kClient.current.Expires)
+		if err != nil {
+			return err
+		}
+
+		now := time.Now().UTC()
+		kClient.nextRefresh = now.Add(expires.UTC().Sub(now) / 2)
+		
 	}
-
-	now := time.Now().Add(time.Duration(kClient.tokenRefreshMargin) * time.Second)
-
-	return now.UTC().After(expires.UTC())
+	req.Header.Set("X-Auth-Token", kClient.current.Id)
+	return nil
 }
 
 // AddAuthentication adds the authentication data to the HTTP header.
 func (kClient *KeystoneClient) AddAuthentication(req *http.Request) error {
-	if kClient.needsRefreshing() {
+	if kClient.current == nil {
 		err := kClient.Authenticate()
 		if err != nil {
 			return err
