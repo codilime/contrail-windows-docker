@@ -153,28 +153,33 @@ func (kClient *KeystoneClient) Authenticate() error {
 	return nil
 }
 
-func (kClient *KeepaliveKeystoneClient) needsRefreshing() bool {
+func (kClient *KeepaliveKeystoneClient) needsRefreshing() (bool, error) {
 	if kClient.current == nil {
-		return true
+		return true, nil
 	}
 
 	issuedAtTime, err := time.Parse(time.RFC3339, kClient.current.Issued_At)
 	if err != nil {
-		return true
+		return false, err
 	}
 
 	expires, err := time.Parse(time.RFC3339, kClient.current.Expires)
 	if err != nil {
-		return true
+		return false, err
 	}
 
 	refreshTime := issuedAtTime.UTC().Add(expires.UTC().Sub(issuedAtTime.UTC()) / 2)
 
-	return time.Now().UTC().After(refreshTime.UTC())
+	return time.Now().UTC().After(refreshTime.UTC()), nil
 }
 
 func (kClient *KeepaliveKeystoneClient) AddAuthentication(req *http.Request) error {
-	if kClient.needsRefreshing() {
+	needsRefreshing, err := kClient.needsRefreshing()
+	if err != nil {
+		return err
+	}
+
+	if needsRefreshing {
 		kClient.current = nil
 	}
 
