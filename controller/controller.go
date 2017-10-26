@@ -63,7 +63,7 @@ func NewController(ip string, port int, keys *KeystoneEnvs) (*Controller, error)
 		return nil, errors.New("Empty Keystone auth URL")
 	}
 
-	keystone := contrail.NewKeystoneClient(keys.Os_auth_url, keys.Os_tenant_name,
+	keystone := contrail.NewKeepaliveKeystoneClient(keys.Os_auth_url, keys.Os_tenant_name,
 		keys.Os_username, keys.Os_password, keys.Os_token)
 	err := keystone.Authenticate()
 	if err != nil {
