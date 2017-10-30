@@ -11,22 +11,23 @@ import (
 )
 
 const (
-	bgp_router_id_perms uint64 = 1 << iota
+	bgp_router_id_perms = iota
+	bgp_router_perms2
 	bgp_router_display_name
 	bgp_router_global_system_config_back_refs
 	bgp_router_physical_router_back_refs
-	bgp_router_virtual_router_back_refs
+	bgp_router_max
 )
 
 type BgpRouter struct {
         contrail.ObjectBase
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
 	global_system_config_back_refs contrail.ReferenceList
 	physical_router_back_refs contrail.ReferenceList
-	virtual_router_back_refs contrail.ReferenceList
-        valid uint64
-        modified uint64
+        valid [bgp_router_max] bool
+        modified [bgp_router_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -70,7 +71,7 @@ func (obj *BgpRouter) hasReferenceBase(name string) bool {
 }
 
 func (obj *BgpRouter) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -81,7 +82,16 @@ func (obj *BgpRouter) GetIdPerms() IdPermsType {
 
 func (obj *BgpRouter) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= bgp_router_id_perms
+        obj.modified[bgp_router_id_perms] = true
+}
+
+func (obj *BgpRouter) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *BgpRouter) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[bgp_router_perms2] = true
 }
 
 func (obj *BgpRouter) GetDisplayName() string {
@@ -90,12 +100,12 @@ func (obj *BgpRouter) GetDisplayName() string {
 
 func (obj *BgpRouter) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= bgp_router_display_name
+        obj.modified[bgp_router_display_name] = true
 }
 
 func (obj *BgpRouter) readGlobalSystemConfigBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & bgp_router_global_system_config_back_refs == 0) {
+                (!obj.valid[bgp_router_global_system_config_back_refs]) {
                 err := obj.GetField(obj, "global_system_config_back_refs")
                 if err != nil {
                         return err
@@ -115,7 +125,7 @@ func (obj *BgpRouter) GetGlobalSystemConfigBackRefs() (
 
 func (obj *BgpRouter) readPhysicalRouterBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & bgp_router_physical_router_back_refs == 0) {
+                (!obj.valid[bgp_router_physical_router_back_refs]) {
                 err := obj.GetField(obj, "physical_router_back_refs")
                 if err != nil {
                         return err
@@ -133,26 +143,6 @@ func (obj *BgpRouter) GetPhysicalRouterBackRefs() (
         return obj.physical_router_back_refs, nil
 }
 
-func (obj *BgpRouter) readVirtualRouterBackRefs() error {
-        if !obj.IsTransient() &&
-                (obj.valid & bgp_router_virtual_router_back_refs == 0) {
-                err := obj.GetField(obj, "virtual_router_back_refs")
-                if err != nil {
-                        return err
-                }
-        }
-        return nil
-}
-
-func (obj *BgpRouter) GetVirtualRouterBackRefs() (
-        contrail.ReferenceList, error) {
-        err := obj.readVirtualRouterBackRefs()
-        if err != nil {
-                return nil, err
-        }
-        return obj.virtual_router_back_refs, nil
-}
-
 func (obj *BgpRouter) MarshalJSON() ([]byte, error) {
         msg := map[string]*json.RawMessage {
         }
@@ -161,7 +151,7 @@ func (obj *BgpRouter) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & bgp_router_id_perms != 0 {
+        if obj.modified[bgp_router_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -170,7 +160,16 @@ func (obj *BgpRouter) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & bgp_router_display_name != 0 {
+        if obj.modified[bgp_router_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[bgp_router_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -192,36 +191,37 @@ func (obj *BgpRouter) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= bgp_router_id_perms
+                                obj.valid[bgp_router_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[bgp_router_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= bgp_router_display_name
+                                obj.valid[bgp_router_display_name] = true
                         }
                         break
                 case "global_system_config_back_refs":
                         err = json.Unmarshal(value, &obj.global_system_config_back_refs)
                         if err == nil {
-                                obj.valid |= bgp_router_global_system_config_back_refs
+                                obj.valid[bgp_router_global_system_config_back_refs] = true
                         }
                         break
                 case "physical_router_back_refs":
                         err = json.Unmarshal(value, &obj.physical_router_back_refs)
                         if err == nil {
-                                obj.valid |= bgp_router_physical_router_back_refs
-                        }
-                        break
-                case "virtual_router_back_refs":
-                        err = json.Unmarshal(value, &obj.virtual_router_back_refs)
-                        if err == nil {
-                                obj.valid |= bgp_router_virtual_router_back_refs
+                                obj.valid[bgp_router_physical_router_back_refs] = true
                         }
                         break
                 }
@@ -240,7 +240,7 @@ func (obj *BgpRouter) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & bgp_router_id_perms != 0 {
+        if obj.modified[bgp_router_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -249,7 +249,16 @@ func (obj *BgpRouter) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & bgp_router_display_name != 0 {
+        if obj.modified[bgp_router_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[bgp_router_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {

@@ -11,20 +11,23 @@ import (
 )
 
 const (
-	subnet_subnet_ip_prefix uint64 = 1 << iota
+	subnet_subnet_ip_prefix = iota
 	subnet_id_perms
+	subnet_perms2
 	subnet_display_name
 	subnet_virtual_machine_interface_refs
+	subnet_max
 )
 
 type Subnet struct {
         contrail.ObjectBase
 	subnet_ip_prefix SubnetType
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
 	virtual_machine_interface_refs contrail.ReferenceList
-        valid uint64
-        modified uint64
+        valid [subnet_max] bool
+        modified [subnet_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -68,7 +71,7 @@ func (obj *Subnet) hasReferenceBase(name string) bool {
 }
 
 func (obj *Subnet) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -79,7 +82,7 @@ func (obj *Subnet) GetSubnetIpPrefix() SubnetType {
 
 func (obj *Subnet) SetSubnetIpPrefix(value *SubnetType) {
         obj.subnet_ip_prefix = *value
-        obj.modified |= subnet_subnet_ip_prefix
+        obj.modified[subnet_subnet_ip_prefix] = true
 }
 
 func (obj *Subnet) GetIdPerms() IdPermsType {
@@ -88,7 +91,16 @@ func (obj *Subnet) GetIdPerms() IdPermsType {
 
 func (obj *Subnet) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= subnet_id_perms
+        obj.modified[subnet_id_perms] = true
+}
+
+func (obj *Subnet) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *Subnet) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[subnet_perms2] = true
 }
 
 func (obj *Subnet) GetDisplayName() string {
@@ -97,12 +109,12 @@ func (obj *Subnet) GetDisplayName() string {
 
 func (obj *Subnet) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= subnet_display_name
+        obj.modified[subnet_display_name] = true
 }
 
 func (obj *Subnet) readVirtualMachineInterfaceRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & subnet_virtual_machine_interface_refs == 0) {
+                (!obj.valid[subnet_virtual_machine_interface_refs]) {
                 err := obj.GetField(obj, "virtual_machine_interface_refs")
                 if err != nil {
                         return err
@@ -127,14 +139,14 @@ func (obj *Subnet) AddVirtualMachineInterface(
                 return err
         }
 
-        if obj.modified & subnet_virtual_machine_interface_refs == 0 {
+        if !obj.modified[subnet_virtual_machine_interface_refs] {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.virtual_machine_interface_refs = append(obj.virtual_machine_interface_refs, ref)
-        obj.modified |= subnet_virtual_machine_interface_refs
+        obj.modified[subnet_virtual_machine_interface_refs] = true
         return nil
 }
 
@@ -144,7 +156,7 @@ func (obj *Subnet) DeleteVirtualMachineInterface(uuid string) error {
                 return err
         }
 
-        if obj.modified & subnet_virtual_machine_interface_refs == 0 {
+        if !obj.modified[subnet_virtual_machine_interface_refs] {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
 
@@ -156,18 +168,18 @@ func (obj *Subnet) DeleteVirtualMachineInterface(uuid string) error {
                         break
                 }
         }
-        obj.modified |= subnet_virtual_machine_interface_refs
+        obj.modified[subnet_virtual_machine_interface_refs] = true
         return nil
 }
 
 func (obj *Subnet) ClearVirtualMachineInterface() {
-        if (obj.valid & subnet_virtual_machine_interface_refs != 0) &&
-           (obj.modified & subnet_virtual_machine_interface_refs == 0) {
+        if (obj.valid[subnet_virtual_machine_interface_refs]) &&
+           (!obj.modified[subnet_virtual_machine_interface_refs]) {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
         obj.virtual_machine_interface_refs = make([]contrail.Reference, 0)
-        obj.valid |= subnet_virtual_machine_interface_refs
-        obj.modified |= subnet_virtual_machine_interface_refs
+        obj.valid[subnet_virtual_machine_interface_refs] = true
+        obj.modified[subnet_virtual_machine_interface_refs] = true
 }
 
 func (obj *Subnet) SetVirtualMachineInterfaceList(
@@ -193,7 +205,7 @@ func (obj *Subnet) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & subnet_subnet_ip_prefix != 0 {
+        if obj.modified[subnet_subnet_ip_prefix] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.subnet_ip_prefix)
                 if err != nil {
@@ -202,7 +214,7 @@ func (obj *Subnet) MarshalJSON() ([]byte, error) {
                 msg["subnet_ip_prefix"] = &value
         }
 
-        if obj.modified & subnet_id_perms != 0 {
+        if obj.modified[subnet_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -211,7 +223,16 @@ func (obj *Subnet) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & subnet_display_name != 0 {
+        if obj.modified[subnet_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[subnet_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -242,30 +263,37 @@ func (obj *Subnet) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "subnet_ip_prefix":
                         err = json.Unmarshal(value, &obj.subnet_ip_prefix)
                         if err == nil {
-                                obj.valid |= subnet_subnet_ip_prefix
+                                obj.valid[subnet_subnet_ip_prefix] = true
                         }
                         break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= subnet_id_perms
+                                obj.valid[subnet_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[subnet_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= subnet_display_name
+                                obj.valid[subnet_display_name] = true
                         }
                         break
                 case "virtual_machine_interface_refs":
                         err = json.Unmarshal(value, &obj.virtual_machine_interface_refs)
                         if err == nil {
-                                obj.valid |= subnet_virtual_machine_interface_refs
+                                obj.valid[subnet_virtual_machine_interface_refs] = true
                         }
                         break
                 }
@@ -284,7 +312,7 @@ func (obj *Subnet) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & subnet_subnet_ip_prefix != 0 {
+        if obj.modified[subnet_subnet_ip_prefix] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.subnet_ip_prefix)
                 if err != nil {
@@ -293,7 +321,7 @@ func (obj *Subnet) UpdateObject() ([]byte, error) {
                 msg["subnet_ip_prefix"] = &value
         }
 
-        if obj.modified & subnet_id_perms != 0 {
+        if obj.modified[subnet_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -302,7 +330,16 @@ func (obj *Subnet) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & subnet_display_name != 0 {
+        if obj.modified[subnet_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[subnet_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -311,7 +348,7 @@ func (obj *Subnet) UpdateObject() ([]byte, error) {
                 msg["display_name"] = &value
         }
 
-        if obj.modified & subnet_virtual_machine_interface_refs != 0 {
+        if obj.modified[subnet_virtual_machine_interface_refs] {
                 if len(obj.virtual_machine_interface_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -336,7 +373,7 @@ func (obj *Subnet) UpdateObject() ([]byte, error) {
 
 func (obj *Subnet) UpdateReferences() error {
 
-        if (obj.modified & subnet_virtual_machine_interface_refs != 0) &&
+        if (obj.modified[subnet_virtual_machine_interface_refs]) &&
            len(obj.virtual_machine_interface_refs) > 0 &&
            obj.hasReferenceBase("virtual-machine-interface") {
                 err := obj.UpdateReference(

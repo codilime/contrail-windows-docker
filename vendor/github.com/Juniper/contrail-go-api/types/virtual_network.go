@@ -11,52 +11,67 @@ import (
 )
 
 const (
-	virtual_network_virtual_network_properties uint64 = 1 << iota
+	virtual_network_ecmp_hashing_include_fields = iota
+	virtual_network_virtual_network_properties
+	virtual_network_provider_properties
 	virtual_network_virtual_network_network_id
 	virtual_network_route_target_list
+	virtual_network_import_route_target_list
+	virtual_network_export_route_target_list
 	virtual_network_router_external
 	virtual_network_is_shared
 	virtual_network_external_ipam
 	virtual_network_flood_unknown_unicast
+	virtual_network_multi_policy_service_chains_enabled
 	virtual_network_id_perms
+	virtual_network_perms2
 	virtual_network_display_name
-	virtual_network_qos_forwarding_class_refs
+	virtual_network_qos_config_refs
 	virtual_network_network_ipam_refs
 	virtual_network_network_policy_refs
 	virtual_network_access_control_lists
 	virtual_network_floating_ip_pools
+	virtual_network_alias_ip_pools
 	virtual_network_routing_instances
 	virtual_network_route_table_refs
 	virtual_network_virtual_machine_interface_back_refs
 	virtual_network_instance_ip_back_refs
 	virtual_network_physical_router_back_refs
 	virtual_network_logical_router_back_refs
+	virtual_network_max
 )
 
 type VirtualNetwork struct {
         contrail.ObjectBase
+	ecmp_hashing_include_fields EcmpHashingIncludeFields
 	virtual_network_properties VirtualNetworkType
+	provider_properties ProviderDetails
 	virtual_network_network_id int
 	route_target_list RouteTargetList
+	import_route_target_list RouteTargetList
+	export_route_target_list RouteTargetList
 	router_external bool
 	is_shared bool
 	external_ipam bool
 	flood_unknown_unicast bool
+	multi_policy_service_chains_enabled bool
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
-	qos_forwarding_class_refs contrail.ReferenceList
+	qos_config_refs contrail.ReferenceList
 	network_ipam_refs contrail.ReferenceList
 	network_policy_refs contrail.ReferenceList
 	access_control_lists contrail.ReferenceList
 	floating_ip_pools contrail.ReferenceList
+	alias_ip_pools contrail.ReferenceList
 	routing_instances contrail.ReferenceList
 	route_table_refs contrail.ReferenceList
 	virtual_machine_interface_back_refs contrail.ReferenceList
 	instance_ip_back_refs contrail.ReferenceList
 	physical_router_back_refs contrail.ReferenceList
 	logical_router_back_refs contrail.ReferenceList
-        valid uint64
-        modified uint64
+        valid [virtual_network_max] bool
+        modified [virtual_network_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -100,10 +115,19 @@ func (obj *VirtualNetwork) hasReferenceBase(name string) bool {
 }
 
 func (obj *VirtualNetwork) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
+
+func (obj *VirtualNetwork) GetEcmpHashingIncludeFields() EcmpHashingIncludeFields {
+        return obj.ecmp_hashing_include_fields
+}
+
+func (obj *VirtualNetwork) SetEcmpHashingIncludeFields(value *EcmpHashingIncludeFields) {
+        obj.ecmp_hashing_include_fields = *value
+        obj.modified[virtual_network_ecmp_hashing_include_fields] = true
+}
 
 func (obj *VirtualNetwork) GetVirtualNetworkProperties() VirtualNetworkType {
         return obj.virtual_network_properties
@@ -111,7 +135,16 @@ func (obj *VirtualNetwork) GetVirtualNetworkProperties() VirtualNetworkType {
 
 func (obj *VirtualNetwork) SetVirtualNetworkProperties(value *VirtualNetworkType) {
         obj.virtual_network_properties = *value
-        obj.modified |= virtual_network_virtual_network_properties
+        obj.modified[virtual_network_virtual_network_properties] = true
+}
+
+func (obj *VirtualNetwork) GetProviderProperties() ProviderDetails {
+        return obj.provider_properties
+}
+
+func (obj *VirtualNetwork) SetProviderProperties(value *ProviderDetails) {
+        obj.provider_properties = *value
+        obj.modified[virtual_network_provider_properties] = true
 }
 
 func (obj *VirtualNetwork) GetVirtualNetworkNetworkId() int {
@@ -120,7 +153,7 @@ func (obj *VirtualNetwork) GetVirtualNetworkNetworkId() int {
 
 func (obj *VirtualNetwork) SetVirtualNetworkNetworkId(value int) {
         obj.virtual_network_network_id = value
-        obj.modified |= virtual_network_virtual_network_network_id
+        obj.modified[virtual_network_virtual_network_network_id] = true
 }
 
 func (obj *VirtualNetwork) GetRouteTargetList() RouteTargetList {
@@ -129,7 +162,25 @@ func (obj *VirtualNetwork) GetRouteTargetList() RouteTargetList {
 
 func (obj *VirtualNetwork) SetRouteTargetList(value *RouteTargetList) {
         obj.route_target_list = *value
-        obj.modified |= virtual_network_route_target_list
+        obj.modified[virtual_network_route_target_list] = true
+}
+
+func (obj *VirtualNetwork) GetImportRouteTargetList() RouteTargetList {
+        return obj.import_route_target_list
+}
+
+func (obj *VirtualNetwork) SetImportRouteTargetList(value *RouteTargetList) {
+        obj.import_route_target_list = *value
+        obj.modified[virtual_network_import_route_target_list] = true
+}
+
+func (obj *VirtualNetwork) GetExportRouteTargetList() RouteTargetList {
+        return obj.export_route_target_list
+}
+
+func (obj *VirtualNetwork) SetExportRouteTargetList(value *RouteTargetList) {
+        obj.export_route_target_list = *value
+        obj.modified[virtual_network_export_route_target_list] = true
 }
 
 func (obj *VirtualNetwork) GetRouterExternal() bool {
@@ -138,7 +189,7 @@ func (obj *VirtualNetwork) GetRouterExternal() bool {
 
 func (obj *VirtualNetwork) SetRouterExternal(value bool) {
         obj.router_external = value
-        obj.modified |= virtual_network_router_external
+        obj.modified[virtual_network_router_external] = true
 }
 
 func (obj *VirtualNetwork) GetIsShared() bool {
@@ -147,7 +198,7 @@ func (obj *VirtualNetwork) GetIsShared() bool {
 
 func (obj *VirtualNetwork) SetIsShared(value bool) {
         obj.is_shared = value
-        obj.modified |= virtual_network_is_shared
+        obj.modified[virtual_network_is_shared] = true
 }
 
 func (obj *VirtualNetwork) GetExternalIpam() bool {
@@ -156,7 +207,7 @@ func (obj *VirtualNetwork) GetExternalIpam() bool {
 
 func (obj *VirtualNetwork) SetExternalIpam(value bool) {
         obj.external_ipam = value
-        obj.modified |= virtual_network_external_ipam
+        obj.modified[virtual_network_external_ipam] = true
 }
 
 func (obj *VirtualNetwork) GetFloodUnknownUnicast() bool {
@@ -165,7 +216,16 @@ func (obj *VirtualNetwork) GetFloodUnknownUnicast() bool {
 
 func (obj *VirtualNetwork) SetFloodUnknownUnicast(value bool) {
         obj.flood_unknown_unicast = value
-        obj.modified |= virtual_network_flood_unknown_unicast
+        obj.modified[virtual_network_flood_unknown_unicast] = true
+}
+
+func (obj *VirtualNetwork) GetMultiPolicyServiceChainsEnabled() bool {
+        return obj.multi_policy_service_chains_enabled
+}
+
+func (obj *VirtualNetwork) SetMultiPolicyServiceChainsEnabled(value bool) {
+        obj.multi_policy_service_chains_enabled = value
+        obj.modified[virtual_network_multi_policy_service_chains_enabled] = true
 }
 
 func (obj *VirtualNetwork) GetIdPerms() IdPermsType {
@@ -174,7 +234,16 @@ func (obj *VirtualNetwork) GetIdPerms() IdPermsType {
 
 func (obj *VirtualNetwork) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= virtual_network_id_perms
+        obj.modified[virtual_network_id_perms] = true
+}
+
+func (obj *VirtualNetwork) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *VirtualNetwork) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[virtual_network_perms2] = true
 }
 
 func (obj *VirtualNetwork) GetDisplayName() string {
@@ -183,12 +252,12 @@ func (obj *VirtualNetwork) GetDisplayName() string {
 
 func (obj *VirtualNetwork) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= virtual_network_display_name
+        obj.modified[virtual_network_display_name] = true
 }
 
 func (obj *VirtualNetwork) readAccessControlLists() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_network_access_control_lists == 0) {
+                (!obj.valid[virtual_network_access_control_lists]) {
                 err := obj.GetField(obj, "access_control_lists")
                 if err != nil {
                         return err
@@ -208,7 +277,7 @@ func (obj *VirtualNetwork) GetAccessControlLists() (
 
 func (obj *VirtualNetwork) readFloatingIpPools() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_network_floating_ip_pools == 0) {
+                (!obj.valid[virtual_network_floating_ip_pools]) {
                 err := obj.GetField(obj, "floating_ip_pools")
                 if err != nil {
                         return err
@@ -226,9 +295,29 @@ func (obj *VirtualNetwork) GetFloatingIpPools() (
         return obj.floating_ip_pools, nil
 }
 
+func (obj *VirtualNetwork) readAliasIpPools() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[virtual_network_alias_ip_pools]) {
+                err := obj.GetField(obj, "alias_ip_pools")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *VirtualNetwork) GetAliasIpPools() (
+        contrail.ReferenceList, error) {
+        err := obj.readAliasIpPools()
+        if err != nil {
+                return nil, err
+        }
+        return obj.alias_ip_pools, nil
+}
+
 func (obj *VirtualNetwork) readRoutingInstances() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_network_routing_instances == 0) {
+                (!obj.valid[virtual_network_routing_instances]) {
                 err := obj.GetField(obj, "routing_instances")
                 if err != nil {
                         return err
@@ -246,10 +335,10 @@ func (obj *VirtualNetwork) GetRoutingInstances() (
         return obj.routing_instances, nil
 }
 
-func (obj *VirtualNetwork) readQosForwardingClassRefs() error {
+func (obj *VirtualNetwork) readQosConfigRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_network_qos_forwarding_class_refs == 0) {
-                err := obj.GetField(obj, "qos_forwarding_class_refs")
+                (!obj.valid[virtual_network_qos_config_refs]) {
+                err := obj.GetField(obj, "qos_config_refs")
                 if err != nil {
                         return err
                 }
@@ -257,71 +346,71 @@ func (obj *VirtualNetwork) readQosForwardingClassRefs() error {
         return nil
 }
 
-func (obj *VirtualNetwork) GetQosForwardingClassRefs() (
+func (obj *VirtualNetwork) GetQosConfigRefs() (
         contrail.ReferenceList, error) {
-        err := obj.readQosForwardingClassRefs()
+        err := obj.readQosConfigRefs()
         if err != nil {
                 return nil, err
         }
-        return obj.qos_forwarding_class_refs, nil
+        return obj.qos_config_refs, nil
 }
 
-func (obj *VirtualNetwork) AddQosForwardingClass(
-        rhs *QosForwardingClass) error {
-        err := obj.readQosForwardingClassRefs()
+func (obj *VirtualNetwork) AddQosConfig(
+        rhs *QosConfig) error {
+        err := obj.readQosConfigRefs()
         if err != nil {
                 return err
         }
 
-        if obj.modified & virtual_network_qos_forwarding_class_refs == 0 {
-                obj.storeReferenceBase("qos-forwarding-class", obj.qos_forwarding_class_refs)
+        if !obj.modified[virtual_network_qos_config_refs] {
+                obj.storeReferenceBase("qos-config", obj.qos_config_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
-        obj.qos_forwarding_class_refs = append(obj.qos_forwarding_class_refs, ref)
-        obj.modified |= virtual_network_qos_forwarding_class_refs
+        obj.qos_config_refs = append(obj.qos_config_refs, ref)
+        obj.modified[virtual_network_qos_config_refs] = true
         return nil
 }
 
-func (obj *VirtualNetwork) DeleteQosForwardingClass(uuid string) error {
-        err := obj.readQosForwardingClassRefs()
+func (obj *VirtualNetwork) DeleteQosConfig(uuid string) error {
+        err := obj.readQosConfigRefs()
         if err != nil {
                 return err
         }
 
-        if obj.modified & virtual_network_qos_forwarding_class_refs == 0 {
-                obj.storeReferenceBase("qos-forwarding-class", obj.qos_forwarding_class_refs)
+        if !obj.modified[virtual_network_qos_config_refs] {
+                obj.storeReferenceBase("qos-config", obj.qos_config_refs)
         }
 
-        for i, ref := range obj.qos_forwarding_class_refs {
+        for i, ref := range obj.qos_config_refs {
                 if ref.Uuid == uuid {
-                        obj.qos_forwarding_class_refs = append(
-                                obj.qos_forwarding_class_refs[:i],
-                                obj.qos_forwarding_class_refs[i+1:]...)
+                        obj.qos_config_refs = append(
+                                obj.qos_config_refs[:i],
+                                obj.qos_config_refs[i+1:]...)
                         break
                 }
         }
-        obj.modified |= virtual_network_qos_forwarding_class_refs
+        obj.modified[virtual_network_qos_config_refs] = true
         return nil
 }
 
-func (obj *VirtualNetwork) ClearQosForwardingClass() {
-        if (obj.valid & virtual_network_qos_forwarding_class_refs != 0) &&
-           (obj.modified & virtual_network_qos_forwarding_class_refs == 0) {
-                obj.storeReferenceBase("qos-forwarding-class", obj.qos_forwarding_class_refs)
+func (obj *VirtualNetwork) ClearQosConfig() {
+        if (obj.valid[virtual_network_qos_config_refs]) &&
+           (!obj.modified[virtual_network_qos_config_refs]) {
+                obj.storeReferenceBase("qos-config", obj.qos_config_refs)
         }
-        obj.qos_forwarding_class_refs = make([]contrail.Reference, 0)
-        obj.valid |= virtual_network_qos_forwarding_class_refs
-        obj.modified |= virtual_network_qos_forwarding_class_refs
+        obj.qos_config_refs = make([]contrail.Reference, 0)
+        obj.valid[virtual_network_qos_config_refs] = true
+        obj.modified[virtual_network_qos_config_refs] = true
 }
 
-func (obj *VirtualNetwork) SetQosForwardingClassList(
+func (obj *VirtualNetwork) SetQosConfigList(
         refList []contrail.ReferencePair) {
-        obj.ClearQosForwardingClass()
-        obj.qos_forwarding_class_refs = make([]contrail.Reference, len(refList))
+        obj.ClearQosConfig()
+        obj.qos_config_refs = make([]contrail.Reference, len(refList))
         for i, pair := range refList {
-                obj.qos_forwarding_class_refs[i] = contrail.Reference {
+                obj.qos_config_refs[i] = contrail.Reference {
                         pair.Object.GetFQName(),
                         pair.Object.GetUuid(),
                         pair.Object.GetHref(),
@@ -333,7 +422,7 @@ func (obj *VirtualNetwork) SetQosForwardingClassList(
 
 func (obj *VirtualNetwork) readNetworkIpamRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_network_network_ipam_refs == 0) {
+                (!obj.valid[virtual_network_network_ipam_refs]) {
                 err := obj.GetField(obj, "network_ipam_refs")
                 if err != nil {
                         return err
@@ -358,14 +447,14 @@ func (obj *VirtualNetwork) AddNetworkIpam(
                 return err
         }
 
-        if obj.modified & virtual_network_network_ipam_refs == 0 {
+        if !obj.modified[virtual_network_network_ipam_refs] {
                 obj.storeReferenceBase("network-ipam", obj.network_ipam_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), data}
         obj.network_ipam_refs = append(obj.network_ipam_refs, ref)
-        obj.modified |= virtual_network_network_ipam_refs
+        obj.modified[virtual_network_network_ipam_refs] = true
         return nil
 }
 
@@ -375,7 +464,7 @@ func (obj *VirtualNetwork) DeleteNetworkIpam(uuid string) error {
                 return err
         }
 
-        if obj.modified & virtual_network_network_ipam_refs == 0 {
+        if !obj.modified[virtual_network_network_ipam_refs] {
                 obj.storeReferenceBase("network-ipam", obj.network_ipam_refs)
         }
 
@@ -387,18 +476,18 @@ func (obj *VirtualNetwork) DeleteNetworkIpam(uuid string) error {
                         break
                 }
         }
-        obj.modified |= virtual_network_network_ipam_refs
+        obj.modified[virtual_network_network_ipam_refs] = true
         return nil
 }
 
 func (obj *VirtualNetwork) ClearNetworkIpam() {
-        if (obj.valid & virtual_network_network_ipam_refs != 0) &&
-           (obj.modified & virtual_network_network_ipam_refs == 0) {
+        if (obj.valid[virtual_network_network_ipam_refs]) &&
+           (!obj.modified[virtual_network_network_ipam_refs]) {
                 obj.storeReferenceBase("network-ipam", obj.network_ipam_refs)
         }
         obj.network_ipam_refs = make([]contrail.Reference, 0)
-        obj.valid |= virtual_network_network_ipam_refs
-        obj.modified |= virtual_network_network_ipam_refs
+        obj.valid[virtual_network_network_ipam_refs] = true
+        obj.modified[virtual_network_network_ipam_refs] = true
 }
 
 func (obj *VirtualNetwork) SetNetworkIpamList(
@@ -418,7 +507,7 @@ func (obj *VirtualNetwork) SetNetworkIpamList(
 
 func (obj *VirtualNetwork) readNetworkPolicyRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_network_network_policy_refs == 0) {
+                (!obj.valid[virtual_network_network_policy_refs]) {
                 err := obj.GetField(obj, "network_policy_refs")
                 if err != nil {
                         return err
@@ -443,14 +532,14 @@ func (obj *VirtualNetwork) AddNetworkPolicy(
                 return err
         }
 
-        if obj.modified & virtual_network_network_policy_refs == 0 {
+        if !obj.modified[virtual_network_network_policy_refs] {
                 obj.storeReferenceBase("network-policy", obj.network_policy_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), data}
         obj.network_policy_refs = append(obj.network_policy_refs, ref)
-        obj.modified |= virtual_network_network_policy_refs
+        obj.modified[virtual_network_network_policy_refs] = true
         return nil
 }
 
@@ -460,7 +549,7 @@ func (obj *VirtualNetwork) DeleteNetworkPolicy(uuid string) error {
                 return err
         }
 
-        if obj.modified & virtual_network_network_policy_refs == 0 {
+        if !obj.modified[virtual_network_network_policy_refs] {
                 obj.storeReferenceBase("network-policy", obj.network_policy_refs)
         }
 
@@ -472,18 +561,18 @@ func (obj *VirtualNetwork) DeleteNetworkPolicy(uuid string) error {
                         break
                 }
         }
-        obj.modified |= virtual_network_network_policy_refs
+        obj.modified[virtual_network_network_policy_refs] = true
         return nil
 }
 
 func (obj *VirtualNetwork) ClearNetworkPolicy() {
-        if (obj.valid & virtual_network_network_policy_refs != 0) &&
-           (obj.modified & virtual_network_network_policy_refs == 0) {
+        if (obj.valid[virtual_network_network_policy_refs]) &&
+           (!obj.modified[virtual_network_network_policy_refs]) {
                 obj.storeReferenceBase("network-policy", obj.network_policy_refs)
         }
         obj.network_policy_refs = make([]contrail.Reference, 0)
-        obj.valid |= virtual_network_network_policy_refs
-        obj.modified |= virtual_network_network_policy_refs
+        obj.valid[virtual_network_network_policy_refs] = true
+        obj.modified[virtual_network_network_policy_refs] = true
 }
 
 func (obj *VirtualNetwork) SetNetworkPolicyList(
@@ -503,7 +592,7 @@ func (obj *VirtualNetwork) SetNetworkPolicyList(
 
 func (obj *VirtualNetwork) readRouteTableRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_network_route_table_refs == 0) {
+                (!obj.valid[virtual_network_route_table_refs]) {
                 err := obj.GetField(obj, "route_table_refs")
                 if err != nil {
                         return err
@@ -528,14 +617,14 @@ func (obj *VirtualNetwork) AddRouteTable(
                 return err
         }
 
-        if obj.modified & virtual_network_route_table_refs == 0 {
+        if !obj.modified[virtual_network_route_table_refs] {
                 obj.storeReferenceBase("route-table", obj.route_table_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.route_table_refs = append(obj.route_table_refs, ref)
-        obj.modified |= virtual_network_route_table_refs
+        obj.modified[virtual_network_route_table_refs] = true
         return nil
 }
 
@@ -545,7 +634,7 @@ func (obj *VirtualNetwork) DeleteRouteTable(uuid string) error {
                 return err
         }
 
-        if obj.modified & virtual_network_route_table_refs == 0 {
+        if !obj.modified[virtual_network_route_table_refs] {
                 obj.storeReferenceBase("route-table", obj.route_table_refs)
         }
 
@@ -557,18 +646,18 @@ func (obj *VirtualNetwork) DeleteRouteTable(uuid string) error {
                         break
                 }
         }
-        obj.modified |= virtual_network_route_table_refs
+        obj.modified[virtual_network_route_table_refs] = true
         return nil
 }
 
 func (obj *VirtualNetwork) ClearRouteTable() {
-        if (obj.valid & virtual_network_route_table_refs != 0) &&
-           (obj.modified & virtual_network_route_table_refs == 0) {
+        if (obj.valid[virtual_network_route_table_refs]) &&
+           (!obj.modified[virtual_network_route_table_refs]) {
                 obj.storeReferenceBase("route-table", obj.route_table_refs)
         }
         obj.route_table_refs = make([]contrail.Reference, 0)
-        obj.valid |= virtual_network_route_table_refs
-        obj.modified |= virtual_network_route_table_refs
+        obj.valid[virtual_network_route_table_refs] = true
+        obj.modified[virtual_network_route_table_refs] = true
 }
 
 func (obj *VirtualNetwork) SetRouteTableList(
@@ -588,7 +677,7 @@ func (obj *VirtualNetwork) SetRouteTableList(
 
 func (obj *VirtualNetwork) readVirtualMachineInterfaceBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_network_virtual_machine_interface_back_refs == 0) {
+                (!obj.valid[virtual_network_virtual_machine_interface_back_refs]) {
                 err := obj.GetField(obj, "virtual_machine_interface_back_refs")
                 if err != nil {
                         return err
@@ -608,7 +697,7 @@ func (obj *VirtualNetwork) GetVirtualMachineInterfaceBackRefs() (
 
 func (obj *VirtualNetwork) readInstanceIpBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_network_instance_ip_back_refs == 0) {
+                (!obj.valid[virtual_network_instance_ip_back_refs]) {
                 err := obj.GetField(obj, "instance_ip_back_refs")
                 if err != nil {
                         return err
@@ -628,7 +717,7 @@ func (obj *VirtualNetwork) GetInstanceIpBackRefs() (
 
 func (obj *VirtualNetwork) readPhysicalRouterBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_network_physical_router_back_refs == 0) {
+                (!obj.valid[virtual_network_physical_router_back_refs]) {
                 err := obj.GetField(obj, "physical_router_back_refs")
                 if err != nil {
                         return err
@@ -648,7 +737,7 @@ func (obj *VirtualNetwork) GetPhysicalRouterBackRefs() (
 
 func (obj *VirtualNetwork) readLogicalRouterBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_network_logical_router_back_refs == 0) {
+                (!obj.valid[virtual_network_logical_router_back_refs]) {
                 err := obj.GetField(obj, "logical_router_back_refs")
                 if err != nil {
                         return err
@@ -674,7 +763,16 @@ func (obj *VirtualNetwork) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & virtual_network_virtual_network_properties != 0 {
+        if obj.modified[virtual_network_ecmp_hashing_include_fields] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.ecmp_hashing_include_fields)
+                if err != nil {
+                        return nil, err
+                }
+                msg["ecmp_hashing_include_fields"] = &value
+        }
+
+        if obj.modified[virtual_network_virtual_network_properties] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.virtual_network_properties)
                 if err != nil {
@@ -683,7 +781,16 @@ func (obj *VirtualNetwork) MarshalJSON() ([]byte, error) {
                 msg["virtual_network_properties"] = &value
         }
 
-        if obj.modified & virtual_network_virtual_network_network_id != 0 {
+        if obj.modified[virtual_network_provider_properties] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.provider_properties)
+                if err != nil {
+                        return nil, err
+                }
+                msg["provider_properties"] = &value
+        }
+
+        if obj.modified[virtual_network_virtual_network_network_id] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.virtual_network_network_id)
                 if err != nil {
@@ -692,7 +799,7 @@ func (obj *VirtualNetwork) MarshalJSON() ([]byte, error) {
                 msg["virtual_network_network_id"] = &value
         }
 
-        if obj.modified & virtual_network_route_target_list != 0 {
+        if obj.modified[virtual_network_route_target_list] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.route_target_list)
                 if err != nil {
@@ -701,7 +808,25 @@ func (obj *VirtualNetwork) MarshalJSON() ([]byte, error) {
                 msg["route_target_list"] = &value
         }
 
-        if obj.modified & virtual_network_router_external != 0 {
+        if obj.modified[virtual_network_import_route_target_list] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.import_route_target_list)
+                if err != nil {
+                        return nil, err
+                }
+                msg["import_route_target_list"] = &value
+        }
+
+        if obj.modified[virtual_network_export_route_target_list] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.export_route_target_list)
+                if err != nil {
+                        return nil, err
+                }
+                msg["export_route_target_list"] = &value
+        }
+
+        if obj.modified[virtual_network_router_external] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.router_external)
                 if err != nil {
@@ -710,7 +835,7 @@ func (obj *VirtualNetwork) MarshalJSON() ([]byte, error) {
                 msg["router_external"] = &value
         }
 
-        if obj.modified & virtual_network_is_shared != 0 {
+        if obj.modified[virtual_network_is_shared] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.is_shared)
                 if err != nil {
@@ -719,7 +844,7 @@ func (obj *VirtualNetwork) MarshalJSON() ([]byte, error) {
                 msg["is_shared"] = &value
         }
 
-        if obj.modified & virtual_network_external_ipam != 0 {
+        if obj.modified[virtual_network_external_ipam] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.external_ipam)
                 if err != nil {
@@ -728,7 +853,7 @@ func (obj *VirtualNetwork) MarshalJSON() ([]byte, error) {
                 msg["external_ipam"] = &value
         }
 
-        if obj.modified & virtual_network_flood_unknown_unicast != 0 {
+        if obj.modified[virtual_network_flood_unknown_unicast] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.flood_unknown_unicast)
                 if err != nil {
@@ -737,7 +862,16 @@ func (obj *VirtualNetwork) MarshalJSON() ([]byte, error) {
                 msg["flood_unknown_unicast"] = &value
         }
 
-        if obj.modified & virtual_network_id_perms != 0 {
+        if obj.modified[virtual_network_multi_policy_service_chains_enabled] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.multi_policy_service_chains_enabled)
+                if err != nil {
+                        return nil, err
+                }
+                msg["multi_policy_service_chains_enabled"] = &value
+        }
+
+        if obj.modified[virtual_network_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -746,7 +880,16 @@ func (obj *VirtualNetwork) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & virtual_network_display_name != 0 {
+        if obj.modified[virtual_network_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[virtual_network_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -755,13 +898,13 @@ func (obj *VirtualNetwork) MarshalJSON() ([]byte, error) {
                 msg["display_name"] = &value
         }
 
-        if len(obj.qos_forwarding_class_refs) > 0 {
+        if len(obj.qos_config_refs) > 0 {
                 var value json.RawMessage
-                value, err := json.Marshal(&obj.qos_forwarding_class_refs)
+                value, err := json.Marshal(&obj.qos_config_refs)
                 if err != nil {
                         return nil, err
                 }
-                msg["qos_forwarding_class_refs"] = &value
+                msg["qos_config_refs"] = &value
         }
 
         if len(obj.network_ipam_refs) > 0 {
@@ -804,114 +947,157 @@ func (obj *VirtualNetwork) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
+                case "ecmp_hashing_include_fields":
+                        err = json.Unmarshal(value, &obj.ecmp_hashing_include_fields)
+                        if err == nil {
+                                obj.valid[virtual_network_ecmp_hashing_include_fields] = true
+                        }
+                        break
                 case "virtual_network_properties":
                         err = json.Unmarshal(value, &obj.virtual_network_properties)
                         if err == nil {
-                                obj.valid |= virtual_network_virtual_network_properties
+                                obj.valid[virtual_network_virtual_network_properties] = true
+                        }
+                        break
+                case "provider_properties":
+                        err = json.Unmarshal(value, &obj.provider_properties)
+                        if err == nil {
+                                obj.valid[virtual_network_provider_properties] = true
                         }
                         break
                 case "virtual_network_network_id":
                         err = json.Unmarshal(value, &obj.virtual_network_network_id)
                         if err == nil {
-                                obj.valid |= virtual_network_virtual_network_network_id
+                                obj.valid[virtual_network_virtual_network_network_id] = true
                         }
                         break
                 case "route_target_list":
                         err = json.Unmarshal(value, &obj.route_target_list)
                         if err == nil {
-                                obj.valid |= virtual_network_route_target_list
+                                obj.valid[virtual_network_route_target_list] = true
+                        }
+                        break
+                case "import_route_target_list":
+                        err = json.Unmarshal(value, &obj.import_route_target_list)
+                        if err == nil {
+                                obj.valid[virtual_network_import_route_target_list] = true
+                        }
+                        break
+                case "export_route_target_list":
+                        err = json.Unmarshal(value, &obj.export_route_target_list)
+                        if err == nil {
+                                obj.valid[virtual_network_export_route_target_list] = true
                         }
                         break
                 case "router_external":
                         err = json.Unmarshal(value, &obj.router_external)
                         if err == nil {
-                                obj.valid |= virtual_network_router_external
+                                obj.valid[virtual_network_router_external] = true
                         }
                         break
                 case "is_shared":
                         err = json.Unmarshal(value, &obj.is_shared)
                         if err == nil {
-                                obj.valid |= virtual_network_is_shared
+                                obj.valid[virtual_network_is_shared] = true
                         }
                         break
                 case "external_ipam":
                         err = json.Unmarshal(value, &obj.external_ipam)
                         if err == nil {
-                                obj.valid |= virtual_network_external_ipam
+                                obj.valid[virtual_network_external_ipam] = true
                         }
                         break
                 case "flood_unknown_unicast":
                         err = json.Unmarshal(value, &obj.flood_unknown_unicast)
                         if err == nil {
-                                obj.valid |= virtual_network_flood_unknown_unicast
+                                obj.valid[virtual_network_flood_unknown_unicast] = true
+                        }
+                        break
+                case "multi_policy_service_chains_enabled":
+                        err = json.Unmarshal(value, &obj.multi_policy_service_chains_enabled)
+                        if err == nil {
+                                obj.valid[virtual_network_multi_policy_service_chains_enabled] = true
                         }
                         break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= virtual_network_id_perms
+                                obj.valid[virtual_network_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[virtual_network_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= virtual_network_display_name
+                                obj.valid[virtual_network_display_name] = true
                         }
                         break
-                case "qos_forwarding_class_refs":
-                        err = json.Unmarshal(value, &obj.qos_forwarding_class_refs)
+                case "qos_config_refs":
+                        err = json.Unmarshal(value, &obj.qos_config_refs)
                         if err == nil {
-                                obj.valid |= virtual_network_qos_forwarding_class_refs
+                                obj.valid[virtual_network_qos_config_refs] = true
                         }
                         break
                 case "access_control_lists":
                         err = json.Unmarshal(value, &obj.access_control_lists)
                         if err == nil {
-                                obj.valid |= virtual_network_access_control_lists
+                                obj.valid[virtual_network_access_control_lists] = true
                         }
                         break
                 case "floating_ip_pools":
                         err = json.Unmarshal(value, &obj.floating_ip_pools)
                         if err == nil {
-                                obj.valid |= virtual_network_floating_ip_pools
+                                obj.valid[virtual_network_floating_ip_pools] = true
+                        }
+                        break
+                case "alias_ip_pools":
+                        err = json.Unmarshal(value, &obj.alias_ip_pools)
+                        if err == nil {
+                                obj.valid[virtual_network_alias_ip_pools] = true
                         }
                         break
                 case "routing_instances":
                         err = json.Unmarshal(value, &obj.routing_instances)
                         if err == nil {
-                                obj.valid |= virtual_network_routing_instances
+                                obj.valid[virtual_network_routing_instances] = true
                         }
                         break
                 case "route_table_refs":
                         err = json.Unmarshal(value, &obj.route_table_refs)
                         if err == nil {
-                                obj.valid |= virtual_network_route_table_refs
+                                obj.valid[virtual_network_route_table_refs] = true
                         }
                         break
                 case "virtual_machine_interface_back_refs":
                         err = json.Unmarshal(value, &obj.virtual_machine_interface_back_refs)
                         if err == nil {
-                                obj.valid |= virtual_network_virtual_machine_interface_back_refs
+                                obj.valid[virtual_network_virtual_machine_interface_back_refs] = true
                         }
                         break
                 case "instance_ip_back_refs":
                         err = json.Unmarshal(value, &obj.instance_ip_back_refs)
                         if err == nil {
-                                obj.valid |= virtual_network_instance_ip_back_refs
+                                obj.valid[virtual_network_instance_ip_back_refs] = true
                         }
                         break
                 case "physical_router_back_refs":
                         err = json.Unmarshal(value, &obj.physical_router_back_refs)
                         if err == nil {
-                                obj.valid |= virtual_network_physical_router_back_refs
+                                obj.valid[virtual_network_physical_router_back_refs] = true
                         }
                         break
                 case "logical_router_back_refs":
                         err = json.Unmarshal(value, &obj.logical_router_back_refs)
                         if err == nil {
-                                obj.valid |= virtual_network_logical_router_back_refs
+                                obj.valid[virtual_network_logical_router_back_refs] = true
                         }
                         break
                 case "network_ipam_refs": {
@@ -926,7 +1112,7 @@ func (obj *VirtualNetwork) UnmarshalJSON(body []byte) error {
                         if err != nil {
                             break
                         }
-                        obj.valid |= virtual_network_network_ipam_refs
+                        obj.valid[virtual_network_network_ipam_refs] = true
                         obj.network_ipam_refs = make(contrail.ReferenceList, 0)
                         for _, element := range array {
                                 ref := contrail.Reference {
@@ -951,7 +1137,7 @@ func (obj *VirtualNetwork) UnmarshalJSON(body []byte) error {
                         if err != nil {
                             break
                         }
-                        obj.valid |= virtual_network_network_policy_refs
+                        obj.valid[virtual_network_network_policy_refs] = true
                         obj.network_policy_refs = make(contrail.ReferenceList, 0)
                         for _, element := range array {
                                 ref := contrail.Reference {
@@ -980,7 +1166,16 @@ func (obj *VirtualNetwork) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & virtual_network_virtual_network_properties != 0 {
+        if obj.modified[virtual_network_ecmp_hashing_include_fields] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.ecmp_hashing_include_fields)
+                if err != nil {
+                        return nil, err
+                }
+                msg["ecmp_hashing_include_fields"] = &value
+        }
+
+        if obj.modified[virtual_network_virtual_network_properties] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.virtual_network_properties)
                 if err != nil {
@@ -989,7 +1184,16 @@ func (obj *VirtualNetwork) UpdateObject() ([]byte, error) {
                 msg["virtual_network_properties"] = &value
         }
 
-        if obj.modified & virtual_network_virtual_network_network_id != 0 {
+        if obj.modified[virtual_network_provider_properties] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.provider_properties)
+                if err != nil {
+                        return nil, err
+                }
+                msg["provider_properties"] = &value
+        }
+
+        if obj.modified[virtual_network_virtual_network_network_id] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.virtual_network_network_id)
                 if err != nil {
@@ -998,7 +1202,7 @@ func (obj *VirtualNetwork) UpdateObject() ([]byte, error) {
                 msg["virtual_network_network_id"] = &value
         }
 
-        if obj.modified & virtual_network_route_target_list != 0 {
+        if obj.modified[virtual_network_route_target_list] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.route_target_list)
                 if err != nil {
@@ -1007,7 +1211,25 @@ func (obj *VirtualNetwork) UpdateObject() ([]byte, error) {
                 msg["route_target_list"] = &value
         }
 
-        if obj.modified & virtual_network_router_external != 0 {
+        if obj.modified[virtual_network_import_route_target_list] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.import_route_target_list)
+                if err != nil {
+                        return nil, err
+                }
+                msg["import_route_target_list"] = &value
+        }
+
+        if obj.modified[virtual_network_export_route_target_list] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.export_route_target_list)
+                if err != nil {
+                        return nil, err
+                }
+                msg["export_route_target_list"] = &value
+        }
+
+        if obj.modified[virtual_network_router_external] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.router_external)
                 if err != nil {
@@ -1016,7 +1238,7 @@ func (obj *VirtualNetwork) UpdateObject() ([]byte, error) {
                 msg["router_external"] = &value
         }
 
-        if obj.modified & virtual_network_is_shared != 0 {
+        if obj.modified[virtual_network_is_shared] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.is_shared)
                 if err != nil {
@@ -1025,7 +1247,7 @@ func (obj *VirtualNetwork) UpdateObject() ([]byte, error) {
                 msg["is_shared"] = &value
         }
 
-        if obj.modified & virtual_network_external_ipam != 0 {
+        if obj.modified[virtual_network_external_ipam] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.external_ipam)
                 if err != nil {
@@ -1034,7 +1256,7 @@ func (obj *VirtualNetwork) UpdateObject() ([]byte, error) {
                 msg["external_ipam"] = &value
         }
 
-        if obj.modified & virtual_network_flood_unknown_unicast != 0 {
+        if obj.modified[virtual_network_flood_unknown_unicast] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.flood_unknown_unicast)
                 if err != nil {
@@ -1043,7 +1265,16 @@ func (obj *VirtualNetwork) UpdateObject() ([]byte, error) {
                 msg["flood_unknown_unicast"] = &value
         }
 
-        if obj.modified & virtual_network_id_perms != 0 {
+        if obj.modified[virtual_network_multi_policy_service_chains_enabled] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.multi_policy_service_chains_enabled)
+                if err != nil {
+                        return nil, err
+                }
+                msg["multi_policy_service_chains_enabled"] = &value
+        }
+
+        if obj.modified[virtual_network_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -1052,7 +1283,16 @@ func (obj *VirtualNetwork) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & virtual_network_display_name != 0 {
+        if obj.modified[virtual_network_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[virtual_network_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -1061,27 +1301,27 @@ func (obj *VirtualNetwork) UpdateObject() ([]byte, error) {
                 msg["display_name"] = &value
         }
 
-        if obj.modified & virtual_network_qos_forwarding_class_refs != 0 {
-                if len(obj.qos_forwarding_class_refs) == 0 {
+        if obj.modified[virtual_network_qos_config_refs] {
+                if len(obj.qos_config_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
                                           make([]contrail.Reference, 0))
                         if err != nil {
                                 return nil, err
                         }
-                        msg["qos_forwarding_class_refs"] = &value
-                } else if !obj.hasReferenceBase("qos-forwarding-class") {
+                        msg["qos_config_refs"] = &value
+                } else if !obj.hasReferenceBase("qos-config") {
                         var value json.RawMessage
-                        value, err := json.Marshal(&obj.qos_forwarding_class_refs)
+                        value, err := json.Marshal(&obj.qos_config_refs)
                         if err != nil {
                                 return nil, err
                         }
-                        msg["qos_forwarding_class_refs"] = &value
+                        msg["qos_config_refs"] = &value
                 }
         }
 
 
-        if obj.modified & virtual_network_network_ipam_refs != 0 {
+        if obj.modified[virtual_network_network_ipam_refs] {
                 if len(obj.network_ipam_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -1101,7 +1341,7 @@ func (obj *VirtualNetwork) UpdateObject() ([]byte, error) {
         }
 
 
-        if obj.modified & virtual_network_network_policy_refs != 0 {
+        if obj.modified[virtual_network_network_policy_refs] {
                 if len(obj.network_policy_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -1121,7 +1361,7 @@ func (obj *VirtualNetwork) UpdateObject() ([]byte, error) {
         }
 
 
-        if obj.modified & virtual_network_route_table_refs != 0 {
+        if obj.modified[virtual_network_route_table_refs] {
                 if len(obj.route_table_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -1146,19 +1386,19 @@ func (obj *VirtualNetwork) UpdateObject() ([]byte, error) {
 
 func (obj *VirtualNetwork) UpdateReferences() error {
 
-        if (obj.modified & virtual_network_qos_forwarding_class_refs != 0) &&
-           len(obj.qos_forwarding_class_refs) > 0 &&
-           obj.hasReferenceBase("qos-forwarding-class") {
+        if (obj.modified[virtual_network_qos_config_refs]) &&
+           len(obj.qos_config_refs) > 0 &&
+           obj.hasReferenceBase("qos-config") {
                 err := obj.UpdateReference(
-                        obj, "qos-forwarding-class",
-                        obj.qos_forwarding_class_refs,
-                        obj.baseMap["qos-forwarding-class"])
+                        obj, "qos-config",
+                        obj.qos_config_refs,
+                        obj.baseMap["qos-config"])
                 if err != nil {
                         return err
                 }
         }
 
-        if (obj.modified & virtual_network_network_ipam_refs != 0) &&
+        if (obj.modified[virtual_network_network_ipam_refs]) &&
            len(obj.network_ipam_refs) > 0 &&
            obj.hasReferenceBase("network-ipam") {
                 err := obj.UpdateReference(
@@ -1170,7 +1410,7 @@ func (obj *VirtualNetwork) UpdateReferences() error {
                 }
         }
 
-        if (obj.modified & virtual_network_network_policy_refs != 0) &&
+        if (obj.modified[virtual_network_network_policy_refs]) &&
            len(obj.network_policy_refs) > 0 &&
            obj.hasReferenceBase("network-policy") {
                 err := obj.UpdateReference(
@@ -1182,7 +1422,7 @@ func (obj *VirtualNetwork) UpdateReferences() error {
                 }
         }
 
-        if (obj.modified & virtual_network_route_table_refs != 0) &&
+        if (obj.modified[virtual_network_route_table_refs]) &&
            len(obj.route_table_refs) > 0 &&
            obj.hasReferenceBase("route-table") {
                 err := obj.UpdateReference(

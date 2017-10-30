@@ -11,18 +11,21 @@ import (
 )
 
 const (
-	routing_instance_id_perms uint64 = 1 << iota
+	routing_instance_id_perms = iota
+	routing_instance_perms2
 	routing_instance_display_name
 	routing_instance_virtual_machine_interface_back_refs
+	routing_instance_max
 )
 
 type RoutingInstance struct {
         contrail.ObjectBase
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
 	virtual_machine_interface_back_refs contrail.ReferenceList
-        valid uint64
-        modified uint64
+        valid [routing_instance_max] bool
+        modified [routing_instance_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -66,7 +69,7 @@ func (obj *RoutingInstance) hasReferenceBase(name string) bool {
 }
 
 func (obj *RoutingInstance) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -77,7 +80,16 @@ func (obj *RoutingInstance) GetIdPerms() IdPermsType {
 
 func (obj *RoutingInstance) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= routing_instance_id_perms
+        obj.modified[routing_instance_id_perms] = true
+}
+
+func (obj *RoutingInstance) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *RoutingInstance) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[routing_instance_perms2] = true
 }
 
 func (obj *RoutingInstance) GetDisplayName() string {
@@ -86,12 +98,12 @@ func (obj *RoutingInstance) GetDisplayName() string {
 
 func (obj *RoutingInstance) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= routing_instance_display_name
+        obj.modified[routing_instance_display_name] = true
 }
 
 func (obj *RoutingInstance) readVirtualMachineInterfaceBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & routing_instance_virtual_machine_interface_back_refs == 0) {
+                (!obj.valid[routing_instance_virtual_machine_interface_back_refs]) {
                 err := obj.GetField(obj, "virtual_machine_interface_back_refs")
                 if err != nil {
                         return err
@@ -117,7 +129,7 @@ func (obj *RoutingInstance) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & routing_instance_id_perms != 0 {
+        if obj.modified[routing_instance_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -126,7 +138,16 @@ func (obj *RoutingInstance) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & routing_instance_display_name != 0 {
+        if obj.modified[routing_instance_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[routing_instance_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -148,18 +169,25 @@ func (obj *RoutingInstance) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= routing_instance_id_perms
+                                obj.valid[routing_instance_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[routing_instance_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= routing_instance_display_name
+                                obj.valid[routing_instance_display_name] = true
                         }
                         break
                 case "virtual_machine_interface_back_refs": {
@@ -174,7 +202,7 @@ func (obj *RoutingInstance) UnmarshalJSON(body []byte) error {
                         if err != nil {
                             break
                         }
-                        obj.valid |= routing_instance_virtual_machine_interface_back_refs
+                        obj.valid[routing_instance_virtual_machine_interface_back_refs] = true
                         obj.virtual_machine_interface_back_refs = make(contrail.ReferenceList, 0)
                         for _, element := range array {
                                 ref := contrail.Reference {
@@ -203,7 +231,7 @@ func (obj *RoutingInstance) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & routing_instance_id_perms != 0 {
+        if obj.modified[routing_instance_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -212,7 +240,16 @@ func (obj *RoutingInstance) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & routing_instance_display_name != 0 {
+        if obj.modified[routing_instance_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[routing_instance_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {

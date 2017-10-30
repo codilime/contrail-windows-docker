@@ -11,13 +11,15 @@ import (
 )
 
 const (
-	security_group_security_group_id uint64 = 1 << iota
+	security_group_security_group_id = iota
 	security_group_configured_security_group_id
 	security_group_security_group_entries
 	security_group_id_perms
+	security_group_perms2
 	security_group_display_name
 	security_group_access_control_lists
 	security_group_virtual_machine_interface_back_refs
+	security_group_max
 )
 
 type SecurityGroup struct {
@@ -26,11 +28,12 @@ type SecurityGroup struct {
 	configured_security_group_id int
 	security_group_entries PolicyEntriesType
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
 	access_control_lists contrail.ReferenceList
 	virtual_machine_interface_back_refs contrail.ReferenceList
-        valid uint64
-        modified uint64
+        valid [security_group_max] bool
+        modified [security_group_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -74,7 +77,7 @@ func (obj *SecurityGroup) hasReferenceBase(name string) bool {
 }
 
 func (obj *SecurityGroup) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -85,7 +88,7 @@ func (obj *SecurityGroup) GetSecurityGroupId() string {
 
 func (obj *SecurityGroup) SetSecurityGroupId(value string) {
         obj.security_group_id = value
-        obj.modified |= security_group_security_group_id
+        obj.modified[security_group_security_group_id] = true
 }
 
 func (obj *SecurityGroup) GetConfiguredSecurityGroupId() int {
@@ -94,7 +97,7 @@ func (obj *SecurityGroup) GetConfiguredSecurityGroupId() int {
 
 func (obj *SecurityGroup) SetConfiguredSecurityGroupId(value int) {
         obj.configured_security_group_id = value
-        obj.modified |= security_group_configured_security_group_id
+        obj.modified[security_group_configured_security_group_id] = true
 }
 
 func (obj *SecurityGroup) GetSecurityGroupEntries() PolicyEntriesType {
@@ -103,7 +106,7 @@ func (obj *SecurityGroup) GetSecurityGroupEntries() PolicyEntriesType {
 
 func (obj *SecurityGroup) SetSecurityGroupEntries(value *PolicyEntriesType) {
         obj.security_group_entries = *value
-        obj.modified |= security_group_security_group_entries
+        obj.modified[security_group_security_group_entries] = true
 }
 
 func (obj *SecurityGroup) GetIdPerms() IdPermsType {
@@ -112,7 +115,16 @@ func (obj *SecurityGroup) GetIdPerms() IdPermsType {
 
 func (obj *SecurityGroup) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= security_group_id_perms
+        obj.modified[security_group_id_perms] = true
+}
+
+func (obj *SecurityGroup) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *SecurityGroup) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[security_group_perms2] = true
 }
 
 func (obj *SecurityGroup) GetDisplayName() string {
@@ -121,12 +133,12 @@ func (obj *SecurityGroup) GetDisplayName() string {
 
 func (obj *SecurityGroup) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= security_group_display_name
+        obj.modified[security_group_display_name] = true
 }
 
 func (obj *SecurityGroup) readAccessControlLists() error {
         if !obj.IsTransient() &&
-                (obj.valid & security_group_access_control_lists == 0) {
+                (!obj.valid[security_group_access_control_lists]) {
                 err := obj.GetField(obj, "access_control_lists")
                 if err != nil {
                         return err
@@ -146,7 +158,7 @@ func (obj *SecurityGroup) GetAccessControlLists() (
 
 func (obj *SecurityGroup) readVirtualMachineInterfaceBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & security_group_virtual_machine_interface_back_refs == 0) {
+                (!obj.valid[security_group_virtual_machine_interface_back_refs]) {
                 err := obj.GetField(obj, "virtual_machine_interface_back_refs")
                 if err != nil {
                         return err
@@ -172,7 +184,7 @@ func (obj *SecurityGroup) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & security_group_security_group_id != 0 {
+        if obj.modified[security_group_security_group_id] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.security_group_id)
                 if err != nil {
@@ -181,7 +193,7 @@ func (obj *SecurityGroup) MarshalJSON() ([]byte, error) {
                 msg["security_group_id"] = &value
         }
 
-        if obj.modified & security_group_configured_security_group_id != 0 {
+        if obj.modified[security_group_configured_security_group_id] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.configured_security_group_id)
                 if err != nil {
@@ -190,7 +202,7 @@ func (obj *SecurityGroup) MarshalJSON() ([]byte, error) {
                 msg["configured_security_group_id"] = &value
         }
 
-        if obj.modified & security_group_security_group_entries != 0 {
+        if obj.modified[security_group_security_group_entries] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.security_group_entries)
                 if err != nil {
@@ -199,7 +211,7 @@ func (obj *SecurityGroup) MarshalJSON() ([]byte, error) {
                 msg["security_group_entries"] = &value
         }
 
-        if obj.modified & security_group_id_perms != 0 {
+        if obj.modified[security_group_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -208,7 +220,16 @@ func (obj *SecurityGroup) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & security_group_display_name != 0 {
+        if obj.modified[security_group_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[security_group_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -230,48 +251,55 @@ func (obj *SecurityGroup) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "security_group_id":
                         err = json.Unmarshal(value, &obj.security_group_id)
                         if err == nil {
-                                obj.valid |= security_group_security_group_id
+                                obj.valid[security_group_security_group_id] = true
                         }
                         break
                 case "configured_security_group_id":
                         err = json.Unmarshal(value, &obj.configured_security_group_id)
                         if err == nil {
-                                obj.valid |= security_group_configured_security_group_id
+                                obj.valid[security_group_configured_security_group_id] = true
                         }
                         break
                 case "security_group_entries":
                         err = json.Unmarshal(value, &obj.security_group_entries)
                         if err == nil {
-                                obj.valid |= security_group_security_group_entries
+                                obj.valid[security_group_security_group_entries] = true
                         }
                         break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= security_group_id_perms
+                                obj.valid[security_group_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[security_group_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= security_group_display_name
+                                obj.valid[security_group_display_name] = true
                         }
                         break
                 case "access_control_lists":
                         err = json.Unmarshal(value, &obj.access_control_lists)
                         if err == nil {
-                                obj.valid |= security_group_access_control_lists
+                                obj.valid[security_group_access_control_lists] = true
                         }
                         break
                 case "virtual_machine_interface_back_refs":
                         err = json.Unmarshal(value, &obj.virtual_machine_interface_back_refs)
                         if err == nil {
-                                obj.valid |= security_group_virtual_machine_interface_back_refs
+                                obj.valid[security_group_virtual_machine_interface_back_refs] = true
                         }
                         break
                 }
@@ -290,7 +318,7 @@ func (obj *SecurityGroup) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & security_group_security_group_id != 0 {
+        if obj.modified[security_group_security_group_id] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.security_group_id)
                 if err != nil {
@@ -299,7 +327,7 @@ func (obj *SecurityGroup) UpdateObject() ([]byte, error) {
                 msg["security_group_id"] = &value
         }
 
-        if obj.modified & security_group_configured_security_group_id != 0 {
+        if obj.modified[security_group_configured_security_group_id] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.configured_security_group_id)
                 if err != nil {
@@ -308,7 +336,7 @@ func (obj *SecurityGroup) UpdateObject() ([]byte, error) {
                 msg["configured_security_group_id"] = &value
         }
 
-        if obj.modified & security_group_security_group_entries != 0 {
+        if obj.modified[security_group_security_group_entries] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.security_group_entries)
                 if err != nil {
@@ -317,7 +345,7 @@ func (obj *SecurityGroup) UpdateObject() ([]byte, error) {
                 msg["security_group_entries"] = &value
         }
 
-        if obj.modified & security_group_id_perms != 0 {
+        if obj.modified[security_group_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -326,7 +354,16 @@ func (obj *SecurityGroup) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & security_group_display_name != 0 {
+        if obj.modified[security_group_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[security_group_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {

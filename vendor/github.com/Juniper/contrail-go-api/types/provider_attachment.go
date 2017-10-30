@@ -11,18 +11,21 @@ import (
 )
 
 const (
-	provider_attachment_id_perms uint64 = 1 << iota
+	provider_attachment_id_perms = iota
+	provider_attachment_perms2
 	provider_attachment_display_name
 	provider_attachment_virtual_router_refs
+	provider_attachment_max
 )
 
 type ProviderAttachment struct {
         contrail.ObjectBase
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
 	virtual_router_refs contrail.ReferenceList
-        valid uint64
-        modified uint64
+        valid [provider_attachment_max] bool
+        modified [provider_attachment_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -66,7 +69,7 @@ func (obj *ProviderAttachment) hasReferenceBase(name string) bool {
 }
 
 func (obj *ProviderAttachment) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -77,7 +80,16 @@ func (obj *ProviderAttachment) GetIdPerms() IdPermsType {
 
 func (obj *ProviderAttachment) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= provider_attachment_id_perms
+        obj.modified[provider_attachment_id_perms] = true
+}
+
+func (obj *ProviderAttachment) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *ProviderAttachment) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[provider_attachment_perms2] = true
 }
 
 func (obj *ProviderAttachment) GetDisplayName() string {
@@ -86,12 +98,12 @@ func (obj *ProviderAttachment) GetDisplayName() string {
 
 func (obj *ProviderAttachment) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= provider_attachment_display_name
+        obj.modified[provider_attachment_display_name] = true
 }
 
 func (obj *ProviderAttachment) readVirtualRouterRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & provider_attachment_virtual_router_refs == 0) {
+                (!obj.valid[provider_attachment_virtual_router_refs]) {
                 err := obj.GetField(obj, "virtual_router_refs")
                 if err != nil {
                         return err
@@ -116,14 +128,14 @@ func (obj *ProviderAttachment) AddVirtualRouter(
                 return err
         }
 
-        if obj.modified & provider_attachment_virtual_router_refs == 0 {
+        if !obj.modified[provider_attachment_virtual_router_refs] {
                 obj.storeReferenceBase("virtual-router", obj.virtual_router_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.virtual_router_refs = append(obj.virtual_router_refs, ref)
-        obj.modified |= provider_attachment_virtual_router_refs
+        obj.modified[provider_attachment_virtual_router_refs] = true
         return nil
 }
 
@@ -133,7 +145,7 @@ func (obj *ProviderAttachment) DeleteVirtualRouter(uuid string) error {
                 return err
         }
 
-        if obj.modified & provider_attachment_virtual_router_refs == 0 {
+        if !obj.modified[provider_attachment_virtual_router_refs] {
                 obj.storeReferenceBase("virtual-router", obj.virtual_router_refs)
         }
 
@@ -145,18 +157,18 @@ func (obj *ProviderAttachment) DeleteVirtualRouter(uuid string) error {
                         break
                 }
         }
-        obj.modified |= provider_attachment_virtual_router_refs
+        obj.modified[provider_attachment_virtual_router_refs] = true
         return nil
 }
 
 func (obj *ProviderAttachment) ClearVirtualRouter() {
-        if (obj.valid & provider_attachment_virtual_router_refs != 0) &&
-           (obj.modified & provider_attachment_virtual_router_refs == 0) {
+        if (obj.valid[provider_attachment_virtual_router_refs]) &&
+           (!obj.modified[provider_attachment_virtual_router_refs]) {
                 obj.storeReferenceBase("virtual-router", obj.virtual_router_refs)
         }
         obj.virtual_router_refs = make([]contrail.Reference, 0)
-        obj.valid |= provider_attachment_virtual_router_refs
-        obj.modified |= provider_attachment_virtual_router_refs
+        obj.valid[provider_attachment_virtual_router_refs] = true
+        obj.modified[provider_attachment_virtual_router_refs] = true
 }
 
 func (obj *ProviderAttachment) SetVirtualRouterList(
@@ -182,7 +194,7 @@ func (obj *ProviderAttachment) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & provider_attachment_id_perms != 0 {
+        if obj.modified[provider_attachment_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -191,7 +203,16 @@ func (obj *ProviderAttachment) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & provider_attachment_display_name != 0 {
+        if obj.modified[provider_attachment_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[provider_attachment_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -222,24 +243,31 @@ func (obj *ProviderAttachment) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= provider_attachment_id_perms
+                                obj.valid[provider_attachment_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[provider_attachment_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= provider_attachment_display_name
+                                obj.valid[provider_attachment_display_name] = true
                         }
                         break
                 case "virtual_router_refs":
                         err = json.Unmarshal(value, &obj.virtual_router_refs)
                         if err == nil {
-                                obj.valid |= provider_attachment_virtual_router_refs
+                                obj.valid[provider_attachment_virtual_router_refs] = true
                         }
                         break
                 }
@@ -258,7 +286,7 @@ func (obj *ProviderAttachment) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & provider_attachment_id_perms != 0 {
+        if obj.modified[provider_attachment_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -267,7 +295,16 @@ func (obj *ProviderAttachment) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & provider_attachment_display_name != 0 {
+        if obj.modified[provider_attachment_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[provider_attachment_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -276,7 +313,7 @@ func (obj *ProviderAttachment) UpdateObject() ([]byte, error) {
                 msg["display_name"] = &value
         }
 
-        if obj.modified & provider_attachment_virtual_router_refs != 0 {
+        if obj.modified[provider_attachment_virtual_router_refs] {
                 if len(obj.virtual_router_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -301,7 +338,7 @@ func (obj *ProviderAttachment) UpdateObject() ([]byte, error) {
 
 func (obj *ProviderAttachment) UpdateReferences() error {
 
-        if (obj.modified & provider_attachment_virtual_router_refs != 0) &&
+        if (obj.modified[provider_attachment_virtual_router_refs]) &&
            len(obj.virtual_router_refs) > 0 &&
            obj.hasReferenceBase("virtual-router") {
                 err := obj.UpdateReference(

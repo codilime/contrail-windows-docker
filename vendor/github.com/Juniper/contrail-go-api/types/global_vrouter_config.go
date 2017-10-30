@@ -11,18 +11,22 @@ import (
 )
 
 const (
-	global_vrouter_config_linklocal_services uint64 = 1 << iota
+	global_vrouter_config_ecmp_hashing_include_fields = iota
+	global_vrouter_config_linklocal_services
 	global_vrouter_config_encapsulation_priorities
 	global_vrouter_config_vxlan_network_identifier_mode
 	global_vrouter_config_flow_export_rate
 	global_vrouter_config_flow_aging_timeout_list
 	global_vrouter_config_forwarding_mode
 	global_vrouter_config_id_perms
+	global_vrouter_config_perms2
 	global_vrouter_config_display_name
+	global_vrouter_config_max
 )
 
 type GlobalVrouterConfig struct {
         contrail.ObjectBase
+	ecmp_hashing_include_fields EcmpHashingIncludeFields
 	linklocal_services LinklocalServicesTypes
 	encapsulation_priorities EncapsulationPrioritiesType
 	vxlan_network_identifier_mode string
@@ -30,9 +34,10 @@ type GlobalVrouterConfig struct {
 	flow_aging_timeout_list FlowAgingTimeoutList
 	forwarding_mode string
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
-        valid uint64
-        modified uint64
+        valid [global_vrouter_config_max] bool
+        modified [global_vrouter_config_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -76,10 +81,19 @@ func (obj *GlobalVrouterConfig) hasReferenceBase(name string) bool {
 }
 
 func (obj *GlobalVrouterConfig) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
+
+func (obj *GlobalVrouterConfig) GetEcmpHashingIncludeFields() EcmpHashingIncludeFields {
+        return obj.ecmp_hashing_include_fields
+}
+
+func (obj *GlobalVrouterConfig) SetEcmpHashingIncludeFields(value *EcmpHashingIncludeFields) {
+        obj.ecmp_hashing_include_fields = *value
+        obj.modified[global_vrouter_config_ecmp_hashing_include_fields] = true
+}
 
 func (obj *GlobalVrouterConfig) GetLinklocalServices() LinklocalServicesTypes {
         return obj.linklocal_services
@@ -87,7 +101,7 @@ func (obj *GlobalVrouterConfig) GetLinklocalServices() LinklocalServicesTypes {
 
 func (obj *GlobalVrouterConfig) SetLinklocalServices(value *LinklocalServicesTypes) {
         obj.linklocal_services = *value
-        obj.modified |= global_vrouter_config_linklocal_services
+        obj.modified[global_vrouter_config_linklocal_services] = true
 }
 
 func (obj *GlobalVrouterConfig) GetEncapsulationPriorities() EncapsulationPrioritiesType {
@@ -96,7 +110,7 @@ func (obj *GlobalVrouterConfig) GetEncapsulationPriorities() EncapsulationPriori
 
 func (obj *GlobalVrouterConfig) SetEncapsulationPriorities(value *EncapsulationPrioritiesType) {
         obj.encapsulation_priorities = *value
-        obj.modified |= global_vrouter_config_encapsulation_priorities
+        obj.modified[global_vrouter_config_encapsulation_priorities] = true
 }
 
 func (obj *GlobalVrouterConfig) GetVxlanNetworkIdentifierMode() string {
@@ -105,7 +119,7 @@ func (obj *GlobalVrouterConfig) GetVxlanNetworkIdentifierMode() string {
 
 func (obj *GlobalVrouterConfig) SetVxlanNetworkIdentifierMode(value string) {
         obj.vxlan_network_identifier_mode = value
-        obj.modified |= global_vrouter_config_vxlan_network_identifier_mode
+        obj.modified[global_vrouter_config_vxlan_network_identifier_mode] = true
 }
 
 func (obj *GlobalVrouterConfig) GetFlowExportRate() int {
@@ -114,7 +128,7 @@ func (obj *GlobalVrouterConfig) GetFlowExportRate() int {
 
 func (obj *GlobalVrouterConfig) SetFlowExportRate(value int) {
         obj.flow_export_rate = value
-        obj.modified |= global_vrouter_config_flow_export_rate
+        obj.modified[global_vrouter_config_flow_export_rate] = true
 }
 
 func (obj *GlobalVrouterConfig) GetFlowAgingTimeoutList() FlowAgingTimeoutList {
@@ -123,7 +137,7 @@ func (obj *GlobalVrouterConfig) GetFlowAgingTimeoutList() FlowAgingTimeoutList {
 
 func (obj *GlobalVrouterConfig) SetFlowAgingTimeoutList(value *FlowAgingTimeoutList) {
         obj.flow_aging_timeout_list = *value
-        obj.modified |= global_vrouter_config_flow_aging_timeout_list
+        obj.modified[global_vrouter_config_flow_aging_timeout_list] = true
 }
 
 func (obj *GlobalVrouterConfig) GetForwardingMode() string {
@@ -132,7 +146,7 @@ func (obj *GlobalVrouterConfig) GetForwardingMode() string {
 
 func (obj *GlobalVrouterConfig) SetForwardingMode(value string) {
         obj.forwarding_mode = value
-        obj.modified |= global_vrouter_config_forwarding_mode
+        obj.modified[global_vrouter_config_forwarding_mode] = true
 }
 
 func (obj *GlobalVrouterConfig) GetIdPerms() IdPermsType {
@@ -141,7 +155,16 @@ func (obj *GlobalVrouterConfig) GetIdPerms() IdPermsType {
 
 func (obj *GlobalVrouterConfig) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= global_vrouter_config_id_perms
+        obj.modified[global_vrouter_config_id_perms] = true
+}
+
+func (obj *GlobalVrouterConfig) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *GlobalVrouterConfig) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[global_vrouter_config_perms2] = true
 }
 
 func (obj *GlobalVrouterConfig) GetDisplayName() string {
@@ -150,7 +173,7 @@ func (obj *GlobalVrouterConfig) GetDisplayName() string {
 
 func (obj *GlobalVrouterConfig) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= global_vrouter_config_display_name
+        obj.modified[global_vrouter_config_display_name] = true
 }
 
 func (obj *GlobalVrouterConfig) MarshalJSON() ([]byte, error) {
@@ -161,7 +184,16 @@ func (obj *GlobalVrouterConfig) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & global_vrouter_config_linklocal_services != 0 {
+        if obj.modified[global_vrouter_config_ecmp_hashing_include_fields] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.ecmp_hashing_include_fields)
+                if err != nil {
+                        return nil, err
+                }
+                msg["ecmp_hashing_include_fields"] = &value
+        }
+
+        if obj.modified[global_vrouter_config_linklocal_services] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.linklocal_services)
                 if err != nil {
@@ -170,7 +202,7 @@ func (obj *GlobalVrouterConfig) MarshalJSON() ([]byte, error) {
                 msg["linklocal_services"] = &value
         }
 
-        if obj.modified & global_vrouter_config_encapsulation_priorities != 0 {
+        if obj.modified[global_vrouter_config_encapsulation_priorities] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.encapsulation_priorities)
                 if err != nil {
@@ -179,7 +211,7 @@ func (obj *GlobalVrouterConfig) MarshalJSON() ([]byte, error) {
                 msg["encapsulation_priorities"] = &value
         }
 
-        if obj.modified & global_vrouter_config_vxlan_network_identifier_mode != 0 {
+        if obj.modified[global_vrouter_config_vxlan_network_identifier_mode] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.vxlan_network_identifier_mode)
                 if err != nil {
@@ -188,7 +220,7 @@ func (obj *GlobalVrouterConfig) MarshalJSON() ([]byte, error) {
                 msg["vxlan_network_identifier_mode"] = &value
         }
 
-        if obj.modified & global_vrouter_config_flow_export_rate != 0 {
+        if obj.modified[global_vrouter_config_flow_export_rate] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.flow_export_rate)
                 if err != nil {
@@ -197,7 +229,7 @@ func (obj *GlobalVrouterConfig) MarshalJSON() ([]byte, error) {
                 msg["flow_export_rate"] = &value
         }
 
-        if obj.modified & global_vrouter_config_flow_aging_timeout_list != 0 {
+        if obj.modified[global_vrouter_config_flow_aging_timeout_list] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.flow_aging_timeout_list)
                 if err != nil {
@@ -206,7 +238,7 @@ func (obj *GlobalVrouterConfig) MarshalJSON() ([]byte, error) {
                 msg["flow_aging_timeout_list"] = &value
         }
 
-        if obj.modified & global_vrouter_config_forwarding_mode != 0 {
+        if obj.modified[global_vrouter_config_forwarding_mode] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.forwarding_mode)
                 if err != nil {
@@ -215,7 +247,7 @@ func (obj *GlobalVrouterConfig) MarshalJSON() ([]byte, error) {
                 msg["forwarding_mode"] = &value
         }
 
-        if obj.modified & global_vrouter_config_id_perms != 0 {
+        if obj.modified[global_vrouter_config_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -224,7 +256,16 @@ func (obj *GlobalVrouterConfig) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & global_vrouter_config_display_name != 0 {
+        if obj.modified[global_vrouter_config_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[global_vrouter_config_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -246,54 +287,67 @@ func (obj *GlobalVrouterConfig) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
+                case "ecmp_hashing_include_fields":
+                        err = json.Unmarshal(value, &obj.ecmp_hashing_include_fields)
+                        if err == nil {
+                                obj.valid[global_vrouter_config_ecmp_hashing_include_fields] = true
+                        }
+                        break
                 case "linklocal_services":
                         err = json.Unmarshal(value, &obj.linklocal_services)
                         if err == nil {
-                                obj.valid |= global_vrouter_config_linklocal_services
+                                obj.valid[global_vrouter_config_linklocal_services] = true
                         }
                         break
                 case "encapsulation_priorities":
                         err = json.Unmarshal(value, &obj.encapsulation_priorities)
                         if err == nil {
-                                obj.valid |= global_vrouter_config_encapsulation_priorities
+                                obj.valid[global_vrouter_config_encapsulation_priorities] = true
                         }
                         break
                 case "vxlan_network_identifier_mode":
                         err = json.Unmarshal(value, &obj.vxlan_network_identifier_mode)
                         if err == nil {
-                                obj.valid |= global_vrouter_config_vxlan_network_identifier_mode
+                                obj.valid[global_vrouter_config_vxlan_network_identifier_mode] = true
                         }
                         break
                 case "flow_export_rate":
                         err = json.Unmarshal(value, &obj.flow_export_rate)
                         if err == nil {
-                                obj.valid |= global_vrouter_config_flow_export_rate
+                                obj.valid[global_vrouter_config_flow_export_rate] = true
                         }
                         break
                 case "flow_aging_timeout_list":
                         err = json.Unmarshal(value, &obj.flow_aging_timeout_list)
                         if err == nil {
-                                obj.valid |= global_vrouter_config_flow_aging_timeout_list
+                                obj.valid[global_vrouter_config_flow_aging_timeout_list] = true
                         }
                         break
                 case "forwarding_mode":
                         err = json.Unmarshal(value, &obj.forwarding_mode)
                         if err == nil {
-                                obj.valid |= global_vrouter_config_forwarding_mode
+                                obj.valid[global_vrouter_config_forwarding_mode] = true
                         }
                         break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= global_vrouter_config_id_perms
+                                obj.valid[global_vrouter_config_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[global_vrouter_config_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= global_vrouter_config_display_name
+                                obj.valid[global_vrouter_config_display_name] = true
                         }
                         break
                 }
@@ -312,7 +366,16 @@ func (obj *GlobalVrouterConfig) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & global_vrouter_config_linklocal_services != 0 {
+        if obj.modified[global_vrouter_config_ecmp_hashing_include_fields] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.ecmp_hashing_include_fields)
+                if err != nil {
+                        return nil, err
+                }
+                msg["ecmp_hashing_include_fields"] = &value
+        }
+
+        if obj.modified[global_vrouter_config_linklocal_services] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.linklocal_services)
                 if err != nil {
@@ -321,7 +384,7 @@ func (obj *GlobalVrouterConfig) UpdateObject() ([]byte, error) {
                 msg["linklocal_services"] = &value
         }
 
-        if obj.modified & global_vrouter_config_encapsulation_priorities != 0 {
+        if obj.modified[global_vrouter_config_encapsulation_priorities] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.encapsulation_priorities)
                 if err != nil {
@@ -330,7 +393,7 @@ func (obj *GlobalVrouterConfig) UpdateObject() ([]byte, error) {
                 msg["encapsulation_priorities"] = &value
         }
 
-        if obj.modified & global_vrouter_config_vxlan_network_identifier_mode != 0 {
+        if obj.modified[global_vrouter_config_vxlan_network_identifier_mode] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.vxlan_network_identifier_mode)
                 if err != nil {
@@ -339,7 +402,7 @@ func (obj *GlobalVrouterConfig) UpdateObject() ([]byte, error) {
                 msg["vxlan_network_identifier_mode"] = &value
         }
 
-        if obj.modified & global_vrouter_config_flow_export_rate != 0 {
+        if obj.modified[global_vrouter_config_flow_export_rate] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.flow_export_rate)
                 if err != nil {
@@ -348,7 +411,7 @@ func (obj *GlobalVrouterConfig) UpdateObject() ([]byte, error) {
                 msg["flow_export_rate"] = &value
         }
 
-        if obj.modified & global_vrouter_config_flow_aging_timeout_list != 0 {
+        if obj.modified[global_vrouter_config_flow_aging_timeout_list] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.flow_aging_timeout_list)
                 if err != nil {
@@ -357,7 +420,7 @@ func (obj *GlobalVrouterConfig) UpdateObject() ([]byte, error) {
                 msg["flow_aging_timeout_list"] = &value
         }
 
-        if obj.modified & global_vrouter_config_forwarding_mode != 0 {
+        if obj.modified[global_vrouter_config_forwarding_mode] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.forwarding_mode)
                 if err != nil {
@@ -366,7 +429,7 @@ func (obj *GlobalVrouterConfig) UpdateObject() ([]byte, error) {
                 msg["forwarding_mode"] = &value
         }
 
-        if obj.modified & global_vrouter_config_id_perms != 0 {
+        if obj.modified[global_vrouter_config_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -375,7 +438,16 @@ func (obj *GlobalVrouterConfig) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & global_vrouter_config_display_name != 0 {
+        if obj.modified[global_vrouter_config_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[global_vrouter_config_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {

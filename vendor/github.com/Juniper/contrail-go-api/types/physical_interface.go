@@ -11,18 +11,29 @@ import (
 )
 
 const (
-	physical_interface_id_perms uint64 = 1 << iota
+	physical_interface_id_perms = iota
+	physical_interface_perms2
 	physical_interface_display_name
 	physical_interface_logical_interfaces
+	physical_interface_physical_interface_refs
+	physical_interface_service_appliance_back_refs
+	physical_interface_virtual_machine_interface_back_refs
+	physical_interface_physical_interface_back_refs
+	physical_interface_max
 )
 
 type PhysicalInterface struct {
         contrail.ObjectBase
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
 	logical_interfaces contrail.ReferenceList
-        valid uint64
-        modified uint64
+	physical_interface_refs contrail.ReferenceList
+	service_appliance_back_refs contrail.ReferenceList
+	virtual_machine_interface_back_refs contrail.ReferenceList
+	physical_interface_back_refs contrail.ReferenceList
+        valid [physical_interface_max] bool
+        modified [physical_interface_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -66,7 +77,7 @@ func (obj *PhysicalInterface) hasReferenceBase(name string) bool {
 }
 
 func (obj *PhysicalInterface) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -77,7 +88,16 @@ func (obj *PhysicalInterface) GetIdPerms() IdPermsType {
 
 func (obj *PhysicalInterface) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= physical_interface_id_perms
+        obj.modified[physical_interface_id_perms] = true
+}
+
+func (obj *PhysicalInterface) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *PhysicalInterface) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[physical_interface_perms2] = true
 }
 
 func (obj *PhysicalInterface) GetDisplayName() string {
@@ -86,12 +106,12 @@ func (obj *PhysicalInterface) GetDisplayName() string {
 
 func (obj *PhysicalInterface) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= physical_interface_display_name
+        obj.modified[physical_interface_display_name] = true
 }
 
 func (obj *PhysicalInterface) readLogicalInterfaces() error {
         if !obj.IsTransient() &&
-                (obj.valid & physical_interface_logical_interfaces == 0) {
+                (!obj.valid[physical_interface_logical_interfaces]) {
                 err := obj.GetField(obj, "logical_interfaces")
                 if err != nil {
                         return err
@@ -109,6 +129,151 @@ func (obj *PhysicalInterface) GetLogicalInterfaces() (
         return obj.logical_interfaces, nil
 }
 
+func (obj *PhysicalInterface) readPhysicalInterfaceRefs() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[physical_interface_physical_interface_refs]) {
+                err := obj.GetField(obj, "physical_interface_refs")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *PhysicalInterface) GetPhysicalInterfaceRefs() (
+        contrail.ReferenceList, error) {
+        err := obj.readPhysicalInterfaceRefs()
+        if err != nil {
+                return nil, err
+        }
+        return obj.physical_interface_refs, nil
+}
+
+func (obj *PhysicalInterface) AddPhysicalInterface(
+        rhs *PhysicalInterface) error {
+        err := obj.readPhysicalInterfaceRefs()
+        if err != nil {
+                return err
+        }
+
+        if !obj.modified[physical_interface_physical_interface_refs] {
+                obj.storeReferenceBase("physical-interface", obj.physical_interface_refs)
+        }
+
+        ref := contrail.Reference {
+                rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
+        obj.physical_interface_refs = append(obj.physical_interface_refs, ref)
+        obj.modified[physical_interface_physical_interface_refs] = true
+        return nil
+}
+
+func (obj *PhysicalInterface) DeletePhysicalInterface(uuid string) error {
+        err := obj.readPhysicalInterfaceRefs()
+        if err != nil {
+                return err
+        }
+
+        if !obj.modified[physical_interface_physical_interface_refs] {
+                obj.storeReferenceBase("physical-interface", obj.physical_interface_refs)
+        }
+
+        for i, ref := range obj.physical_interface_refs {
+                if ref.Uuid == uuid {
+                        obj.physical_interface_refs = append(
+                                obj.physical_interface_refs[:i],
+                                obj.physical_interface_refs[i+1:]...)
+                        break
+                }
+        }
+        obj.modified[physical_interface_physical_interface_refs] = true
+        return nil
+}
+
+func (obj *PhysicalInterface) ClearPhysicalInterface() {
+        if (obj.valid[physical_interface_physical_interface_refs]) &&
+           (!obj.modified[physical_interface_physical_interface_refs]) {
+                obj.storeReferenceBase("physical-interface", obj.physical_interface_refs)
+        }
+        obj.physical_interface_refs = make([]contrail.Reference, 0)
+        obj.valid[physical_interface_physical_interface_refs] = true
+        obj.modified[physical_interface_physical_interface_refs] = true
+}
+
+func (obj *PhysicalInterface) SetPhysicalInterfaceList(
+        refList []contrail.ReferencePair) {
+        obj.ClearPhysicalInterface()
+        obj.physical_interface_refs = make([]contrail.Reference, len(refList))
+        for i, pair := range refList {
+                obj.physical_interface_refs[i] = contrail.Reference {
+                        pair.Object.GetFQName(),
+                        pair.Object.GetUuid(),
+                        pair.Object.GetHref(),
+                        pair.Attribute,
+                }
+        }
+}
+
+
+func (obj *PhysicalInterface) readServiceApplianceBackRefs() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[physical_interface_service_appliance_back_refs]) {
+                err := obj.GetField(obj, "service_appliance_back_refs")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *PhysicalInterface) GetServiceApplianceBackRefs() (
+        contrail.ReferenceList, error) {
+        err := obj.readServiceApplianceBackRefs()
+        if err != nil {
+                return nil, err
+        }
+        return obj.service_appliance_back_refs, nil
+}
+
+func (obj *PhysicalInterface) readVirtualMachineInterfaceBackRefs() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[physical_interface_virtual_machine_interface_back_refs]) {
+                err := obj.GetField(obj, "virtual_machine_interface_back_refs")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *PhysicalInterface) GetVirtualMachineInterfaceBackRefs() (
+        contrail.ReferenceList, error) {
+        err := obj.readVirtualMachineInterfaceBackRefs()
+        if err != nil {
+                return nil, err
+        }
+        return obj.virtual_machine_interface_back_refs, nil
+}
+
+func (obj *PhysicalInterface) readPhysicalInterfaceBackRefs() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[physical_interface_physical_interface_back_refs]) {
+                err := obj.GetField(obj, "physical_interface_back_refs")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *PhysicalInterface) GetPhysicalInterfaceBackRefs() (
+        contrail.ReferenceList, error) {
+        err := obj.readPhysicalInterfaceBackRefs()
+        if err != nil {
+                return nil, err
+        }
+        return obj.physical_interface_back_refs, nil
+}
+
 func (obj *PhysicalInterface) MarshalJSON() ([]byte, error) {
         msg := map[string]*json.RawMessage {
         }
@@ -117,7 +282,7 @@ func (obj *PhysicalInterface) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & physical_interface_id_perms != 0 {
+        if obj.modified[physical_interface_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -126,13 +291,31 @@ func (obj *PhysicalInterface) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & physical_interface_display_name != 0 {
+        if obj.modified[physical_interface_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[physical_interface_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
                         return nil, err
                 }
                 msg["display_name"] = &value
+        }
+
+        if len(obj.physical_interface_refs) > 0 {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.physical_interface_refs)
+                if err != nil {
+                        return nil, err
+                }
+                msg["physical_interface_refs"] = &value
         }
 
         return json.Marshal(msg)
@@ -148,26 +331,76 @@ func (obj *PhysicalInterface) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= physical_interface_id_perms
+                                obj.valid[physical_interface_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[physical_interface_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= physical_interface_display_name
+                                obj.valid[physical_interface_display_name] = true
                         }
                         break
                 case "logical_interfaces":
                         err = json.Unmarshal(value, &obj.logical_interfaces)
                         if err == nil {
-                                obj.valid |= physical_interface_logical_interfaces
+                                obj.valid[physical_interface_logical_interfaces] = true
                         }
                         break
+                case "physical_interface_refs":
+                        err = json.Unmarshal(value, &obj.physical_interface_refs)
+                        if err == nil {
+                                obj.valid[physical_interface_physical_interface_refs] = true
+                        }
+                        break
+                case "virtual_machine_interface_back_refs":
+                        err = json.Unmarshal(value, &obj.virtual_machine_interface_back_refs)
+                        if err == nil {
+                                obj.valid[physical_interface_virtual_machine_interface_back_refs] = true
+                        }
+                        break
+                case "physical_interface_back_refs":
+                        err = json.Unmarshal(value, &obj.physical_interface_back_refs)
+                        if err == nil {
+                                obj.valid[physical_interface_physical_interface_back_refs] = true
+                        }
+                        break
+                case "service_appliance_back_refs": {
+                        type ReferenceElement struct {
+                                To []string
+                                Uuid string
+                                Href string
+                                Attr ServiceApplianceInterfaceType
+                        }
+                        var array []ReferenceElement
+                        err = json.Unmarshal(value, &array)
+                        if err != nil {
+                            break
+                        }
+                        obj.valid[physical_interface_service_appliance_back_refs] = true
+                        obj.service_appliance_back_refs = make(contrail.ReferenceList, 0)
+                        for _, element := range array {
+                                ref := contrail.Reference {
+                                        element.To,
+                                        element.Uuid,
+                                        element.Href,
+                                        element.Attr,
+                                }
+                                obj.service_appliance_back_refs = append(obj.service_appliance_back_refs, ref)
+                        }
+                        break
+                }
                 }
                 if err != nil {
                         return err
@@ -184,7 +417,7 @@ func (obj *PhysicalInterface) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & physical_interface_id_perms != 0 {
+        if obj.modified[physical_interface_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -193,7 +426,16 @@ func (obj *PhysicalInterface) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & physical_interface_display_name != 0 {
+        if obj.modified[physical_interface_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[physical_interface_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -202,10 +444,42 @@ func (obj *PhysicalInterface) UpdateObject() ([]byte, error) {
                 msg["display_name"] = &value
         }
 
+        if obj.modified[physical_interface_physical_interface_refs] {
+                if len(obj.physical_interface_refs) == 0 {
+                        var value json.RawMessage
+                        value, err := json.Marshal(
+                                          make([]contrail.Reference, 0))
+                        if err != nil {
+                                return nil, err
+                        }
+                        msg["physical_interface_refs"] = &value
+                } else if !obj.hasReferenceBase("physical-interface") {
+                        var value json.RawMessage
+                        value, err := json.Marshal(&obj.physical_interface_refs)
+                        if err != nil {
+                                return nil, err
+                        }
+                        msg["physical_interface_refs"] = &value
+                }
+        }
+
+
         return json.Marshal(msg)
 }
 
 func (obj *PhysicalInterface) UpdateReferences() error {
+
+        if (obj.modified[physical_interface_physical_interface_refs]) &&
+           len(obj.physical_interface_refs) > 0 &&
+           obj.hasReferenceBase("physical-interface") {
+                err := obj.UpdateReference(
+                        obj, "physical-interface",
+                        obj.physical_interface_refs,
+                        obj.baseMap["physical-interface"])
+                if err != nil {
+                        return err
+                }
+        }
 
         return nil
 }

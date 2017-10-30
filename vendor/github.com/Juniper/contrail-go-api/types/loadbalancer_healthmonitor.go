@@ -11,20 +11,23 @@ import (
 )
 
 const (
-	loadbalancer_healthmonitor_loadbalancer_healthmonitor_properties uint64 = 1 << iota
+	loadbalancer_healthmonitor_loadbalancer_healthmonitor_properties = iota
 	loadbalancer_healthmonitor_id_perms
+	loadbalancer_healthmonitor_perms2
 	loadbalancer_healthmonitor_display_name
 	loadbalancer_healthmonitor_loadbalancer_pool_back_refs
+	loadbalancer_healthmonitor_max
 )
 
 type LoadbalancerHealthmonitor struct {
         contrail.ObjectBase
 	loadbalancer_healthmonitor_properties LoadbalancerHealthmonitorType
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
 	loadbalancer_pool_back_refs contrail.ReferenceList
-        valid uint64
-        modified uint64
+        valid [loadbalancer_healthmonitor_max] bool
+        modified [loadbalancer_healthmonitor_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -68,7 +71,7 @@ func (obj *LoadbalancerHealthmonitor) hasReferenceBase(name string) bool {
 }
 
 func (obj *LoadbalancerHealthmonitor) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -79,7 +82,7 @@ func (obj *LoadbalancerHealthmonitor) GetLoadbalancerHealthmonitorProperties() L
 
 func (obj *LoadbalancerHealthmonitor) SetLoadbalancerHealthmonitorProperties(value *LoadbalancerHealthmonitorType) {
         obj.loadbalancer_healthmonitor_properties = *value
-        obj.modified |= loadbalancer_healthmonitor_loadbalancer_healthmonitor_properties
+        obj.modified[loadbalancer_healthmonitor_loadbalancer_healthmonitor_properties] = true
 }
 
 func (obj *LoadbalancerHealthmonitor) GetIdPerms() IdPermsType {
@@ -88,7 +91,16 @@ func (obj *LoadbalancerHealthmonitor) GetIdPerms() IdPermsType {
 
 func (obj *LoadbalancerHealthmonitor) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= loadbalancer_healthmonitor_id_perms
+        obj.modified[loadbalancer_healthmonitor_id_perms] = true
+}
+
+func (obj *LoadbalancerHealthmonitor) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *LoadbalancerHealthmonitor) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[loadbalancer_healthmonitor_perms2] = true
 }
 
 func (obj *LoadbalancerHealthmonitor) GetDisplayName() string {
@@ -97,12 +109,12 @@ func (obj *LoadbalancerHealthmonitor) GetDisplayName() string {
 
 func (obj *LoadbalancerHealthmonitor) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= loadbalancer_healthmonitor_display_name
+        obj.modified[loadbalancer_healthmonitor_display_name] = true
 }
 
 func (obj *LoadbalancerHealthmonitor) readLoadbalancerPoolBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & loadbalancer_healthmonitor_loadbalancer_pool_back_refs == 0) {
+                (!obj.valid[loadbalancer_healthmonitor_loadbalancer_pool_back_refs]) {
                 err := obj.GetField(obj, "loadbalancer_pool_back_refs")
                 if err != nil {
                         return err
@@ -128,7 +140,7 @@ func (obj *LoadbalancerHealthmonitor) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & loadbalancer_healthmonitor_loadbalancer_healthmonitor_properties != 0 {
+        if obj.modified[loadbalancer_healthmonitor_loadbalancer_healthmonitor_properties] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.loadbalancer_healthmonitor_properties)
                 if err != nil {
@@ -137,7 +149,7 @@ func (obj *LoadbalancerHealthmonitor) MarshalJSON() ([]byte, error) {
                 msg["loadbalancer_healthmonitor_properties"] = &value
         }
 
-        if obj.modified & loadbalancer_healthmonitor_id_perms != 0 {
+        if obj.modified[loadbalancer_healthmonitor_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -146,7 +158,16 @@ func (obj *LoadbalancerHealthmonitor) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & loadbalancer_healthmonitor_display_name != 0 {
+        if obj.modified[loadbalancer_healthmonitor_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[loadbalancer_healthmonitor_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -168,30 +189,37 @@ func (obj *LoadbalancerHealthmonitor) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "loadbalancer_healthmonitor_properties":
                         err = json.Unmarshal(value, &obj.loadbalancer_healthmonitor_properties)
                         if err == nil {
-                                obj.valid |= loadbalancer_healthmonitor_loadbalancer_healthmonitor_properties
+                                obj.valid[loadbalancer_healthmonitor_loadbalancer_healthmonitor_properties] = true
                         }
                         break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= loadbalancer_healthmonitor_id_perms
+                                obj.valid[loadbalancer_healthmonitor_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[loadbalancer_healthmonitor_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= loadbalancer_healthmonitor_display_name
+                                obj.valid[loadbalancer_healthmonitor_display_name] = true
                         }
                         break
                 case "loadbalancer_pool_back_refs":
                         err = json.Unmarshal(value, &obj.loadbalancer_pool_back_refs)
                         if err == nil {
-                                obj.valid |= loadbalancer_healthmonitor_loadbalancer_pool_back_refs
+                                obj.valid[loadbalancer_healthmonitor_loadbalancer_pool_back_refs] = true
                         }
                         break
                 }
@@ -210,7 +238,7 @@ func (obj *LoadbalancerHealthmonitor) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & loadbalancer_healthmonitor_loadbalancer_healthmonitor_properties != 0 {
+        if obj.modified[loadbalancer_healthmonitor_loadbalancer_healthmonitor_properties] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.loadbalancer_healthmonitor_properties)
                 if err != nil {
@@ -219,7 +247,7 @@ func (obj *LoadbalancerHealthmonitor) UpdateObject() ([]byte, error) {
                 msg["loadbalancer_healthmonitor_properties"] = &value
         }
 
-        if obj.modified & loadbalancer_healthmonitor_id_perms != 0 {
+        if obj.modified[loadbalancer_healthmonitor_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -228,7 +256,16 @@ func (obj *LoadbalancerHealthmonitor) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & loadbalancer_healthmonitor_display_name != 0 {
+        if obj.modified[loadbalancer_healthmonitor_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[loadbalancer_healthmonitor_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {

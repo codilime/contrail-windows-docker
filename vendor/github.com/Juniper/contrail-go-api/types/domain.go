@@ -11,28 +11,31 @@ import (
 )
 
 const (
-	domain_domain_limits uint64 = 1 << iota
-	domain_api_access_list
+	domain_domain_limits = iota
 	domain_id_perms
+	domain_perms2
 	domain_display_name
 	domain_projects
 	domain_namespaces
 	domain_service_templates
 	domain_virtual_DNSs
+	domain_api_access_lists
+	domain_max
 )
 
 type Domain struct {
         contrail.ObjectBase
 	domain_limits DomainLimitsType
-	api_access_list ApiAccessListType
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
 	projects contrail.ReferenceList
 	namespaces contrail.ReferenceList
 	service_templates contrail.ReferenceList
 	virtual_DNSs contrail.ReferenceList
-        valid uint64
-        modified uint64
+	api_access_lists contrail.ReferenceList
+        valid [domain_max] bool
+        modified [domain_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -76,7 +79,7 @@ func (obj *Domain) hasReferenceBase(name string) bool {
 }
 
 func (obj *Domain) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -87,16 +90,7 @@ func (obj *Domain) GetDomainLimits() DomainLimitsType {
 
 func (obj *Domain) SetDomainLimits(value *DomainLimitsType) {
         obj.domain_limits = *value
-        obj.modified |= domain_domain_limits
-}
-
-func (obj *Domain) GetApiAccessList() ApiAccessListType {
-        return obj.api_access_list
-}
-
-func (obj *Domain) SetApiAccessList(value *ApiAccessListType) {
-        obj.api_access_list = *value
-        obj.modified |= domain_api_access_list
+        obj.modified[domain_domain_limits] = true
 }
 
 func (obj *Domain) GetIdPerms() IdPermsType {
@@ -105,7 +99,16 @@ func (obj *Domain) GetIdPerms() IdPermsType {
 
 func (obj *Domain) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= domain_id_perms
+        obj.modified[domain_id_perms] = true
+}
+
+func (obj *Domain) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *Domain) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[domain_perms2] = true
 }
 
 func (obj *Domain) GetDisplayName() string {
@@ -114,12 +117,12 @@ func (obj *Domain) GetDisplayName() string {
 
 func (obj *Domain) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= domain_display_name
+        obj.modified[domain_display_name] = true
 }
 
 func (obj *Domain) readProjects() error {
         if !obj.IsTransient() &&
-                (obj.valid & domain_projects == 0) {
+                (!obj.valid[domain_projects]) {
                 err := obj.GetField(obj, "projects")
                 if err != nil {
                         return err
@@ -139,7 +142,7 @@ func (obj *Domain) GetProjects() (
 
 func (obj *Domain) readNamespaces() error {
         if !obj.IsTransient() &&
-                (obj.valid & domain_namespaces == 0) {
+                (!obj.valid[domain_namespaces]) {
                 err := obj.GetField(obj, "namespaces")
                 if err != nil {
                         return err
@@ -159,7 +162,7 @@ func (obj *Domain) GetNamespaces() (
 
 func (obj *Domain) readServiceTemplates() error {
         if !obj.IsTransient() &&
-                (obj.valid & domain_service_templates == 0) {
+                (!obj.valid[domain_service_templates]) {
                 err := obj.GetField(obj, "service_templates")
                 if err != nil {
                         return err
@@ -179,7 +182,7 @@ func (obj *Domain) GetServiceTemplates() (
 
 func (obj *Domain) readVirtualDnss() error {
         if !obj.IsTransient() &&
-                (obj.valid & domain_virtual_DNSs == 0) {
+                (!obj.valid[domain_virtual_DNSs]) {
                 err := obj.GetField(obj, "virtual_DNSs")
                 if err != nil {
                         return err
@@ -197,6 +200,26 @@ func (obj *Domain) GetVirtualDnss() (
         return obj.virtual_DNSs, nil
 }
 
+func (obj *Domain) readApiAccessLists() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[domain_api_access_lists]) {
+                err := obj.GetField(obj, "api_access_lists")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *Domain) GetApiAccessLists() (
+        contrail.ReferenceList, error) {
+        err := obj.readApiAccessLists()
+        if err != nil {
+                return nil, err
+        }
+        return obj.api_access_lists, nil
+}
+
 func (obj *Domain) MarshalJSON() ([]byte, error) {
         msg := map[string]*json.RawMessage {
         }
@@ -205,7 +228,7 @@ func (obj *Domain) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & domain_domain_limits != 0 {
+        if obj.modified[domain_domain_limits] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.domain_limits)
                 if err != nil {
@@ -214,16 +237,7 @@ func (obj *Domain) MarshalJSON() ([]byte, error) {
                 msg["domain_limits"] = &value
         }
 
-        if obj.modified & domain_api_access_list != 0 {
-                var value json.RawMessage
-                value, err := json.Marshal(&obj.api_access_list)
-                if err != nil {
-                        return nil, err
-                }
-                msg["api_access_list"] = &value
-        }
-
-        if obj.modified & domain_id_perms != 0 {
+        if obj.modified[domain_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -232,7 +246,16 @@ func (obj *Domain) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & domain_display_name != 0 {
+        if obj.modified[domain_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[domain_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -254,54 +277,61 @@ func (obj *Domain) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "domain_limits":
                         err = json.Unmarshal(value, &obj.domain_limits)
                         if err == nil {
-                                obj.valid |= domain_domain_limits
-                        }
-                        break
-                case "api_access_list":
-                        err = json.Unmarshal(value, &obj.api_access_list)
-                        if err == nil {
-                                obj.valid |= domain_api_access_list
+                                obj.valid[domain_domain_limits] = true
                         }
                         break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= domain_id_perms
+                                obj.valid[domain_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[domain_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= domain_display_name
+                                obj.valid[domain_display_name] = true
                         }
                         break
                 case "projects":
                         err = json.Unmarshal(value, &obj.projects)
                         if err == nil {
-                                obj.valid |= domain_projects
+                                obj.valid[domain_projects] = true
                         }
                         break
                 case "namespaces":
                         err = json.Unmarshal(value, &obj.namespaces)
                         if err == nil {
-                                obj.valid |= domain_namespaces
+                                obj.valid[domain_namespaces] = true
                         }
                         break
                 case "service_templates":
                         err = json.Unmarshal(value, &obj.service_templates)
                         if err == nil {
-                                obj.valid |= domain_service_templates
+                                obj.valid[domain_service_templates] = true
                         }
                         break
                 case "virtual_DNSs":
                         err = json.Unmarshal(value, &obj.virtual_DNSs)
                         if err == nil {
-                                obj.valid |= domain_virtual_DNSs
+                                obj.valid[domain_virtual_DNSs] = true
+                        }
+                        break
+                case "api_access_lists":
+                        err = json.Unmarshal(value, &obj.api_access_lists)
+                        if err == nil {
+                                obj.valid[domain_api_access_lists] = true
                         }
                         break
                 }
@@ -320,7 +350,7 @@ func (obj *Domain) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & domain_domain_limits != 0 {
+        if obj.modified[domain_domain_limits] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.domain_limits)
                 if err != nil {
@@ -329,16 +359,7 @@ func (obj *Domain) UpdateObject() ([]byte, error) {
                 msg["domain_limits"] = &value
         }
 
-        if obj.modified & domain_api_access_list != 0 {
-                var value json.RawMessage
-                value, err := json.Marshal(&obj.api_access_list)
-                if err != nil {
-                        return nil, err
-                }
-                msg["api_access_list"] = &value
-        }
-
-        if obj.modified & domain_id_perms != 0 {
+        if obj.modified[domain_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -347,7 +368,16 @@ func (obj *Domain) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & domain_display_name != 0 {
+        if obj.modified[domain_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[domain_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {

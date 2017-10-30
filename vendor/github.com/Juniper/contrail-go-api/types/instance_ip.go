@@ -11,15 +11,23 @@ import (
 )
 
 const (
-	instance_ip_instance_ip_address uint64 = 1 << iota
+	instance_ip_instance_ip_address = iota
 	instance_ip_instance_ip_family
 	instance_ip_instance_ip_mode
+	instance_ip_secondary_ip_tracking_ip
 	instance_ip_subnet_uuid
 	instance_ip_instance_ip_secondary
+	instance_ip_instance_ip_local_ip
+	instance_ip_service_instance_ip
+	instance_ip_service_health_check_ip
 	instance_ip_id_perms
+	instance_ip_perms2
 	instance_ip_display_name
 	instance_ip_virtual_network_refs
 	instance_ip_virtual_machine_interface_refs
+	instance_ip_physical_router_refs
+	instance_ip_service_instance_back_refs
+	instance_ip_max
 )
 
 type InstanceIp struct {
@@ -27,14 +35,21 @@ type InstanceIp struct {
 	instance_ip_address string
 	instance_ip_family string
 	instance_ip_mode string
+	secondary_ip_tracking_ip SubnetType
 	subnet_uuid string
 	instance_ip_secondary bool
+	instance_ip_local_ip bool
+	service_instance_ip bool
+	service_health_check_ip bool
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
 	virtual_network_refs contrail.ReferenceList
 	virtual_machine_interface_refs contrail.ReferenceList
-        valid uint64
-        modified uint64
+	physical_router_refs contrail.ReferenceList
+	service_instance_back_refs contrail.ReferenceList
+        valid [instance_ip_max] bool
+        modified [instance_ip_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -78,7 +93,7 @@ func (obj *InstanceIp) hasReferenceBase(name string) bool {
 }
 
 func (obj *InstanceIp) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -89,7 +104,7 @@ func (obj *InstanceIp) GetInstanceIpAddress() string {
 
 func (obj *InstanceIp) SetInstanceIpAddress(value string) {
         obj.instance_ip_address = value
-        obj.modified |= instance_ip_instance_ip_address
+        obj.modified[instance_ip_instance_ip_address] = true
 }
 
 func (obj *InstanceIp) GetInstanceIpFamily() string {
@@ -98,7 +113,7 @@ func (obj *InstanceIp) GetInstanceIpFamily() string {
 
 func (obj *InstanceIp) SetInstanceIpFamily(value string) {
         obj.instance_ip_family = value
-        obj.modified |= instance_ip_instance_ip_family
+        obj.modified[instance_ip_instance_ip_family] = true
 }
 
 func (obj *InstanceIp) GetInstanceIpMode() string {
@@ -107,7 +122,16 @@ func (obj *InstanceIp) GetInstanceIpMode() string {
 
 func (obj *InstanceIp) SetInstanceIpMode(value string) {
         obj.instance_ip_mode = value
-        obj.modified |= instance_ip_instance_ip_mode
+        obj.modified[instance_ip_instance_ip_mode] = true
+}
+
+func (obj *InstanceIp) GetSecondaryIpTrackingIp() SubnetType {
+        return obj.secondary_ip_tracking_ip
+}
+
+func (obj *InstanceIp) SetSecondaryIpTrackingIp(value *SubnetType) {
+        obj.secondary_ip_tracking_ip = *value
+        obj.modified[instance_ip_secondary_ip_tracking_ip] = true
 }
 
 func (obj *InstanceIp) GetSubnetUuid() string {
@@ -116,7 +140,7 @@ func (obj *InstanceIp) GetSubnetUuid() string {
 
 func (obj *InstanceIp) SetSubnetUuid(value string) {
         obj.subnet_uuid = value
-        obj.modified |= instance_ip_subnet_uuid
+        obj.modified[instance_ip_subnet_uuid] = true
 }
 
 func (obj *InstanceIp) GetInstanceIpSecondary() bool {
@@ -125,7 +149,34 @@ func (obj *InstanceIp) GetInstanceIpSecondary() bool {
 
 func (obj *InstanceIp) SetInstanceIpSecondary(value bool) {
         obj.instance_ip_secondary = value
-        obj.modified |= instance_ip_instance_ip_secondary
+        obj.modified[instance_ip_instance_ip_secondary] = true
+}
+
+func (obj *InstanceIp) GetInstanceIpLocalIp() bool {
+        return obj.instance_ip_local_ip
+}
+
+func (obj *InstanceIp) SetInstanceIpLocalIp(value bool) {
+        obj.instance_ip_local_ip = value
+        obj.modified[instance_ip_instance_ip_local_ip] = true
+}
+
+func (obj *InstanceIp) GetServiceInstanceIp() bool {
+        return obj.service_instance_ip
+}
+
+func (obj *InstanceIp) SetServiceInstanceIp(value bool) {
+        obj.service_instance_ip = value
+        obj.modified[instance_ip_service_instance_ip] = true
+}
+
+func (obj *InstanceIp) GetServiceHealthCheckIp() bool {
+        return obj.service_health_check_ip
+}
+
+func (obj *InstanceIp) SetServiceHealthCheckIp(value bool) {
+        obj.service_health_check_ip = value
+        obj.modified[instance_ip_service_health_check_ip] = true
 }
 
 func (obj *InstanceIp) GetIdPerms() IdPermsType {
@@ -134,7 +185,16 @@ func (obj *InstanceIp) GetIdPerms() IdPermsType {
 
 func (obj *InstanceIp) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= instance_ip_id_perms
+        obj.modified[instance_ip_id_perms] = true
+}
+
+func (obj *InstanceIp) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *InstanceIp) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[instance_ip_perms2] = true
 }
 
 func (obj *InstanceIp) GetDisplayName() string {
@@ -143,12 +203,12 @@ func (obj *InstanceIp) GetDisplayName() string {
 
 func (obj *InstanceIp) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= instance_ip_display_name
+        obj.modified[instance_ip_display_name] = true
 }
 
 func (obj *InstanceIp) readVirtualNetworkRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & instance_ip_virtual_network_refs == 0) {
+                (!obj.valid[instance_ip_virtual_network_refs]) {
                 err := obj.GetField(obj, "virtual_network_refs")
                 if err != nil {
                         return err
@@ -173,14 +233,14 @@ func (obj *InstanceIp) AddVirtualNetwork(
                 return err
         }
 
-        if obj.modified & instance_ip_virtual_network_refs == 0 {
+        if !obj.modified[instance_ip_virtual_network_refs] {
                 obj.storeReferenceBase("virtual-network", obj.virtual_network_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.virtual_network_refs = append(obj.virtual_network_refs, ref)
-        obj.modified |= instance_ip_virtual_network_refs
+        obj.modified[instance_ip_virtual_network_refs] = true
         return nil
 }
 
@@ -190,7 +250,7 @@ func (obj *InstanceIp) DeleteVirtualNetwork(uuid string) error {
                 return err
         }
 
-        if obj.modified & instance_ip_virtual_network_refs == 0 {
+        if !obj.modified[instance_ip_virtual_network_refs] {
                 obj.storeReferenceBase("virtual-network", obj.virtual_network_refs)
         }
 
@@ -202,18 +262,18 @@ func (obj *InstanceIp) DeleteVirtualNetwork(uuid string) error {
                         break
                 }
         }
-        obj.modified |= instance_ip_virtual_network_refs
+        obj.modified[instance_ip_virtual_network_refs] = true
         return nil
 }
 
 func (obj *InstanceIp) ClearVirtualNetwork() {
-        if (obj.valid & instance_ip_virtual_network_refs != 0) &&
-           (obj.modified & instance_ip_virtual_network_refs == 0) {
+        if (obj.valid[instance_ip_virtual_network_refs]) &&
+           (!obj.modified[instance_ip_virtual_network_refs]) {
                 obj.storeReferenceBase("virtual-network", obj.virtual_network_refs)
         }
         obj.virtual_network_refs = make([]contrail.Reference, 0)
-        obj.valid |= instance_ip_virtual_network_refs
-        obj.modified |= instance_ip_virtual_network_refs
+        obj.valid[instance_ip_virtual_network_refs] = true
+        obj.modified[instance_ip_virtual_network_refs] = true
 }
 
 func (obj *InstanceIp) SetVirtualNetworkList(
@@ -233,7 +293,7 @@ func (obj *InstanceIp) SetVirtualNetworkList(
 
 func (obj *InstanceIp) readVirtualMachineInterfaceRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & instance_ip_virtual_machine_interface_refs == 0) {
+                (!obj.valid[instance_ip_virtual_machine_interface_refs]) {
                 err := obj.GetField(obj, "virtual_machine_interface_refs")
                 if err != nil {
                         return err
@@ -258,14 +318,14 @@ func (obj *InstanceIp) AddVirtualMachineInterface(
                 return err
         }
 
-        if obj.modified & instance_ip_virtual_machine_interface_refs == 0 {
+        if !obj.modified[instance_ip_virtual_machine_interface_refs] {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.virtual_machine_interface_refs = append(obj.virtual_machine_interface_refs, ref)
-        obj.modified |= instance_ip_virtual_machine_interface_refs
+        obj.modified[instance_ip_virtual_machine_interface_refs] = true
         return nil
 }
 
@@ -275,7 +335,7 @@ func (obj *InstanceIp) DeleteVirtualMachineInterface(uuid string) error {
                 return err
         }
 
-        if obj.modified & instance_ip_virtual_machine_interface_refs == 0 {
+        if !obj.modified[instance_ip_virtual_machine_interface_refs] {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
 
@@ -287,18 +347,18 @@ func (obj *InstanceIp) DeleteVirtualMachineInterface(uuid string) error {
                         break
                 }
         }
-        obj.modified |= instance_ip_virtual_machine_interface_refs
+        obj.modified[instance_ip_virtual_machine_interface_refs] = true
         return nil
 }
 
 func (obj *InstanceIp) ClearVirtualMachineInterface() {
-        if (obj.valid & instance_ip_virtual_machine_interface_refs != 0) &&
-           (obj.modified & instance_ip_virtual_machine_interface_refs == 0) {
+        if (obj.valid[instance_ip_virtual_machine_interface_refs]) &&
+           (!obj.modified[instance_ip_virtual_machine_interface_refs]) {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
         obj.virtual_machine_interface_refs = make([]contrail.Reference, 0)
-        obj.valid |= instance_ip_virtual_machine_interface_refs
-        obj.modified |= instance_ip_virtual_machine_interface_refs
+        obj.valid[instance_ip_virtual_machine_interface_refs] = true
+        obj.modified[instance_ip_virtual_machine_interface_refs] = true
 }
 
 func (obj *InstanceIp) SetVirtualMachineInterfaceList(
@@ -316,6 +376,111 @@ func (obj *InstanceIp) SetVirtualMachineInterfaceList(
 }
 
 
+func (obj *InstanceIp) readPhysicalRouterRefs() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[instance_ip_physical_router_refs]) {
+                err := obj.GetField(obj, "physical_router_refs")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *InstanceIp) GetPhysicalRouterRefs() (
+        contrail.ReferenceList, error) {
+        err := obj.readPhysicalRouterRefs()
+        if err != nil {
+                return nil, err
+        }
+        return obj.physical_router_refs, nil
+}
+
+func (obj *InstanceIp) AddPhysicalRouter(
+        rhs *PhysicalRouter) error {
+        err := obj.readPhysicalRouterRefs()
+        if err != nil {
+                return err
+        }
+
+        if !obj.modified[instance_ip_physical_router_refs] {
+                obj.storeReferenceBase("physical-router", obj.physical_router_refs)
+        }
+
+        ref := contrail.Reference {
+                rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
+        obj.physical_router_refs = append(obj.physical_router_refs, ref)
+        obj.modified[instance_ip_physical_router_refs] = true
+        return nil
+}
+
+func (obj *InstanceIp) DeletePhysicalRouter(uuid string) error {
+        err := obj.readPhysicalRouterRefs()
+        if err != nil {
+                return err
+        }
+
+        if !obj.modified[instance_ip_physical_router_refs] {
+                obj.storeReferenceBase("physical-router", obj.physical_router_refs)
+        }
+
+        for i, ref := range obj.physical_router_refs {
+                if ref.Uuid == uuid {
+                        obj.physical_router_refs = append(
+                                obj.physical_router_refs[:i],
+                                obj.physical_router_refs[i+1:]...)
+                        break
+                }
+        }
+        obj.modified[instance_ip_physical_router_refs] = true
+        return nil
+}
+
+func (obj *InstanceIp) ClearPhysicalRouter() {
+        if (obj.valid[instance_ip_physical_router_refs]) &&
+           (!obj.modified[instance_ip_physical_router_refs]) {
+                obj.storeReferenceBase("physical-router", obj.physical_router_refs)
+        }
+        obj.physical_router_refs = make([]contrail.Reference, 0)
+        obj.valid[instance_ip_physical_router_refs] = true
+        obj.modified[instance_ip_physical_router_refs] = true
+}
+
+func (obj *InstanceIp) SetPhysicalRouterList(
+        refList []contrail.ReferencePair) {
+        obj.ClearPhysicalRouter()
+        obj.physical_router_refs = make([]contrail.Reference, len(refList))
+        for i, pair := range refList {
+                obj.physical_router_refs[i] = contrail.Reference {
+                        pair.Object.GetFQName(),
+                        pair.Object.GetUuid(),
+                        pair.Object.GetHref(),
+                        pair.Attribute,
+                }
+        }
+}
+
+
+func (obj *InstanceIp) readServiceInstanceBackRefs() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[instance_ip_service_instance_back_refs]) {
+                err := obj.GetField(obj, "service_instance_back_refs")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *InstanceIp) GetServiceInstanceBackRefs() (
+        contrail.ReferenceList, error) {
+        err := obj.readServiceInstanceBackRefs()
+        if err != nil {
+                return nil, err
+        }
+        return obj.service_instance_back_refs, nil
+}
+
 func (obj *InstanceIp) MarshalJSON() ([]byte, error) {
         msg := map[string]*json.RawMessage {
         }
@@ -324,7 +489,7 @@ func (obj *InstanceIp) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & instance_ip_instance_ip_address != 0 {
+        if obj.modified[instance_ip_instance_ip_address] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.instance_ip_address)
                 if err != nil {
@@ -333,7 +498,7 @@ func (obj *InstanceIp) MarshalJSON() ([]byte, error) {
                 msg["instance_ip_address"] = &value
         }
 
-        if obj.modified & instance_ip_instance_ip_family != 0 {
+        if obj.modified[instance_ip_instance_ip_family] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.instance_ip_family)
                 if err != nil {
@@ -342,7 +507,7 @@ func (obj *InstanceIp) MarshalJSON() ([]byte, error) {
                 msg["instance_ip_family"] = &value
         }
 
-        if obj.modified & instance_ip_instance_ip_mode != 0 {
+        if obj.modified[instance_ip_instance_ip_mode] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.instance_ip_mode)
                 if err != nil {
@@ -351,7 +516,16 @@ func (obj *InstanceIp) MarshalJSON() ([]byte, error) {
                 msg["instance_ip_mode"] = &value
         }
 
-        if obj.modified & instance_ip_subnet_uuid != 0 {
+        if obj.modified[instance_ip_secondary_ip_tracking_ip] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.secondary_ip_tracking_ip)
+                if err != nil {
+                        return nil, err
+                }
+                msg["secondary_ip_tracking_ip"] = &value
+        }
+
+        if obj.modified[instance_ip_subnet_uuid] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.subnet_uuid)
                 if err != nil {
@@ -360,7 +534,7 @@ func (obj *InstanceIp) MarshalJSON() ([]byte, error) {
                 msg["subnet_uuid"] = &value
         }
 
-        if obj.modified & instance_ip_instance_ip_secondary != 0 {
+        if obj.modified[instance_ip_instance_ip_secondary] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.instance_ip_secondary)
                 if err != nil {
@@ -369,7 +543,34 @@ func (obj *InstanceIp) MarshalJSON() ([]byte, error) {
                 msg["instance_ip_secondary"] = &value
         }
 
-        if obj.modified & instance_ip_id_perms != 0 {
+        if obj.modified[instance_ip_instance_ip_local_ip] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.instance_ip_local_ip)
+                if err != nil {
+                        return nil, err
+                }
+                msg["instance_ip_local_ip"] = &value
+        }
+
+        if obj.modified[instance_ip_service_instance_ip] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.service_instance_ip)
+                if err != nil {
+                        return nil, err
+                }
+                msg["service_instance_ip"] = &value
+        }
+
+        if obj.modified[instance_ip_service_health_check_ip] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.service_health_check_ip)
+                if err != nil {
+                        return nil, err
+                }
+                msg["service_health_check_ip"] = &value
+        }
+
+        if obj.modified[instance_ip_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -378,7 +579,16 @@ func (obj *InstanceIp) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & instance_ip_display_name != 0 {
+        if obj.modified[instance_ip_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[instance_ip_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -405,6 +615,15 @@ func (obj *InstanceIp) MarshalJSON() ([]byte, error) {
                 msg["virtual_machine_interface_refs"] = &value
         }
 
+        if len(obj.physical_router_refs) > 0 {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.physical_router_refs)
+                if err != nil {
+                        return nil, err
+                }
+                msg["physical_router_refs"] = &value
+        }
+
         return json.Marshal(msg)
 }
 
@@ -418,62 +637,124 @@ func (obj *InstanceIp) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "instance_ip_address":
                         err = json.Unmarshal(value, &obj.instance_ip_address)
                         if err == nil {
-                                obj.valid |= instance_ip_instance_ip_address
+                                obj.valid[instance_ip_instance_ip_address] = true
                         }
                         break
                 case "instance_ip_family":
                         err = json.Unmarshal(value, &obj.instance_ip_family)
                         if err == nil {
-                                obj.valid |= instance_ip_instance_ip_family
+                                obj.valid[instance_ip_instance_ip_family] = true
                         }
                         break
                 case "instance_ip_mode":
                         err = json.Unmarshal(value, &obj.instance_ip_mode)
                         if err == nil {
-                                obj.valid |= instance_ip_instance_ip_mode
+                                obj.valid[instance_ip_instance_ip_mode] = true
+                        }
+                        break
+                case "secondary_ip_tracking_ip":
+                        err = json.Unmarshal(value, &obj.secondary_ip_tracking_ip)
+                        if err == nil {
+                                obj.valid[instance_ip_secondary_ip_tracking_ip] = true
                         }
                         break
                 case "subnet_uuid":
                         err = json.Unmarshal(value, &obj.subnet_uuid)
                         if err == nil {
-                                obj.valid |= instance_ip_subnet_uuid
+                                obj.valid[instance_ip_subnet_uuid] = true
                         }
                         break
                 case "instance_ip_secondary":
                         err = json.Unmarshal(value, &obj.instance_ip_secondary)
                         if err == nil {
-                                obj.valid |= instance_ip_instance_ip_secondary
+                                obj.valid[instance_ip_instance_ip_secondary] = true
+                        }
+                        break
+                case "instance_ip_local_ip":
+                        err = json.Unmarshal(value, &obj.instance_ip_local_ip)
+                        if err == nil {
+                                obj.valid[instance_ip_instance_ip_local_ip] = true
+                        }
+                        break
+                case "service_instance_ip":
+                        err = json.Unmarshal(value, &obj.service_instance_ip)
+                        if err == nil {
+                                obj.valid[instance_ip_service_instance_ip] = true
+                        }
+                        break
+                case "service_health_check_ip":
+                        err = json.Unmarshal(value, &obj.service_health_check_ip)
+                        if err == nil {
+                                obj.valid[instance_ip_service_health_check_ip] = true
                         }
                         break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= instance_ip_id_perms
+                                obj.valid[instance_ip_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[instance_ip_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= instance_ip_display_name
+                                obj.valid[instance_ip_display_name] = true
                         }
                         break
                 case "virtual_network_refs":
                         err = json.Unmarshal(value, &obj.virtual_network_refs)
                         if err == nil {
-                                obj.valid |= instance_ip_virtual_network_refs
+                                obj.valid[instance_ip_virtual_network_refs] = true
                         }
                         break
                 case "virtual_machine_interface_refs":
                         err = json.Unmarshal(value, &obj.virtual_machine_interface_refs)
                         if err == nil {
-                                obj.valid |= instance_ip_virtual_machine_interface_refs
+                                obj.valid[instance_ip_virtual_machine_interface_refs] = true
                         }
                         break
+                case "physical_router_refs":
+                        err = json.Unmarshal(value, &obj.physical_router_refs)
+                        if err == nil {
+                                obj.valid[instance_ip_physical_router_refs] = true
+                        }
+                        break
+                case "service_instance_back_refs": {
+                        type ReferenceElement struct {
+                                To []string
+                                Uuid string
+                                Href string
+                                Attr ServiceInterfaceTag
+                        }
+                        var array []ReferenceElement
+                        err = json.Unmarshal(value, &array)
+                        if err != nil {
+                            break
+                        }
+                        obj.valid[instance_ip_service_instance_back_refs] = true
+                        obj.service_instance_back_refs = make(contrail.ReferenceList, 0)
+                        for _, element := range array {
+                                ref := contrail.Reference {
+                                        element.To,
+                                        element.Uuid,
+                                        element.Href,
+                                        element.Attr,
+                                }
+                                obj.service_instance_back_refs = append(obj.service_instance_back_refs, ref)
+                        }
+                        break
+                }
                 }
                 if err != nil {
                         return err
@@ -490,7 +771,7 @@ func (obj *InstanceIp) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & instance_ip_instance_ip_address != 0 {
+        if obj.modified[instance_ip_instance_ip_address] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.instance_ip_address)
                 if err != nil {
@@ -499,7 +780,7 @@ func (obj *InstanceIp) UpdateObject() ([]byte, error) {
                 msg["instance_ip_address"] = &value
         }
 
-        if obj.modified & instance_ip_instance_ip_family != 0 {
+        if obj.modified[instance_ip_instance_ip_family] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.instance_ip_family)
                 if err != nil {
@@ -508,7 +789,7 @@ func (obj *InstanceIp) UpdateObject() ([]byte, error) {
                 msg["instance_ip_family"] = &value
         }
 
-        if obj.modified & instance_ip_instance_ip_mode != 0 {
+        if obj.modified[instance_ip_instance_ip_mode] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.instance_ip_mode)
                 if err != nil {
@@ -517,7 +798,16 @@ func (obj *InstanceIp) UpdateObject() ([]byte, error) {
                 msg["instance_ip_mode"] = &value
         }
 
-        if obj.modified & instance_ip_subnet_uuid != 0 {
+        if obj.modified[instance_ip_secondary_ip_tracking_ip] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.secondary_ip_tracking_ip)
+                if err != nil {
+                        return nil, err
+                }
+                msg["secondary_ip_tracking_ip"] = &value
+        }
+
+        if obj.modified[instance_ip_subnet_uuid] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.subnet_uuid)
                 if err != nil {
@@ -526,7 +816,7 @@ func (obj *InstanceIp) UpdateObject() ([]byte, error) {
                 msg["subnet_uuid"] = &value
         }
 
-        if obj.modified & instance_ip_instance_ip_secondary != 0 {
+        if obj.modified[instance_ip_instance_ip_secondary] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.instance_ip_secondary)
                 if err != nil {
@@ -535,7 +825,34 @@ func (obj *InstanceIp) UpdateObject() ([]byte, error) {
                 msg["instance_ip_secondary"] = &value
         }
 
-        if obj.modified & instance_ip_id_perms != 0 {
+        if obj.modified[instance_ip_instance_ip_local_ip] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.instance_ip_local_ip)
+                if err != nil {
+                        return nil, err
+                }
+                msg["instance_ip_local_ip"] = &value
+        }
+
+        if obj.modified[instance_ip_service_instance_ip] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.service_instance_ip)
+                if err != nil {
+                        return nil, err
+                }
+                msg["service_instance_ip"] = &value
+        }
+
+        if obj.modified[instance_ip_service_health_check_ip] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.service_health_check_ip)
+                if err != nil {
+                        return nil, err
+                }
+                msg["service_health_check_ip"] = &value
+        }
+
+        if obj.modified[instance_ip_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -544,7 +861,16 @@ func (obj *InstanceIp) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & instance_ip_display_name != 0 {
+        if obj.modified[instance_ip_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[instance_ip_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -553,7 +879,7 @@ func (obj *InstanceIp) UpdateObject() ([]byte, error) {
                 msg["display_name"] = &value
         }
 
-        if obj.modified & instance_ip_virtual_network_refs != 0 {
+        if obj.modified[instance_ip_virtual_network_refs] {
                 if len(obj.virtual_network_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -573,7 +899,7 @@ func (obj *InstanceIp) UpdateObject() ([]byte, error) {
         }
 
 
-        if obj.modified & instance_ip_virtual_machine_interface_refs != 0 {
+        if obj.modified[instance_ip_virtual_machine_interface_refs] {
                 if len(obj.virtual_machine_interface_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -593,12 +919,32 @@ func (obj *InstanceIp) UpdateObject() ([]byte, error) {
         }
 
 
+        if obj.modified[instance_ip_physical_router_refs] {
+                if len(obj.physical_router_refs) == 0 {
+                        var value json.RawMessage
+                        value, err := json.Marshal(
+                                          make([]contrail.Reference, 0))
+                        if err != nil {
+                                return nil, err
+                        }
+                        msg["physical_router_refs"] = &value
+                } else if !obj.hasReferenceBase("physical-router") {
+                        var value json.RawMessage
+                        value, err := json.Marshal(&obj.physical_router_refs)
+                        if err != nil {
+                                return nil, err
+                        }
+                        msg["physical_router_refs"] = &value
+                }
+        }
+
+
         return json.Marshal(msg)
 }
 
 func (obj *InstanceIp) UpdateReferences() error {
 
-        if (obj.modified & instance_ip_virtual_network_refs != 0) &&
+        if (obj.modified[instance_ip_virtual_network_refs]) &&
            len(obj.virtual_network_refs) > 0 &&
            obj.hasReferenceBase("virtual-network") {
                 err := obj.UpdateReference(
@@ -610,13 +956,25 @@ func (obj *InstanceIp) UpdateReferences() error {
                 }
         }
 
-        if (obj.modified & instance_ip_virtual_machine_interface_refs != 0) &&
+        if (obj.modified[instance_ip_virtual_machine_interface_refs]) &&
            len(obj.virtual_machine_interface_refs) > 0 &&
            obj.hasReferenceBase("virtual-machine-interface") {
                 err := obj.UpdateReference(
                         obj, "virtual-machine-interface",
                         obj.virtual_machine_interface_refs,
                         obj.baseMap["virtual-machine-interface"])
+                if err != nil {
+                        return err
+                }
+        }
+
+        if (obj.modified[instance_ip_physical_router_refs]) &&
+           len(obj.physical_router_refs) > 0 &&
+           obj.hasReferenceBase("physical-router") {
+                err := obj.UpdateReference(
+                        obj, "physical-router",
+                        obj.physical_router_refs,
+                        obj.baseMap["physical-router"])
                 if err != nil {
                         return err
                 }

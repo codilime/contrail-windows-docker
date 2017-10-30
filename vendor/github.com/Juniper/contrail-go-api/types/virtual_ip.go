@@ -11,22 +11,25 @@ import (
 )
 
 const (
-	virtual_ip_virtual_ip_properties uint64 = 1 << iota
+	virtual_ip_virtual_ip_properties = iota
 	virtual_ip_id_perms
+	virtual_ip_perms2
 	virtual_ip_display_name
 	virtual_ip_loadbalancer_pool_refs
 	virtual_ip_virtual_machine_interface_refs
+	virtual_ip_max
 )
 
 type VirtualIp struct {
         contrail.ObjectBase
 	virtual_ip_properties VirtualIpType
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
 	loadbalancer_pool_refs contrail.ReferenceList
 	virtual_machine_interface_refs contrail.ReferenceList
-        valid uint64
-        modified uint64
+        valid [virtual_ip_max] bool
+        modified [virtual_ip_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -70,7 +73,7 @@ func (obj *VirtualIp) hasReferenceBase(name string) bool {
 }
 
 func (obj *VirtualIp) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -81,7 +84,7 @@ func (obj *VirtualIp) GetVirtualIpProperties() VirtualIpType {
 
 func (obj *VirtualIp) SetVirtualIpProperties(value *VirtualIpType) {
         obj.virtual_ip_properties = *value
-        obj.modified |= virtual_ip_virtual_ip_properties
+        obj.modified[virtual_ip_virtual_ip_properties] = true
 }
 
 func (obj *VirtualIp) GetIdPerms() IdPermsType {
@@ -90,7 +93,16 @@ func (obj *VirtualIp) GetIdPerms() IdPermsType {
 
 func (obj *VirtualIp) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= virtual_ip_id_perms
+        obj.modified[virtual_ip_id_perms] = true
+}
+
+func (obj *VirtualIp) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *VirtualIp) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[virtual_ip_perms2] = true
 }
 
 func (obj *VirtualIp) GetDisplayName() string {
@@ -99,12 +111,12 @@ func (obj *VirtualIp) GetDisplayName() string {
 
 func (obj *VirtualIp) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= virtual_ip_display_name
+        obj.modified[virtual_ip_display_name] = true
 }
 
 func (obj *VirtualIp) readLoadbalancerPoolRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_ip_loadbalancer_pool_refs == 0) {
+                (!obj.valid[virtual_ip_loadbalancer_pool_refs]) {
                 err := obj.GetField(obj, "loadbalancer_pool_refs")
                 if err != nil {
                         return err
@@ -129,14 +141,14 @@ func (obj *VirtualIp) AddLoadbalancerPool(
                 return err
         }
 
-        if obj.modified & virtual_ip_loadbalancer_pool_refs == 0 {
+        if !obj.modified[virtual_ip_loadbalancer_pool_refs] {
                 obj.storeReferenceBase("loadbalancer-pool", obj.loadbalancer_pool_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.loadbalancer_pool_refs = append(obj.loadbalancer_pool_refs, ref)
-        obj.modified |= virtual_ip_loadbalancer_pool_refs
+        obj.modified[virtual_ip_loadbalancer_pool_refs] = true
         return nil
 }
 
@@ -146,7 +158,7 @@ func (obj *VirtualIp) DeleteLoadbalancerPool(uuid string) error {
                 return err
         }
 
-        if obj.modified & virtual_ip_loadbalancer_pool_refs == 0 {
+        if !obj.modified[virtual_ip_loadbalancer_pool_refs] {
                 obj.storeReferenceBase("loadbalancer-pool", obj.loadbalancer_pool_refs)
         }
 
@@ -158,18 +170,18 @@ func (obj *VirtualIp) DeleteLoadbalancerPool(uuid string) error {
                         break
                 }
         }
-        obj.modified |= virtual_ip_loadbalancer_pool_refs
+        obj.modified[virtual_ip_loadbalancer_pool_refs] = true
         return nil
 }
 
 func (obj *VirtualIp) ClearLoadbalancerPool() {
-        if (obj.valid & virtual_ip_loadbalancer_pool_refs != 0) &&
-           (obj.modified & virtual_ip_loadbalancer_pool_refs == 0) {
+        if (obj.valid[virtual_ip_loadbalancer_pool_refs]) &&
+           (!obj.modified[virtual_ip_loadbalancer_pool_refs]) {
                 obj.storeReferenceBase("loadbalancer-pool", obj.loadbalancer_pool_refs)
         }
         obj.loadbalancer_pool_refs = make([]contrail.Reference, 0)
-        obj.valid |= virtual_ip_loadbalancer_pool_refs
-        obj.modified |= virtual_ip_loadbalancer_pool_refs
+        obj.valid[virtual_ip_loadbalancer_pool_refs] = true
+        obj.modified[virtual_ip_loadbalancer_pool_refs] = true
 }
 
 func (obj *VirtualIp) SetLoadbalancerPoolList(
@@ -189,7 +201,7 @@ func (obj *VirtualIp) SetLoadbalancerPoolList(
 
 func (obj *VirtualIp) readVirtualMachineInterfaceRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_ip_virtual_machine_interface_refs == 0) {
+                (!obj.valid[virtual_ip_virtual_machine_interface_refs]) {
                 err := obj.GetField(obj, "virtual_machine_interface_refs")
                 if err != nil {
                         return err
@@ -214,14 +226,14 @@ func (obj *VirtualIp) AddVirtualMachineInterface(
                 return err
         }
 
-        if obj.modified & virtual_ip_virtual_machine_interface_refs == 0 {
+        if !obj.modified[virtual_ip_virtual_machine_interface_refs] {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.virtual_machine_interface_refs = append(obj.virtual_machine_interface_refs, ref)
-        obj.modified |= virtual_ip_virtual_machine_interface_refs
+        obj.modified[virtual_ip_virtual_machine_interface_refs] = true
         return nil
 }
 
@@ -231,7 +243,7 @@ func (obj *VirtualIp) DeleteVirtualMachineInterface(uuid string) error {
                 return err
         }
 
-        if obj.modified & virtual_ip_virtual_machine_interface_refs == 0 {
+        if !obj.modified[virtual_ip_virtual_machine_interface_refs] {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
 
@@ -243,18 +255,18 @@ func (obj *VirtualIp) DeleteVirtualMachineInterface(uuid string) error {
                         break
                 }
         }
-        obj.modified |= virtual_ip_virtual_machine_interface_refs
+        obj.modified[virtual_ip_virtual_machine_interface_refs] = true
         return nil
 }
 
 func (obj *VirtualIp) ClearVirtualMachineInterface() {
-        if (obj.valid & virtual_ip_virtual_machine_interface_refs != 0) &&
-           (obj.modified & virtual_ip_virtual_machine_interface_refs == 0) {
+        if (obj.valid[virtual_ip_virtual_machine_interface_refs]) &&
+           (!obj.modified[virtual_ip_virtual_machine_interface_refs]) {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
         obj.virtual_machine_interface_refs = make([]contrail.Reference, 0)
-        obj.valid |= virtual_ip_virtual_machine_interface_refs
-        obj.modified |= virtual_ip_virtual_machine_interface_refs
+        obj.valid[virtual_ip_virtual_machine_interface_refs] = true
+        obj.modified[virtual_ip_virtual_machine_interface_refs] = true
 }
 
 func (obj *VirtualIp) SetVirtualMachineInterfaceList(
@@ -280,7 +292,7 @@ func (obj *VirtualIp) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & virtual_ip_virtual_ip_properties != 0 {
+        if obj.modified[virtual_ip_virtual_ip_properties] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.virtual_ip_properties)
                 if err != nil {
@@ -289,7 +301,7 @@ func (obj *VirtualIp) MarshalJSON() ([]byte, error) {
                 msg["virtual_ip_properties"] = &value
         }
 
-        if obj.modified & virtual_ip_id_perms != 0 {
+        if obj.modified[virtual_ip_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -298,7 +310,16 @@ func (obj *VirtualIp) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & virtual_ip_display_name != 0 {
+        if obj.modified[virtual_ip_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[virtual_ip_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -338,36 +359,43 @@ func (obj *VirtualIp) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "virtual_ip_properties":
                         err = json.Unmarshal(value, &obj.virtual_ip_properties)
                         if err == nil {
-                                obj.valid |= virtual_ip_virtual_ip_properties
+                                obj.valid[virtual_ip_virtual_ip_properties] = true
                         }
                         break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= virtual_ip_id_perms
+                                obj.valid[virtual_ip_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[virtual_ip_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= virtual_ip_display_name
+                                obj.valid[virtual_ip_display_name] = true
                         }
                         break
                 case "loadbalancer_pool_refs":
                         err = json.Unmarshal(value, &obj.loadbalancer_pool_refs)
                         if err == nil {
-                                obj.valid |= virtual_ip_loadbalancer_pool_refs
+                                obj.valid[virtual_ip_loadbalancer_pool_refs] = true
                         }
                         break
                 case "virtual_machine_interface_refs":
                         err = json.Unmarshal(value, &obj.virtual_machine_interface_refs)
                         if err == nil {
-                                obj.valid |= virtual_ip_virtual_machine_interface_refs
+                                obj.valid[virtual_ip_virtual_machine_interface_refs] = true
                         }
                         break
                 }
@@ -386,7 +414,7 @@ func (obj *VirtualIp) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & virtual_ip_virtual_ip_properties != 0 {
+        if obj.modified[virtual_ip_virtual_ip_properties] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.virtual_ip_properties)
                 if err != nil {
@@ -395,7 +423,7 @@ func (obj *VirtualIp) UpdateObject() ([]byte, error) {
                 msg["virtual_ip_properties"] = &value
         }
 
-        if obj.modified & virtual_ip_id_perms != 0 {
+        if obj.modified[virtual_ip_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -404,7 +432,16 @@ func (obj *VirtualIp) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & virtual_ip_display_name != 0 {
+        if obj.modified[virtual_ip_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[virtual_ip_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -413,7 +450,7 @@ func (obj *VirtualIp) UpdateObject() ([]byte, error) {
                 msg["display_name"] = &value
         }
 
-        if obj.modified & virtual_ip_loadbalancer_pool_refs != 0 {
+        if obj.modified[virtual_ip_loadbalancer_pool_refs] {
                 if len(obj.loadbalancer_pool_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -433,7 +470,7 @@ func (obj *VirtualIp) UpdateObject() ([]byte, error) {
         }
 
 
-        if obj.modified & virtual_ip_virtual_machine_interface_refs != 0 {
+        if obj.modified[virtual_ip_virtual_machine_interface_refs] {
                 if len(obj.virtual_machine_interface_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -458,7 +495,7 @@ func (obj *VirtualIp) UpdateObject() ([]byte, error) {
 
 func (obj *VirtualIp) UpdateReferences() error {
 
-        if (obj.modified & virtual_ip_loadbalancer_pool_refs != 0) &&
+        if (obj.modified[virtual_ip_loadbalancer_pool_refs]) &&
            len(obj.loadbalancer_pool_refs) > 0 &&
            obj.hasReferenceBase("loadbalancer-pool") {
                 err := obj.UpdateReference(
@@ -470,7 +507,7 @@ func (obj *VirtualIp) UpdateReferences() error {
                 }
         }
 
-        if (obj.modified & virtual_ip_virtual_machine_interface_refs != 0) &&
+        if (obj.modified[virtual_ip_virtual_machine_interface_refs]) &&
            len(obj.virtual_machine_interface_refs) > 0 &&
            obj.hasReferenceBase("virtual-machine-interface") {
                 err := obj.UpdateReference(

@@ -11,11 +11,13 @@ import (
 )
 
 const (
-	logical_interface_logical_interface_vlan_tag uint64 = 1 << iota
+	logical_interface_logical_interface_vlan_tag = iota
 	logical_interface_logical_interface_type
 	logical_interface_id_perms
+	logical_interface_perms2
 	logical_interface_display_name
 	logical_interface_virtual_machine_interface_refs
+	logical_interface_max
 )
 
 type LogicalInterface struct {
@@ -23,10 +25,11 @@ type LogicalInterface struct {
 	logical_interface_vlan_tag int
 	logical_interface_type string
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
 	virtual_machine_interface_refs contrail.ReferenceList
-        valid uint64
-        modified uint64
+        valid [logical_interface_max] bool
+        modified [logical_interface_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -70,7 +73,7 @@ func (obj *LogicalInterface) hasReferenceBase(name string) bool {
 }
 
 func (obj *LogicalInterface) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -81,7 +84,7 @@ func (obj *LogicalInterface) GetLogicalInterfaceVlanTag() int {
 
 func (obj *LogicalInterface) SetLogicalInterfaceVlanTag(value int) {
         obj.logical_interface_vlan_tag = value
-        obj.modified |= logical_interface_logical_interface_vlan_tag
+        obj.modified[logical_interface_logical_interface_vlan_tag] = true
 }
 
 func (obj *LogicalInterface) GetLogicalInterfaceType() string {
@@ -90,7 +93,7 @@ func (obj *LogicalInterface) GetLogicalInterfaceType() string {
 
 func (obj *LogicalInterface) SetLogicalInterfaceType(value string) {
         obj.logical_interface_type = value
-        obj.modified |= logical_interface_logical_interface_type
+        obj.modified[logical_interface_logical_interface_type] = true
 }
 
 func (obj *LogicalInterface) GetIdPerms() IdPermsType {
@@ -99,7 +102,16 @@ func (obj *LogicalInterface) GetIdPerms() IdPermsType {
 
 func (obj *LogicalInterface) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= logical_interface_id_perms
+        obj.modified[logical_interface_id_perms] = true
+}
+
+func (obj *LogicalInterface) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *LogicalInterface) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[logical_interface_perms2] = true
 }
 
 func (obj *LogicalInterface) GetDisplayName() string {
@@ -108,12 +120,12 @@ func (obj *LogicalInterface) GetDisplayName() string {
 
 func (obj *LogicalInterface) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= logical_interface_display_name
+        obj.modified[logical_interface_display_name] = true
 }
 
 func (obj *LogicalInterface) readVirtualMachineInterfaceRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & logical_interface_virtual_machine_interface_refs == 0) {
+                (!obj.valid[logical_interface_virtual_machine_interface_refs]) {
                 err := obj.GetField(obj, "virtual_machine_interface_refs")
                 if err != nil {
                         return err
@@ -138,14 +150,14 @@ func (obj *LogicalInterface) AddVirtualMachineInterface(
                 return err
         }
 
-        if obj.modified & logical_interface_virtual_machine_interface_refs == 0 {
+        if !obj.modified[logical_interface_virtual_machine_interface_refs] {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.virtual_machine_interface_refs = append(obj.virtual_machine_interface_refs, ref)
-        obj.modified |= logical_interface_virtual_machine_interface_refs
+        obj.modified[logical_interface_virtual_machine_interface_refs] = true
         return nil
 }
 
@@ -155,7 +167,7 @@ func (obj *LogicalInterface) DeleteVirtualMachineInterface(uuid string) error {
                 return err
         }
 
-        if obj.modified & logical_interface_virtual_machine_interface_refs == 0 {
+        if !obj.modified[logical_interface_virtual_machine_interface_refs] {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
 
@@ -167,18 +179,18 @@ func (obj *LogicalInterface) DeleteVirtualMachineInterface(uuid string) error {
                         break
                 }
         }
-        obj.modified |= logical_interface_virtual_machine_interface_refs
+        obj.modified[logical_interface_virtual_machine_interface_refs] = true
         return nil
 }
 
 func (obj *LogicalInterface) ClearVirtualMachineInterface() {
-        if (obj.valid & logical_interface_virtual_machine_interface_refs != 0) &&
-           (obj.modified & logical_interface_virtual_machine_interface_refs == 0) {
+        if (obj.valid[logical_interface_virtual_machine_interface_refs]) &&
+           (!obj.modified[logical_interface_virtual_machine_interface_refs]) {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
         obj.virtual_machine_interface_refs = make([]contrail.Reference, 0)
-        obj.valid |= logical_interface_virtual_machine_interface_refs
-        obj.modified |= logical_interface_virtual_machine_interface_refs
+        obj.valid[logical_interface_virtual_machine_interface_refs] = true
+        obj.modified[logical_interface_virtual_machine_interface_refs] = true
 }
 
 func (obj *LogicalInterface) SetVirtualMachineInterfaceList(
@@ -204,7 +216,7 @@ func (obj *LogicalInterface) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & logical_interface_logical_interface_vlan_tag != 0 {
+        if obj.modified[logical_interface_logical_interface_vlan_tag] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.logical_interface_vlan_tag)
                 if err != nil {
@@ -213,7 +225,7 @@ func (obj *LogicalInterface) MarshalJSON() ([]byte, error) {
                 msg["logical_interface_vlan_tag"] = &value
         }
 
-        if obj.modified & logical_interface_logical_interface_type != 0 {
+        if obj.modified[logical_interface_logical_interface_type] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.logical_interface_type)
                 if err != nil {
@@ -222,7 +234,7 @@ func (obj *LogicalInterface) MarshalJSON() ([]byte, error) {
                 msg["logical_interface_type"] = &value
         }
 
-        if obj.modified & logical_interface_id_perms != 0 {
+        if obj.modified[logical_interface_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -231,7 +243,16 @@ func (obj *LogicalInterface) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & logical_interface_display_name != 0 {
+        if obj.modified[logical_interface_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[logical_interface_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -262,36 +283,43 @@ func (obj *LogicalInterface) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "logical_interface_vlan_tag":
                         err = json.Unmarshal(value, &obj.logical_interface_vlan_tag)
                         if err == nil {
-                                obj.valid |= logical_interface_logical_interface_vlan_tag
+                                obj.valid[logical_interface_logical_interface_vlan_tag] = true
                         }
                         break
                 case "logical_interface_type":
                         err = json.Unmarshal(value, &obj.logical_interface_type)
                         if err == nil {
-                                obj.valid |= logical_interface_logical_interface_type
+                                obj.valid[logical_interface_logical_interface_type] = true
                         }
                         break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= logical_interface_id_perms
+                                obj.valid[logical_interface_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[logical_interface_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= logical_interface_display_name
+                                obj.valid[logical_interface_display_name] = true
                         }
                         break
                 case "virtual_machine_interface_refs":
                         err = json.Unmarshal(value, &obj.virtual_machine_interface_refs)
                         if err == nil {
-                                obj.valid |= logical_interface_virtual_machine_interface_refs
+                                obj.valid[logical_interface_virtual_machine_interface_refs] = true
                         }
                         break
                 }
@@ -310,7 +338,7 @@ func (obj *LogicalInterface) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & logical_interface_logical_interface_vlan_tag != 0 {
+        if obj.modified[logical_interface_logical_interface_vlan_tag] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.logical_interface_vlan_tag)
                 if err != nil {
@@ -319,7 +347,7 @@ func (obj *LogicalInterface) UpdateObject() ([]byte, error) {
                 msg["logical_interface_vlan_tag"] = &value
         }
 
-        if obj.modified & logical_interface_logical_interface_type != 0 {
+        if obj.modified[logical_interface_logical_interface_type] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.logical_interface_type)
                 if err != nil {
@@ -328,7 +356,7 @@ func (obj *LogicalInterface) UpdateObject() ([]byte, error) {
                 msg["logical_interface_type"] = &value
         }
 
-        if obj.modified & logical_interface_id_perms != 0 {
+        if obj.modified[logical_interface_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -337,7 +365,16 @@ func (obj *LogicalInterface) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & logical_interface_display_name != 0 {
+        if obj.modified[logical_interface_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[logical_interface_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -346,7 +383,7 @@ func (obj *LogicalInterface) UpdateObject() ([]byte, error) {
                 msg["display_name"] = &value
         }
 
-        if obj.modified & logical_interface_virtual_machine_interface_refs != 0 {
+        if obj.modified[logical_interface_virtual_machine_interface_refs] {
                 if len(obj.virtual_machine_interface_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -371,7 +408,7 @@ func (obj *LogicalInterface) UpdateObject() ([]byte, error) {
 
 func (obj *LogicalInterface) UpdateReferences() error {
 
-        if (obj.modified & logical_interface_virtual_machine_interface_refs != 0) &&
+        if (obj.modified[logical_interface_virtual_machine_interface_refs]) &&
            len(obj.virtual_machine_interface_refs) > 0 &&
            obj.hasReferenceBase("virtual-machine-interface") {
                 err := obj.UpdateReference(

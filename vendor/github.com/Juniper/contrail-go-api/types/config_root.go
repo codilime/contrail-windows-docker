@@ -11,22 +11,23 @@ import (
 )
 
 const (
-	config_root_api_access_list uint64 = 1 << iota
-	config_root_id_perms
+	config_root_id_perms = iota
+	config_root_perms2
 	config_root_display_name
 	config_root_global_system_configs
 	config_root_domains
+	config_root_max
 )
 
 type ConfigRoot struct {
         contrail.ObjectBase
-	api_access_list ApiAccessListType
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
 	global_system_configs contrail.ReferenceList
 	domains contrail.ReferenceList
-        valid uint64
-        modified uint64
+        valid [config_root_max] bool
+        modified [config_root_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -70,19 +71,10 @@ func (obj *ConfigRoot) hasReferenceBase(name string) bool {
 }
 
 func (obj *ConfigRoot) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
-
-func (obj *ConfigRoot) GetApiAccessList() ApiAccessListType {
-        return obj.api_access_list
-}
-
-func (obj *ConfigRoot) SetApiAccessList(value *ApiAccessListType) {
-        obj.api_access_list = *value
-        obj.modified |= config_root_api_access_list
-}
 
 func (obj *ConfigRoot) GetIdPerms() IdPermsType {
         return obj.id_perms
@@ -90,7 +82,16 @@ func (obj *ConfigRoot) GetIdPerms() IdPermsType {
 
 func (obj *ConfigRoot) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= config_root_id_perms
+        obj.modified[config_root_id_perms] = true
+}
+
+func (obj *ConfigRoot) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *ConfigRoot) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[config_root_perms2] = true
 }
 
 func (obj *ConfigRoot) GetDisplayName() string {
@@ -99,12 +100,12 @@ func (obj *ConfigRoot) GetDisplayName() string {
 
 func (obj *ConfigRoot) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= config_root_display_name
+        obj.modified[config_root_display_name] = true
 }
 
 func (obj *ConfigRoot) readGlobalSystemConfigs() error {
         if !obj.IsTransient() &&
-                (obj.valid & config_root_global_system_configs == 0) {
+                (!obj.valid[config_root_global_system_configs]) {
                 err := obj.GetField(obj, "global_system_configs")
                 if err != nil {
                         return err
@@ -124,7 +125,7 @@ func (obj *ConfigRoot) GetGlobalSystemConfigs() (
 
 func (obj *ConfigRoot) readDomains() error {
         if !obj.IsTransient() &&
-                (obj.valid & config_root_domains == 0) {
+                (!obj.valid[config_root_domains]) {
                 err := obj.GetField(obj, "domains")
                 if err != nil {
                         return err
@@ -150,16 +151,7 @@ func (obj *ConfigRoot) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & config_root_api_access_list != 0 {
-                var value json.RawMessage
-                value, err := json.Marshal(&obj.api_access_list)
-                if err != nil {
-                        return nil, err
-                }
-                msg["api_access_list"] = &value
-        }
-
-        if obj.modified & config_root_id_perms != 0 {
+        if obj.modified[config_root_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -168,7 +160,16 @@ func (obj *ConfigRoot) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & config_root_display_name != 0 {
+        if obj.modified[config_root_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[config_root_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -190,36 +191,37 @@ func (obj *ConfigRoot) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
-                case "api_access_list":
-                        err = json.Unmarshal(value, &obj.api_access_list)
-                        if err == nil {
-                                obj.valid |= config_root_api_access_list
-                        }
-                        break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= config_root_id_perms
+                                obj.valid[config_root_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[config_root_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= config_root_display_name
+                                obj.valid[config_root_display_name] = true
                         }
                         break
                 case "global_system_configs":
                         err = json.Unmarshal(value, &obj.global_system_configs)
                         if err == nil {
-                                obj.valid |= config_root_global_system_configs
+                                obj.valid[config_root_global_system_configs] = true
                         }
                         break
                 case "domains":
                         err = json.Unmarshal(value, &obj.domains)
                         if err == nil {
-                                obj.valid |= config_root_domains
+                                obj.valid[config_root_domains] = true
                         }
                         break
                 }
@@ -238,16 +240,7 @@ func (obj *ConfigRoot) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & config_root_api_access_list != 0 {
-                var value json.RawMessage
-                value, err := json.Marshal(&obj.api_access_list)
-                if err != nil {
-                        return nil, err
-                }
-                msg["api_access_list"] = &value
-        }
-
-        if obj.modified & config_root_id_perms != 0 {
+        if obj.modified[config_root_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -256,7 +249,16 @@ func (obj *ConfigRoot) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & config_root_display_name != 0 {
+        if obj.modified[config_root_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[config_root_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {

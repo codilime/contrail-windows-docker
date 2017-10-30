@@ -11,17 +11,20 @@ import (
 )
 
 const (
-	loadbalancer_pool_loadbalancer_pool_properties uint64 = 1 << iota
+	loadbalancer_pool_loadbalancer_pool_properties = iota
 	loadbalancer_pool_loadbalancer_pool_provider
 	loadbalancer_pool_loadbalancer_pool_custom_attributes
 	loadbalancer_pool_id_perms
+	loadbalancer_pool_perms2
 	loadbalancer_pool_display_name
 	loadbalancer_pool_service_instance_refs
 	loadbalancer_pool_virtual_machine_interface_refs
+	loadbalancer_pool_loadbalancer_listener_refs
 	loadbalancer_pool_service_appliance_set_refs
 	loadbalancer_pool_loadbalancer_members
 	loadbalancer_pool_loadbalancer_healthmonitor_refs
 	loadbalancer_pool_virtual_ip_back_refs
+	loadbalancer_pool_max
 )
 
 type LoadbalancerPool struct {
@@ -30,15 +33,17 @@ type LoadbalancerPool struct {
 	loadbalancer_pool_provider string
 	loadbalancer_pool_custom_attributes KeyValuePairs
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
 	service_instance_refs contrail.ReferenceList
 	virtual_machine_interface_refs contrail.ReferenceList
+	loadbalancer_listener_refs contrail.ReferenceList
 	service_appliance_set_refs contrail.ReferenceList
 	loadbalancer_members contrail.ReferenceList
 	loadbalancer_healthmonitor_refs contrail.ReferenceList
 	virtual_ip_back_refs contrail.ReferenceList
-        valid uint64
-        modified uint64
+        valid [loadbalancer_pool_max] bool
+        modified [loadbalancer_pool_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -82,7 +87,7 @@ func (obj *LoadbalancerPool) hasReferenceBase(name string) bool {
 }
 
 func (obj *LoadbalancerPool) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -93,7 +98,7 @@ func (obj *LoadbalancerPool) GetLoadbalancerPoolProperties() LoadbalancerPoolTyp
 
 func (obj *LoadbalancerPool) SetLoadbalancerPoolProperties(value *LoadbalancerPoolType) {
         obj.loadbalancer_pool_properties = *value
-        obj.modified |= loadbalancer_pool_loadbalancer_pool_properties
+        obj.modified[loadbalancer_pool_loadbalancer_pool_properties] = true
 }
 
 func (obj *LoadbalancerPool) GetLoadbalancerPoolProvider() string {
@@ -102,7 +107,7 @@ func (obj *LoadbalancerPool) GetLoadbalancerPoolProvider() string {
 
 func (obj *LoadbalancerPool) SetLoadbalancerPoolProvider(value string) {
         obj.loadbalancer_pool_provider = value
-        obj.modified |= loadbalancer_pool_loadbalancer_pool_provider
+        obj.modified[loadbalancer_pool_loadbalancer_pool_provider] = true
 }
 
 func (obj *LoadbalancerPool) GetLoadbalancerPoolCustomAttributes() KeyValuePairs {
@@ -111,7 +116,7 @@ func (obj *LoadbalancerPool) GetLoadbalancerPoolCustomAttributes() KeyValuePairs
 
 func (obj *LoadbalancerPool) SetLoadbalancerPoolCustomAttributes(value *KeyValuePairs) {
         obj.loadbalancer_pool_custom_attributes = *value
-        obj.modified |= loadbalancer_pool_loadbalancer_pool_custom_attributes
+        obj.modified[loadbalancer_pool_loadbalancer_pool_custom_attributes] = true
 }
 
 func (obj *LoadbalancerPool) GetIdPerms() IdPermsType {
@@ -120,7 +125,16 @@ func (obj *LoadbalancerPool) GetIdPerms() IdPermsType {
 
 func (obj *LoadbalancerPool) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= loadbalancer_pool_id_perms
+        obj.modified[loadbalancer_pool_id_perms] = true
+}
+
+func (obj *LoadbalancerPool) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *LoadbalancerPool) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[loadbalancer_pool_perms2] = true
 }
 
 func (obj *LoadbalancerPool) GetDisplayName() string {
@@ -129,12 +143,12 @@ func (obj *LoadbalancerPool) GetDisplayName() string {
 
 func (obj *LoadbalancerPool) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= loadbalancer_pool_display_name
+        obj.modified[loadbalancer_pool_display_name] = true
 }
 
 func (obj *LoadbalancerPool) readLoadbalancerMembers() error {
         if !obj.IsTransient() &&
-                (obj.valid & loadbalancer_pool_loadbalancer_members == 0) {
+                (!obj.valid[loadbalancer_pool_loadbalancer_members]) {
                 err := obj.GetField(obj, "loadbalancer_members")
                 if err != nil {
                         return err
@@ -154,7 +168,7 @@ func (obj *LoadbalancerPool) GetLoadbalancerMembers() (
 
 func (obj *LoadbalancerPool) readServiceInstanceRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & loadbalancer_pool_service_instance_refs == 0) {
+                (!obj.valid[loadbalancer_pool_service_instance_refs]) {
                 err := obj.GetField(obj, "service_instance_refs")
                 if err != nil {
                         return err
@@ -179,14 +193,14 @@ func (obj *LoadbalancerPool) AddServiceInstance(
                 return err
         }
 
-        if obj.modified & loadbalancer_pool_service_instance_refs == 0 {
+        if !obj.modified[loadbalancer_pool_service_instance_refs] {
                 obj.storeReferenceBase("service-instance", obj.service_instance_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.service_instance_refs = append(obj.service_instance_refs, ref)
-        obj.modified |= loadbalancer_pool_service_instance_refs
+        obj.modified[loadbalancer_pool_service_instance_refs] = true
         return nil
 }
 
@@ -196,7 +210,7 @@ func (obj *LoadbalancerPool) DeleteServiceInstance(uuid string) error {
                 return err
         }
 
-        if obj.modified & loadbalancer_pool_service_instance_refs == 0 {
+        if !obj.modified[loadbalancer_pool_service_instance_refs] {
                 obj.storeReferenceBase("service-instance", obj.service_instance_refs)
         }
 
@@ -208,18 +222,18 @@ func (obj *LoadbalancerPool) DeleteServiceInstance(uuid string) error {
                         break
                 }
         }
-        obj.modified |= loadbalancer_pool_service_instance_refs
+        obj.modified[loadbalancer_pool_service_instance_refs] = true
         return nil
 }
 
 func (obj *LoadbalancerPool) ClearServiceInstance() {
-        if (obj.valid & loadbalancer_pool_service_instance_refs != 0) &&
-           (obj.modified & loadbalancer_pool_service_instance_refs == 0) {
+        if (obj.valid[loadbalancer_pool_service_instance_refs]) &&
+           (!obj.modified[loadbalancer_pool_service_instance_refs]) {
                 obj.storeReferenceBase("service-instance", obj.service_instance_refs)
         }
         obj.service_instance_refs = make([]contrail.Reference, 0)
-        obj.valid |= loadbalancer_pool_service_instance_refs
-        obj.modified |= loadbalancer_pool_service_instance_refs
+        obj.valid[loadbalancer_pool_service_instance_refs] = true
+        obj.modified[loadbalancer_pool_service_instance_refs] = true
 }
 
 func (obj *LoadbalancerPool) SetServiceInstanceList(
@@ -239,7 +253,7 @@ func (obj *LoadbalancerPool) SetServiceInstanceList(
 
 func (obj *LoadbalancerPool) readVirtualMachineInterfaceRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & loadbalancer_pool_virtual_machine_interface_refs == 0) {
+                (!obj.valid[loadbalancer_pool_virtual_machine_interface_refs]) {
                 err := obj.GetField(obj, "virtual_machine_interface_refs")
                 if err != nil {
                         return err
@@ -264,14 +278,14 @@ func (obj *LoadbalancerPool) AddVirtualMachineInterface(
                 return err
         }
 
-        if obj.modified & loadbalancer_pool_virtual_machine_interface_refs == 0 {
+        if !obj.modified[loadbalancer_pool_virtual_machine_interface_refs] {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.virtual_machine_interface_refs = append(obj.virtual_machine_interface_refs, ref)
-        obj.modified |= loadbalancer_pool_virtual_machine_interface_refs
+        obj.modified[loadbalancer_pool_virtual_machine_interface_refs] = true
         return nil
 }
 
@@ -281,7 +295,7 @@ func (obj *LoadbalancerPool) DeleteVirtualMachineInterface(uuid string) error {
                 return err
         }
 
-        if obj.modified & loadbalancer_pool_virtual_machine_interface_refs == 0 {
+        if !obj.modified[loadbalancer_pool_virtual_machine_interface_refs] {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
 
@@ -293,18 +307,18 @@ func (obj *LoadbalancerPool) DeleteVirtualMachineInterface(uuid string) error {
                         break
                 }
         }
-        obj.modified |= loadbalancer_pool_virtual_machine_interface_refs
+        obj.modified[loadbalancer_pool_virtual_machine_interface_refs] = true
         return nil
 }
 
 func (obj *LoadbalancerPool) ClearVirtualMachineInterface() {
-        if (obj.valid & loadbalancer_pool_virtual_machine_interface_refs != 0) &&
-           (obj.modified & loadbalancer_pool_virtual_machine_interface_refs == 0) {
+        if (obj.valid[loadbalancer_pool_virtual_machine_interface_refs]) &&
+           (!obj.modified[loadbalancer_pool_virtual_machine_interface_refs]) {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
         obj.virtual_machine_interface_refs = make([]contrail.Reference, 0)
-        obj.valid |= loadbalancer_pool_virtual_machine_interface_refs
-        obj.modified |= loadbalancer_pool_virtual_machine_interface_refs
+        obj.valid[loadbalancer_pool_virtual_machine_interface_refs] = true
+        obj.modified[loadbalancer_pool_virtual_machine_interface_refs] = true
 }
 
 func (obj *LoadbalancerPool) SetVirtualMachineInterfaceList(
@@ -322,9 +336,94 @@ func (obj *LoadbalancerPool) SetVirtualMachineInterfaceList(
 }
 
 
+func (obj *LoadbalancerPool) readLoadbalancerListenerRefs() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[loadbalancer_pool_loadbalancer_listener_refs]) {
+                err := obj.GetField(obj, "loadbalancer_listener_refs")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *LoadbalancerPool) GetLoadbalancerListenerRefs() (
+        contrail.ReferenceList, error) {
+        err := obj.readLoadbalancerListenerRefs()
+        if err != nil {
+                return nil, err
+        }
+        return obj.loadbalancer_listener_refs, nil
+}
+
+func (obj *LoadbalancerPool) AddLoadbalancerListener(
+        rhs *LoadbalancerListener) error {
+        err := obj.readLoadbalancerListenerRefs()
+        if err != nil {
+                return err
+        }
+
+        if !obj.modified[loadbalancer_pool_loadbalancer_listener_refs] {
+                obj.storeReferenceBase("loadbalancer-listener", obj.loadbalancer_listener_refs)
+        }
+
+        ref := contrail.Reference {
+                rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
+        obj.loadbalancer_listener_refs = append(obj.loadbalancer_listener_refs, ref)
+        obj.modified[loadbalancer_pool_loadbalancer_listener_refs] = true
+        return nil
+}
+
+func (obj *LoadbalancerPool) DeleteLoadbalancerListener(uuid string) error {
+        err := obj.readLoadbalancerListenerRefs()
+        if err != nil {
+                return err
+        }
+
+        if !obj.modified[loadbalancer_pool_loadbalancer_listener_refs] {
+                obj.storeReferenceBase("loadbalancer-listener", obj.loadbalancer_listener_refs)
+        }
+
+        for i, ref := range obj.loadbalancer_listener_refs {
+                if ref.Uuid == uuid {
+                        obj.loadbalancer_listener_refs = append(
+                                obj.loadbalancer_listener_refs[:i],
+                                obj.loadbalancer_listener_refs[i+1:]...)
+                        break
+                }
+        }
+        obj.modified[loadbalancer_pool_loadbalancer_listener_refs] = true
+        return nil
+}
+
+func (obj *LoadbalancerPool) ClearLoadbalancerListener() {
+        if (obj.valid[loadbalancer_pool_loadbalancer_listener_refs]) &&
+           (!obj.modified[loadbalancer_pool_loadbalancer_listener_refs]) {
+                obj.storeReferenceBase("loadbalancer-listener", obj.loadbalancer_listener_refs)
+        }
+        obj.loadbalancer_listener_refs = make([]contrail.Reference, 0)
+        obj.valid[loadbalancer_pool_loadbalancer_listener_refs] = true
+        obj.modified[loadbalancer_pool_loadbalancer_listener_refs] = true
+}
+
+func (obj *LoadbalancerPool) SetLoadbalancerListenerList(
+        refList []contrail.ReferencePair) {
+        obj.ClearLoadbalancerListener()
+        obj.loadbalancer_listener_refs = make([]contrail.Reference, len(refList))
+        for i, pair := range refList {
+                obj.loadbalancer_listener_refs[i] = contrail.Reference {
+                        pair.Object.GetFQName(),
+                        pair.Object.GetUuid(),
+                        pair.Object.GetHref(),
+                        pair.Attribute,
+                }
+        }
+}
+
+
 func (obj *LoadbalancerPool) readServiceApplianceSetRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & loadbalancer_pool_service_appliance_set_refs == 0) {
+                (!obj.valid[loadbalancer_pool_service_appliance_set_refs]) {
                 err := obj.GetField(obj, "service_appliance_set_refs")
                 if err != nil {
                         return err
@@ -349,14 +448,14 @@ func (obj *LoadbalancerPool) AddServiceApplianceSet(
                 return err
         }
 
-        if obj.modified & loadbalancer_pool_service_appliance_set_refs == 0 {
+        if !obj.modified[loadbalancer_pool_service_appliance_set_refs] {
                 obj.storeReferenceBase("service-appliance-set", obj.service_appliance_set_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.service_appliance_set_refs = append(obj.service_appliance_set_refs, ref)
-        obj.modified |= loadbalancer_pool_service_appliance_set_refs
+        obj.modified[loadbalancer_pool_service_appliance_set_refs] = true
         return nil
 }
 
@@ -366,7 +465,7 @@ func (obj *LoadbalancerPool) DeleteServiceApplianceSet(uuid string) error {
                 return err
         }
 
-        if obj.modified & loadbalancer_pool_service_appliance_set_refs == 0 {
+        if !obj.modified[loadbalancer_pool_service_appliance_set_refs] {
                 obj.storeReferenceBase("service-appliance-set", obj.service_appliance_set_refs)
         }
 
@@ -378,18 +477,18 @@ func (obj *LoadbalancerPool) DeleteServiceApplianceSet(uuid string) error {
                         break
                 }
         }
-        obj.modified |= loadbalancer_pool_service_appliance_set_refs
+        obj.modified[loadbalancer_pool_service_appliance_set_refs] = true
         return nil
 }
 
 func (obj *LoadbalancerPool) ClearServiceApplianceSet() {
-        if (obj.valid & loadbalancer_pool_service_appliance_set_refs != 0) &&
-           (obj.modified & loadbalancer_pool_service_appliance_set_refs == 0) {
+        if (obj.valid[loadbalancer_pool_service_appliance_set_refs]) &&
+           (!obj.modified[loadbalancer_pool_service_appliance_set_refs]) {
                 obj.storeReferenceBase("service-appliance-set", obj.service_appliance_set_refs)
         }
         obj.service_appliance_set_refs = make([]contrail.Reference, 0)
-        obj.valid |= loadbalancer_pool_service_appliance_set_refs
-        obj.modified |= loadbalancer_pool_service_appliance_set_refs
+        obj.valid[loadbalancer_pool_service_appliance_set_refs] = true
+        obj.modified[loadbalancer_pool_service_appliance_set_refs] = true
 }
 
 func (obj *LoadbalancerPool) SetServiceApplianceSetList(
@@ -409,7 +508,7 @@ func (obj *LoadbalancerPool) SetServiceApplianceSetList(
 
 func (obj *LoadbalancerPool) readLoadbalancerHealthmonitorRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & loadbalancer_pool_loadbalancer_healthmonitor_refs == 0) {
+                (!obj.valid[loadbalancer_pool_loadbalancer_healthmonitor_refs]) {
                 err := obj.GetField(obj, "loadbalancer_healthmonitor_refs")
                 if err != nil {
                         return err
@@ -434,14 +533,14 @@ func (obj *LoadbalancerPool) AddLoadbalancerHealthmonitor(
                 return err
         }
 
-        if obj.modified & loadbalancer_pool_loadbalancer_healthmonitor_refs == 0 {
+        if !obj.modified[loadbalancer_pool_loadbalancer_healthmonitor_refs] {
                 obj.storeReferenceBase("loadbalancer-healthmonitor", obj.loadbalancer_healthmonitor_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.loadbalancer_healthmonitor_refs = append(obj.loadbalancer_healthmonitor_refs, ref)
-        obj.modified |= loadbalancer_pool_loadbalancer_healthmonitor_refs
+        obj.modified[loadbalancer_pool_loadbalancer_healthmonitor_refs] = true
         return nil
 }
 
@@ -451,7 +550,7 @@ func (obj *LoadbalancerPool) DeleteLoadbalancerHealthmonitor(uuid string) error 
                 return err
         }
 
-        if obj.modified & loadbalancer_pool_loadbalancer_healthmonitor_refs == 0 {
+        if !obj.modified[loadbalancer_pool_loadbalancer_healthmonitor_refs] {
                 obj.storeReferenceBase("loadbalancer-healthmonitor", obj.loadbalancer_healthmonitor_refs)
         }
 
@@ -463,18 +562,18 @@ func (obj *LoadbalancerPool) DeleteLoadbalancerHealthmonitor(uuid string) error 
                         break
                 }
         }
-        obj.modified |= loadbalancer_pool_loadbalancer_healthmonitor_refs
+        obj.modified[loadbalancer_pool_loadbalancer_healthmonitor_refs] = true
         return nil
 }
 
 func (obj *LoadbalancerPool) ClearLoadbalancerHealthmonitor() {
-        if (obj.valid & loadbalancer_pool_loadbalancer_healthmonitor_refs != 0) &&
-           (obj.modified & loadbalancer_pool_loadbalancer_healthmonitor_refs == 0) {
+        if (obj.valid[loadbalancer_pool_loadbalancer_healthmonitor_refs]) &&
+           (!obj.modified[loadbalancer_pool_loadbalancer_healthmonitor_refs]) {
                 obj.storeReferenceBase("loadbalancer-healthmonitor", obj.loadbalancer_healthmonitor_refs)
         }
         obj.loadbalancer_healthmonitor_refs = make([]contrail.Reference, 0)
-        obj.valid |= loadbalancer_pool_loadbalancer_healthmonitor_refs
-        obj.modified |= loadbalancer_pool_loadbalancer_healthmonitor_refs
+        obj.valid[loadbalancer_pool_loadbalancer_healthmonitor_refs] = true
+        obj.modified[loadbalancer_pool_loadbalancer_healthmonitor_refs] = true
 }
 
 func (obj *LoadbalancerPool) SetLoadbalancerHealthmonitorList(
@@ -494,7 +593,7 @@ func (obj *LoadbalancerPool) SetLoadbalancerHealthmonitorList(
 
 func (obj *LoadbalancerPool) readVirtualIpBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & loadbalancer_pool_virtual_ip_back_refs == 0) {
+                (!obj.valid[loadbalancer_pool_virtual_ip_back_refs]) {
                 err := obj.GetField(obj, "virtual_ip_back_refs")
                 if err != nil {
                         return err
@@ -520,7 +619,7 @@ func (obj *LoadbalancerPool) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & loadbalancer_pool_loadbalancer_pool_properties != 0 {
+        if obj.modified[loadbalancer_pool_loadbalancer_pool_properties] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.loadbalancer_pool_properties)
                 if err != nil {
@@ -529,7 +628,7 @@ func (obj *LoadbalancerPool) MarshalJSON() ([]byte, error) {
                 msg["loadbalancer_pool_properties"] = &value
         }
 
-        if obj.modified & loadbalancer_pool_loadbalancer_pool_provider != 0 {
+        if obj.modified[loadbalancer_pool_loadbalancer_pool_provider] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.loadbalancer_pool_provider)
                 if err != nil {
@@ -538,7 +637,7 @@ func (obj *LoadbalancerPool) MarshalJSON() ([]byte, error) {
                 msg["loadbalancer_pool_provider"] = &value
         }
 
-        if obj.modified & loadbalancer_pool_loadbalancer_pool_custom_attributes != 0 {
+        if obj.modified[loadbalancer_pool_loadbalancer_pool_custom_attributes] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.loadbalancer_pool_custom_attributes)
                 if err != nil {
@@ -547,7 +646,7 @@ func (obj *LoadbalancerPool) MarshalJSON() ([]byte, error) {
                 msg["loadbalancer_pool_custom_attributes"] = &value
         }
 
-        if obj.modified & loadbalancer_pool_id_perms != 0 {
+        if obj.modified[loadbalancer_pool_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -556,7 +655,16 @@ func (obj *LoadbalancerPool) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & loadbalancer_pool_display_name != 0 {
+        if obj.modified[loadbalancer_pool_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[loadbalancer_pool_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -581,6 +689,15 @@ func (obj *LoadbalancerPool) MarshalJSON() ([]byte, error) {
                         return nil, err
                 }
                 msg["virtual_machine_interface_refs"] = &value
+        }
+
+        if len(obj.loadbalancer_listener_refs) > 0 {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.loadbalancer_listener_refs)
+                if err != nil {
+                        return nil, err
+                }
+                msg["loadbalancer_listener_refs"] = &value
         }
 
         if len(obj.service_appliance_set_refs) > 0 {
@@ -614,72 +731,85 @@ func (obj *LoadbalancerPool) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "loadbalancer_pool_properties":
                         err = json.Unmarshal(value, &obj.loadbalancer_pool_properties)
                         if err == nil {
-                                obj.valid |= loadbalancer_pool_loadbalancer_pool_properties
+                                obj.valid[loadbalancer_pool_loadbalancer_pool_properties] = true
                         }
                         break
                 case "loadbalancer_pool_provider":
                         err = json.Unmarshal(value, &obj.loadbalancer_pool_provider)
                         if err == nil {
-                                obj.valid |= loadbalancer_pool_loadbalancer_pool_provider
+                                obj.valid[loadbalancer_pool_loadbalancer_pool_provider] = true
                         }
                         break
                 case "loadbalancer_pool_custom_attributes":
                         err = json.Unmarshal(value, &obj.loadbalancer_pool_custom_attributes)
                         if err == nil {
-                                obj.valid |= loadbalancer_pool_loadbalancer_pool_custom_attributes
+                                obj.valid[loadbalancer_pool_loadbalancer_pool_custom_attributes] = true
                         }
                         break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= loadbalancer_pool_id_perms
+                                obj.valid[loadbalancer_pool_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[loadbalancer_pool_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= loadbalancer_pool_display_name
+                                obj.valid[loadbalancer_pool_display_name] = true
                         }
                         break
                 case "service_instance_refs":
                         err = json.Unmarshal(value, &obj.service_instance_refs)
                         if err == nil {
-                                obj.valid |= loadbalancer_pool_service_instance_refs
+                                obj.valid[loadbalancer_pool_service_instance_refs] = true
                         }
                         break
                 case "virtual_machine_interface_refs":
                         err = json.Unmarshal(value, &obj.virtual_machine_interface_refs)
                         if err == nil {
-                                obj.valid |= loadbalancer_pool_virtual_machine_interface_refs
+                                obj.valid[loadbalancer_pool_virtual_machine_interface_refs] = true
+                        }
+                        break
+                case "loadbalancer_listener_refs":
+                        err = json.Unmarshal(value, &obj.loadbalancer_listener_refs)
+                        if err == nil {
+                                obj.valid[loadbalancer_pool_loadbalancer_listener_refs] = true
                         }
                         break
                 case "service_appliance_set_refs":
                         err = json.Unmarshal(value, &obj.service_appliance_set_refs)
                         if err == nil {
-                                obj.valid |= loadbalancer_pool_service_appliance_set_refs
+                                obj.valid[loadbalancer_pool_service_appliance_set_refs] = true
                         }
                         break
                 case "loadbalancer_members":
                         err = json.Unmarshal(value, &obj.loadbalancer_members)
                         if err == nil {
-                                obj.valid |= loadbalancer_pool_loadbalancer_members
+                                obj.valid[loadbalancer_pool_loadbalancer_members] = true
                         }
                         break
                 case "loadbalancer_healthmonitor_refs":
                         err = json.Unmarshal(value, &obj.loadbalancer_healthmonitor_refs)
                         if err == nil {
-                                obj.valid |= loadbalancer_pool_loadbalancer_healthmonitor_refs
+                                obj.valid[loadbalancer_pool_loadbalancer_healthmonitor_refs] = true
                         }
                         break
                 case "virtual_ip_back_refs":
                         err = json.Unmarshal(value, &obj.virtual_ip_back_refs)
                         if err == nil {
-                                obj.valid |= loadbalancer_pool_virtual_ip_back_refs
+                                obj.valid[loadbalancer_pool_virtual_ip_back_refs] = true
                         }
                         break
                 }
@@ -698,7 +828,7 @@ func (obj *LoadbalancerPool) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & loadbalancer_pool_loadbalancer_pool_properties != 0 {
+        if obj.modified[loadbalancer_pool_loadbalancer_pool_properties] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.loadbalancer_pool_properties)
                 if err != nil {
@@ -707,7 +837,7 @@ func (obj *LoadbalancerPool) UpdateObject() ([]byte, error) {
                 msg["loadbalancer_pool_properties"] = &value
         }
 
-        if obj.modified & loadbalancer_pool_loadbalancer_pool_provider != 0 {
+        if obj.modified[loadbalancer_pool_loadbalancer_pool_provider] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.loadbalancer_pool_provider)
                 if err != nil {
@@ -716,7 +846,7 @@ func (obj *LoadbalancerPool) UpdateObject() ([]byte, error) {
                 msg["loadbalancer_pool_provider"] = &value
         }
 
-        if obj.modified & loadbalancer_pool_loadbalancer_pool_custom_attributes != 0 {
+        if obj.modified[loadbalancer_pool_loadbalancer_pool_custom_attributes] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.loadbalancer_pool_custom_attributes)
                 if err != nil {
@@ -725,7 +855,7 @@ func (obj *LoadbalancerPool) UpdateObject() ([]byte, error) {
                 msg["loadbalancer_pool_custom_attributes"] = &value
         }
 
-        if obj.modified & loadbalancer_pool_id_perms != 0 {
+        if obj.modified[loadbalancer_pool_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -734,7 +864,16 @@ func (obj *LoadbalancerPool) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & loadbalancer_pool_display_name != 0 {
+        if obj.modified[loadbalancer_pool_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[loadbalancer_pool_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -743,7 +882,7 @@ func (obj *LoadbalancerPool) UpdateObject() ([]byte, error) {
                 msg["display_name"] = &value
         }
 
-        if obj.modified & loadbalancer_pool_service_instance_refs != 0 {
+        if obj.modified[loadbalancer_pool_service_instance_refs] {
                 if len(obj.service_instance_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -763,7 +902,7 @@ func (obj *LoadbalancerPool) UpdateObject() ([]byte, error) {
         }
 
 
-        if obj.modified & loadbalancer_pool_virtual_machine_interface_refs != 0 {
+        if obj.modified[loadbalancer_pool_virtual_machine_interface_refs] {
                 if len(obj.virtual_machine_interface_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -783,7 +922,27 @@ func (obj *LoadbalancerPool) UpdateObject() ([]byte, error) {
         }
 
 
-        if obj.modified & loadbalancer_pool_service_appliance_set_refs != 0 {
+        if obj.modified[loadbalancer_pool_loadbalancer_listener_refs] {
+                if len(obj.loadbalancer_listener_refs) == 0 {
+                        var value json.RawMessage
+                        value, err := json.Marshal(
+                                          make([]contrail.Reference, 0))
+                        if err != nil {
+                                return nil, err
+                        }
+                        msg["loadbalancer_listener_refs"] = &value
+                } else if !obj.hasReferenceBase("loadbalancer-listener") {
+                        var value json.RawMessage
+                        value, err := json.Marshal(&obj.loadbalancer_listener_refs)
+                        if err != nil {
+                                return nil, err
+                        }
+                        msg["loadbalancer_listener_refs"] = &value
+                }
+        }
+
+
+        if obj.modified[loadbalancer_pool_service_appliance_set_refs] {
                 if len(obj.service_appliance_set_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -803,7 +962,7 @@ func (obj *LoadbalancerPool) UpdateObject() ([]byte, error) {
         }
 
 
-        if obj.modified & loadbalancer_pool_loadbalancer_healthmonitor_refs != 0 {
+        if obj.modified[loadbalancer_pool_loadbalancer_healthmonitor_refs] {
                 if len(obj.loadbalancer_healthmonitor_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -828,7 +987,7 @@ func (obj *LoadbalancerPool) UpdateObject() ([]byte, error) {
 
 func (obj *LoadbalancerPool) UpdateReferences() error {
 
-        if (obj.modified & loadbalancer_pool_service_instance_refs != 0) &&
+        if (obj.modified[loadbalancer_pool_service_instance_refs]) &&
            len(obj.service_instance_refs) > 0 &&
            obj.hasReferenceBase("service-instance") {
                 err := obj.UpdateReference(
@@ -840,7 +999,7 @@ func (obj *LoadbalancerPool) UpdateReferences() error {
                 }
         }
 
-        if (obj.modified & loadbalancer_pool_virtual_machine_interface_refs != 0) &&
+        if (obj.modified[loadbalancer_pool_virtual_machine_interface_refs]) &&
            len(obj.virtual_machine_interface_refs) > 0 &&
            obj.hasReferenceBase("virtual-machine-interface") {
                 err := obj.UpdateReference(
@@ -852,7 +1011,19 @@ func (obj *LoadbalancerPool) UpdateReferences() error {
                 }
         }
 
-        if (obj.modified & loadbalancer_pool_service_appliance_set_refs != 0) &&
+        if (obj.modified[loadbalancer_pool_loadbalancer_listener_refs]) &&
+           len(obj.loadbalancer_listener_refs) > 0 &&
+           obj.hasReferenceBase("loadbalancer-listener") {
+                err := obj.UpdateReference(
+                        obj, "loadbalancer-listener",
+                        obj.loadbalancer_listener_refs,
+                        obj.baseMap["loadbalancer-listener"])
+                if err != nil {
+                        return err
+                }
+        }
+
+        if (obj.modified[loadbalancer_pool_service_appliance_set_refs]) &&
            len(obj.service_appliance_set_refs) > 0 &&
            obj.hasReferenceBase("service-appliance-set") {
                 err := obj.UpdateReference(
@@ -864,7 +1035,7 @@ func (obj *LoadbalancerPool) UpdateReferences() error {
                 }
         }
 
-        if (obj.modified & loadbalancer_pool_loadbalancer_healthmonitor_refs != 0) &&
+        if (obj.modified[loadbalancer_pool_loadbalancer_healthmonitor_refs]) &&
            len(obj.loadbalancer_healthmonitor_refs) > 0 &&
            obj.hasReferenceBase("loadbalancer-healthmonitor") {
                 err := obj.UpdateReference(

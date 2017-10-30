@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	physical_router_physical_router_management_ip uint64 = 1 << iota
+	physical_router_physical_router_management_ip = iota
 	physical_router_physical_router_dataplane_ip
 	physical_router_physical_router_vendor_name
 	physical_router_physical_router_product_name
@@ -20,12 +20,15 @@ const (
 	physical_router_physical_router_snmp_credentials
 	physical_router_physical_router_junos_service_ports
 	physical_router_id_perms
+	physical_router_perms2
 	physical_router_display_name
 	physical_router_virtual_router_refs
 	physical_router_bgp_router_refs
 	physical_router_virtual_network_refs
 	physical_router_physical_interfaces
 	physical_router_logical_interfaces
+	physical_router_instance_ip_back_refs
+	physical_router_max
 )
 
 type PhysicalRouter struct {
@@ -39,14 +42,16 @@ type PhysicalRouter struct {
 	physical_router_snmp_credentials SNMPCredentials
 	physical_router_junos_service_ports JunosServicePorts
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
 	virtual_router_refs contrail.ReferenceList
 	bgp_router_refs contrail.ReferenceList
 	virtual_network_refs contrail.ReferenceList
 	physical_interfaces contrail.ReferenceList
 	logical_interfaces contrail.ReferenceList
-        valid uint64
-        modified uint64
+	instance_ip_back_refs contrail.ReferenceList
+        valid [physical_router_max] bool
+        modified [physical_router_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -90,7 +95,7 @@ func (obj *PhysicalRouter) hasReferenceBase(name string) bool {
 }
 
 func (obj *PhysicalRouter) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -101,7 +106,7 @@ func (obj *PhysicalRouter) GetPhysicalRouterManagementIp() string {
 
 func (obj *PhysicalRouter) SetPhysicalRouterManagementIp(value string) {
         obj.physical_router_management_ip = value
-        obj.modified |= physical_router_physical_router_management_ip
+        obj.modified[physical_router_physical_router_management_ip] = true
 }
 
 func (obj *PhysicalRouter) GetPhysicalRouterDataplaneIp() string {
@@ -110,7 +115,7 @@ func (obj *PhysicalRouter) GetPhysicalRouterDataplaneIp() string {
 
 func (obj *PhysicalRouter) SetPhysicalRouterDataplaneIp(value string) {
         obj.physical_router_dataplane_ip = value
-        obj.modified |= physical_router_physical_router_dataplane_ip
+        obj.modified[physical_router_physical_router_dataplane_ip] = true
 }
 
 func (obj *PhysicalRouter) GetPhysicalRouterVendorName() string {
@@ -119,7 +124,7 @@ func (obj *PhysicalRouter) GetPhysicalRouterVendorName() string {
 
 func (obj *PhysicalRouter) SetPhysicalRouterVendorName(value string) {
         obj.physical_router_vendor_name = value
-        obj.modified |= physical_router_physical_router_vendor_name
+        obj.modified[physical_router_physical_router_vendor_name] = true
 }
 
 func (obj *PhysicalRouter) GetPhysicalRouterProductName() string {
@@ -128,7 +133,7 @@ func (obj *PhysicalRouter) GetPhysicalRouterProductName() string {
 
 func (obj *PhysicalRouter) SetPhysicalRouterProductName(value string) {
         obj.physical_router_product_name = value
-        obj.modified |= physical_router_physical_router_product_name
+        obj.modified[physical_router_physical_router_product_name] = true
 }
 
 func (obj *PhysicalRouter) GetPhysicalRouterVncManaged() bool {
@@ -137,7 +142,7 @@ func (obj *PhysicalRouter) GetPhysicalRouterVncManaged() bool {
 
 func (obj *PhysicalRouter) SetPhysicalRouterVncManaged(value bool) {
         obj.physical_router_vnc_managed = value
-        obj.modified |= physical_router_physical_router_vnc_managed
+        obj.modified[physical_router_physical_router_vnc_managed] = true
 }
 
 func (obj *PhysicalRouter) GetPhysicalRouterUserCredentials() UserCredentials {
@@ -146,7 +151,7 @@ func (obj *PhysicalRouter) GetPhysicalRouterUserCredentials() UserCredentials {
 
 func (obj *PhysicalRouter) SetPhysicalRouterUserCredentials(value *UserCredentials) {
         obj.physical_router_user_credentials = *value
-        obj.modified |= physical_router_physical_router_user_credentials
+        obj.modified[physical_router_physical_router_user_credentials] = true
 }
 
 func (obj *PhysicalRouter) GetPhysicalRouterSnmpCredentials() SNMPCredentials {
@@ -155,7 +160,7 @@ func (obj *PhysicalRouter) GetPhysicalRouterSnmpCredentials() SNMPCredentials {
 
 func (obj *PhysicalRouter) SetPhysicalRouterSnmpCredentials(value *SNMPCredentials) {
         obj.physical_router_snmp_credentials = *value
-        obj.modified |= physical_router_physical_router_snmp_credentials
+        obj.modified[physical_router_physical_router_snmp_credentials] = true
 }
 
 func (obj *PhysicalRouter) GetPhysicalRouterJunosServicePorts() JunosServicePorts {
@@ -164,7 +169,7 @@ func (obj *PhysicalRouter) GetPhysicalRouterJunosServicePorts() JunosServicePort
 
 func (obj *PhysicalRouter) SetPhysicalRouterJunosServicePorts(value *JunosServicePorts) {
         obj.physical_router_junos_service_ports = *value
-        obj.modified |= physical_router_physical_router_junos_service_ports
+        obj.modified[physical_router_physical_router_junos_service_ports] = true
 }
 
 func (obj *PhysicalRouter) GetIdPerms() IdPermsType {
@@ -173,7 +178,16 @@ func (obj *PhysicalRouter) GetIdPerms() IdPermsType {
 
 func (obj *PhysicalRouter) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= physical_router_id_perms
+        obj.modified[physical_router_id_perms] = true
+}
+
+func (obj *PhysicalRouter) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *PhysicalRouter) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[physical_router_perms2] = true
 }
 
 func (obj *PhysicalRouter) GetDisplayName() string {
@@ -182,12 +196,12 @@ func (obj *PhysicalRouter) GetDisplayName() string {
 
 func (obj *PhysicalRouter) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= physical_router_display_name
+        obj.modified[physical_router_display_name] = true
 }
 
 func (obj *PhysicalRouter) readPhysicalInterfaces() error {
         if !obj.IsTransient() &&
-                (obj.valid & physical_router_physical_interfaces == 0) {
+                (!obj.valid[physical_router_physical_interfaces]) {
                 err := obj.GetField(obj, "physical_interfaces")
                 if err != nil {
                         return err
@@ -207,7 +221,7 @@ func (obj *PhysicalRouter) GetPhysicalInterfaces() (
 
 func (obj *PhysicalRouter) readLogicalInterfaces() error {
         if !obj.IsTransient() &&
-                (obj.valid & physical_router_logical_interfaces == 0) {
+                (!obj.valid[physical_router_logical_interfaces]) {
                 err := obj.GetField(obj, "logical_interfaces")
                 if err != nil {
                         return err
@@ -227,7 +241,7 @@ func (obj *PhysicalRouter) GetLogicalInterfaces() (
 
 func (obj *PhysicalRouter) readVirtualRouterRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & physical_router_virtual_router_refs == 0) {
+                (!obj.valid[physical_router_virtual_router_refs]) {
                 err := obj.GetField(obj, "virtual_router_refs")
                 if err != nil {
                         return err
@@ -252,14 +266,14 @@ func (obj *PhysicalRouter) AddVirtualRouter(
                 return err
         }
 
-        if obj.modified & physical_router_virtual_router_refs == 0 {
+        if !obj.modified[physical_router_virtual_router_refs] {
                 obj.storeReferenceBase("virtual-router", obj.virtual_router_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.virtual_router_refs = append(obj.virtual_router_refs, ref)
-        obj.modified |= physical_router_virtual_router_refs
+        obj.modified[physical_router_virtual_router_refs] = true
         return nil
 }
 
@@ -269,7 +283,7 @@ func (obj *PhysicalRouter) DeleteVirtualRouter(uuid string) error {
                 return err
         }
 
-        if obj.modified & physical_router_virtual_router_refs == 0 {
+        if !obj.modified[physical_router_virtual_router_refs] {
                 obj.storeReferenceBase("virtual-router", obj.virtual_router_refs)
         }
 
@@ -281,18 +295,18 @@ func (obj *PhysicalRouter) DeleteVirtualRouter(uuid string) error {
                         break
                 }
         }
-        obj.modified |= physical_router_virtual_router_refs
+        obj.modified[physical_router_virtual_router_refs] = true
         return nil
 }
 
 func (obj *PhysicalRouter) ClearVirtualRouter() {
-        if (obj.valid & physical_router_virtual_router_refs != 0) &&
-           (obj.modified & physical_router_virtual_router_refs == 0) {
+        if (obj.valid[physical_router_virtual_router_refs]) &&
+           (!obj.modified[physical_router_virtual_router_refs]) {
                 obj.storeReferenceBase("virtual-router", obj.virtual_router_refs)
         }
         obj.virtual_router_refs = make([]contrail.Reference, 0)
-        obj.valid |= physical_router_virtual_router_refs
-        obj.modified |= physical_router_virtual_router_refs
+        obj.valid[physical_router_virtual_router_refs] = true
+        obj.modified[physical_router_virtual_router_refs] = true
 }
 
 func (obj *PhysicalRouter) SetVirtualRouterList(
@@ -312,7 +326,7 @@ func (obj *PhysicalRouter) SetVirtualRouterList(
 
 func (obj *PhysicalRouter) readBgpRouterRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & physical_router_bgp_router_refs == 0) {
+                (!obj.valid[physical_router_bgp_router_refs]) {
                 err := obj.GetField(obj, "bgp_router_refs")
                 if err != nil {
                         return err
@@ -337,14 +351,14 @@ func (obj *PhysicalRouter) AddBgpRouter(
                 return err
         }
 
-        if obj.modified & physical_router_bgp_router_refs == 0 {
+        if !obj.modified[physical_router_bgp_router_refs] {
                 obj.storeReferenceBase("bgp-router", obj.bgp_router_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.bgp_router_refs = append(obj.bgp_router_refs, ref)
-        obj.modified |= physical_router_bgp_router_refs
+        obj.modified[physical_router_bgp_router_refs] = true
         return nil
 }
 
@@ -354,7 +368,7 @@ func (obj *PhysicalRouter) DeleteBgpRouter(uuid string) error {
                 return err
         }
 
-        if obj.modified & physical_router_bgp_router_refs == 0 {
+        if !obj.modified[physical_router_bgp_router_refs] {
                 obj.storeReferenceBase("bgp-router", obj.bgp_router_refs)
         }
 
@@ -366,18 +380,18 @@ func (obj *PhysicalRouter) DeleteBgpRouter(uuid string) error {
                         break
                 }
         }
-        obj.modified |= physical_router_bgp_router_refs
+        obj.modified[physical_router_bgp_router_refs] = true
         return nil
 }
 
 func (obj *PhysicalRouter) ClearBgpRouter() {
-        if (obj.valid & physical_router_bgp_router_refs != 0) &&
-           (obj.modified & physical_router_bgp_router_refs == 0) {
+        if (obj.valid[physical_router_bgp_router_refs]) &&
+           (!obj.modified[physical_router_bgp_router_refs]) {
                 obj.storeReferenceBase("bgp-router", obj.bgp_router_refs)
         }
         obj.bgp_router_refs = make([]contrail.Reference, 0)
-        obj.valid |= physical_router_bgp_router_refs
-        obj.modified |= physical_router_bgp_router_refs
+        obj.valid[physical_router_bgp_router_refs] = true
+        obj.modified[physical_router_bgp_router_refs] = true
 }
 
 func (obj *PhysicalRouter) SetBgpRouterList(
@@ -397,7 +411,7 @@ func (obj *PhysicalRouter) SetBgpRouterList(
 
 func (obj *PhysicalRouter) readVirtualNetworkRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & physical_router_virtual_network_refs == 0) {
+                (!obj.valid[physical_router_virtual_network_refs]) {
                 err := obj.GetField(obj, "virtual_network_refs")
                 if err != nil {
                         return err
@@ -422,14 +436,14 @@ func (obj *PhysicalRouter) AddVirtualNetwork(
                 return err
         }
 
-        if obj.modified & physical_router_virtual_network_refs == 0 {
+        if !obj.modified[physical_router_virtual_network_refs] {
                 obj.storeReferenceBase("virtual-network", obj.virtual_network_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.virtual_network_refs = append(obj.virtual_network_refs, ref)
-        obj.modified |= physical_router_virtual_network_refs
+        obj.modified[physical_router_virtual_network_refs] = true
         return nil
 }
 
@@ -439,7 +453,7 @@ func (obj *PhysicalRouter) DeleteVirtualNetwork(uuid string) error {
                 return err
         }
 
-        if obj.modified & physical_router_virtual_network_refs == 0 {
+        if !obj.modified[physical_router_virtual_network_refs] {
                 obj.storeReferenceBase("virtual-network", obj.virtual_network_refs)
         }
 
@@ -451,18 +465,18 @@ func (obj *PhysicalRouter) DeleteVirtualNetwork(uuid string) error {
                         break
                 }
         }
-        obj.modified |= physical_router_virtual_network_refs
+        obj.modified[physical_router_virtual_network_refs] = true
         return nil
 }
 
 func (obj *PhysicalRouter) ClearVirtualNetwork() {
-        if (obj.valid & physical_router_virtual_network_refs != 0) &&
-           (obj.modified & physical_router_virtual_network_refs == 0) {
+        if (obj.valid[physical_router_virtual_network_refs]) &&
+           (!obj.modified[physical_router_virtual_network_refs]) {
                 obj.storeReferenceBase("virtual-network", obj.virtual_network_refs)
         }
         obj.virtual_network_refs = make([]contrail.Reference, 0)
-        obj.valid |= physical_router_virtual_network_refs
-        obj.modified |= physical_router_virtual_network_refs
+        obj.valid[physical_router_virtual_network_refs] = true
+        obj.modified[physical_router_virtual_network_refs] = true
 }
 
 func (obj *PhysicalRouter) SetVirtualNetworkList(
@@ -480,6 +494,26 @@ func (obj *PhysicalRouter) SetVirtualNetworkList(
 }
 
 
+func (obj *PhysicalRouter) readInstanceIpBackRefs() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[physical_router_instance_ip_back_refs]) {
+                err := obj.GetField(obj, "instance_ip_back_refs")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *PhysicalRouter) GetInstanceIpBackRefs() (
+        contrail.ReferenceList, error) {
+        err := obj.readInstanceIpBackRefs()
+        if err != nil {
+                return nil, err
+        }
+        return obj.instance_ip_back_refs, nil
+}
+
 func (obj *PhysicalRouter) MarshalJSON() ([]byte, error) {
         msg := map[string]*json.RawMessage {
         }
@@ -488,7 +522,7 @@ func (obj *PhysicalRouter) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & physical_router_physical_router_management_ip != 0 {
+        if obj.modified[physical_router_physical_router_management_ip] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.physical_router_management_ip)
                 if err != nil {
@@ -497,7 +531,7 @@ func (obj *PhysicalRouter) MarshalJSON() ([]byte, error) {
                 msg["physical_router_management_ip"] = &value
         }
 
-        if obj.modified & physical_router_physical_router_dataplane_ip != 0 {
+        if obj.modified[physical_router_physical_router_dataplane_ip] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.physical_router_dataplane_ip)
                 if err != nil {
@@ -506,7 +540,7 @@ func (obj *PhysicalRouter) MarshalJSON() ([]byte, error) {
                 msg["physical_router_dataplane_ip"] = &value
         }
 
-        if obj.modified & physical_router_physical_router_vendor_name != 0 {
+        if obj.modified[physical_router_physical_router_vendor_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.physical_router_vendor_name)
                 if err != nil {
@@ -515,7 +549,7 @@ func (obj *PhysicalRouter) MarshalJSON() ([]byte, error) {
                 msg["physical_router_vendor_name"] = &value
         }
 
-        if obj.modified & physical_router_physical_router_product_name != 0 {
+        if obj.modified[physical_router_physical_router_product_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.physical_router_product_name)
                 if err != nil {
@@ -524,7 +558,7 @@ func (obj *PhysicalRouter) MarshalJSON() ([]byte, error) {
                 msg["physical_router_product_name"] = &value
         }
 
-        if obj.modified & physical_router_physical_router_vnc_managed != 0 {
+        if obj.modified[physical_router_physical_router_vnc_managed] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.physical_router_vnc_managed)
                 if err != nil {
@@ -533,7 +567,7 @@ func (obj *PhysicalRouter) MarshalJSON() ([]byte, error) {
                 msg["physical_router_vnc_managed"] = &value
         }
 
-        if obj.modified & physical_router_physical_router_user_credentials != 0 {
+        if obj.modified[physical_router_physical_router_user_credentials] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.physical_router_user_credentials)
                 if err != nil {
@@ -542,7 +576,7 @@ func (obj *PhysicalRouter) MarshalJSON() ([]byte, error) {
                 msg["physical_router_user_credentials"] = &value
         }
 
-        if obj.modified & physical_router_physical_router_snmp_credentials != 0 {
+        if obj.modified[physical_router_physical_router_snmp_credentials] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.physical_router_snmp_credentials)
                 if err != nil {
@@ -551,7 +585,7 @@ func (obj *PhysicalRouter) MarshalJSON() ([]byte, error) {
                 msg["physical_router_snmp_credentials"] = &value
         }
 
-        if obj.modified & physical_router_physical_router_junos_service_ports != 0 {
+        if obj.modified[physical_router_physical_router_junos_service_ports] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.physical_router_junos_service_ports)
                 if err != nil {
@@ -560,7 +594,7 @@ func (obj *PhysicalRouter) MarshalJSON() ([]byte, error) {
                 msg["physical_router_junos_service_ports"] = &value
         }
 
-        if obj.modified & physical_router_id_perms != 0 {
+        if obj.modified[physical_router_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -569,7 +603,16 @@ func (obj *PhysicalRouter) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & physical_router_display_name != 0 {
+        if obj.modified[physical_router_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[physical_router_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -618,96 +661,109 @@ func (obj *PhysicalRouter) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "physical_router_management_ip":
                         err = json.Unmarshal(value, &obj.physical_router_management_ip)
                         if err == nil {
-                                obj.valid |= physical_router_physical_router_management_ip
+                                obj.valid[physical_router_physical_router_management_ip] = true
                         }
                         break
                 case "physical_router_dataplane_ip":
                         err = json.Unmarshal(value, &obj.physical_router_dataplane_ip)
                         if err == nil {
-                                obj.valid |= physical_router_physical_router_dataplane_ip
+                                obj.valid[physical_router_physical_router_dataplane_ip] = true
                         }
                         break
                 case "physical_router_vendor_name":
                         err = json.Unmarshal(value, &obj.physical_router_vendor_name)
                         if err == nil {
-                                obj.valid |= physical_router_physical_router_vendor_name
+                                obj.valid[physical_router_physical_router_vendor_name] = true
                         }
                         break
                 case "physical_router_product_name":
                         err = json.Unmarshal(value, &obj.physical_router_product_name)
                         if err == nil {
-                                obj.valid |= physical_router_physical_router_product_name
+                                obj.valid[physical_router_physical_router_product_name] = true
                         }
                         break
                 case "physical_router_vnc_managed":
                         err = json.Unmarshal(value, &obj.physical_router_vnc_managed)
                         if err == nil {
-                                obj.valid |= physical_router_physical_router_vnc_managed
+                                obj.valid[physical_router_physical_router_vnc_managed] = true
                         }
                         break
                 case "physical_router_user_credentials":
                         err = json.Unmarshal(value, &obj.physical_router_user_credentials)
                         if err == nil {
-                                obj.valid |= physical_router_physical_router_user_credentials
+                                obj.valid[physical_router_physical_router_user_credentials] = true
                         }
                         break
                 case "physical_router_snmp_credentials":
                         err = json.Unmarshal(value, &obj.physical_router_snmp_credentials)
                         if err == nil {
-                                obj.valid |= physical_router_physical_router_snmp_credentials
+                                obj.valid[physical_router_physical_router_snmp_credentials] = true
                         }
                         break
                 case "physical_router_junos_service_ports":
                         err = json.Unmarshal(value, &obj.physical_router_junos_service_ports)
                         if err == nil {
-                                obj.valid |= physical_router_physical_router_junos_service_ports
+                                obj.valid[physical_router_physical_router_junos_service_ports] = true
                         }
                         break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= physical_router_id_perms
+                                obj.valid[physical_router_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[physical_router_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= physical_router_display_name
+                                obj.valid[physical_router_display_name] = true
                         }
                         break
                 case "virtual_router_refs":
                         err = json.Unmarshal(value, &obj.virtual_router_refs)
                         if err == nil {
-                                obj.valid |= physical_router_virtual_router_refs
+                                obj.valid[physical_router_virtual_router_refs] = true
                         }
                         break
                 case "bgp_router_refs":
                         err = json.Unmarshal(value, &obj.bgp_router_refs)
                         if err == nil {
-                                obj.valid |= physical_router_bgp_router_refs
+                                obj.valid[physical_router_bgp_router_refs] = true
                         }
                         break
                 case "virtual_network_refs":
                         err = json.Unmarshal(value, &obj.virtual_network_refs)
                         if err == nil {
-                                obj.valid |= physical_router_virtual_network_refs
+                                obj.valid[physical_router_virtual_network_refs] = true
                         }
                         break
                 case "physical_interfaces":
                         err = json.Unmarshal(value, &obj.physical_interfaces)
                         if err == nil {
-                                obj.valid |= physical_router_physical_interfaces
+                                obj.valid[physical_router_physical_interfaces] = true
                         }
                         break
                 case "logical_interfaces":
                         err = json.Unmarshal(value, &obj.logical_interfaces)
                         if err == nil {
-                                obj.valid |= physical_router_logical_interfaces
+                                obj.valid[physical_router_logical_interfaces] = true
+                        }
+                        break
+                case "instance_ip_back_refs":
+                        err = json.Unmarshal(value, &obj.instance_ip_back_refs)
+                        if err == nil {
+                                obj.valid[physical_router_instance_ip_back_refs] = true
                         }
                         break
                 }
@@ -726,7 +782,7 @@ func (obj *PhysicalRouter) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & physical_router_physical_router_management_ip != 0 {
+        if obj.modified[physical_router_physical_router_management_ip] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.physical_router_management_ip)
                 if err != nil {
@@ -735,7 +791,7 @@ func (obj *PhysicalRouter) UpdateObject() ([]byte, error) {
                 msg["physical_router_management_ip"] = &value
         }
 
-        if obj.modified & physical_router_physical_router_dataplane_ip != 0 {
+        if obj.modified[physical_router_physical_router_dataplane_ip] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.physical_router_dataplane_ip)
                 if err != nil {
@@ -744,7 +800,7 @@ func (obj *PhysicalRouter) UpdateObject() ([]byte, error) {
                 msg["physical_router_dataplane_ip"] = &value
         }
 
-        if obj.modified & physical_router_physical_router_vendor_name != 0 {
+        if obj.modified[physical_router_physical_router_vendor_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.physical_router_vendor_name)
                 if err != nil {
@@ -753,7 +809,7 @@ func (obj *PhysicalRouter) UpdateObject() ([]byte, error) {
                 msg["physical_router_vendor_name"] = &value
         }
 
-        if obj.modified & physical_router_physical_router_product_name != 0 {
+        if obj.modified[physical_router_physical_router_product_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.physical_router_product_name)
                 if err != nil {
@@ -762,7 +818,7 @@ func (obj *PhysicalRouter) UpdateObject() ([]byte, error) {
                 msg["physical_router_product_name"] = &value
         }
 
-        if obj.modified & physical_router_physical_router_vnc_managed != 0 {
+        if obj.modified[physical_router_physical_router_vnc_managed] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.physical_router_vnc_managed)
                 if err != nil {
@@ -771,7 +827,7 @@ func (obj *PhysicalRouter) UpdateObject() ([]byte, error) {
                 msg["physical_router_vnc_managed"] = &value
         }
 
-        if obj.modified & physical_router_physical_router_user_credentials != 0 {
+        if obj.modified[physical_router_physical_router_user_credentials] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.physical_router_user_credentials)
                 if err != nil {
@@ -780,7 +836,7 @@ func (obj *PhysicalRouter) UpdateObject() ([]byte, error) {
                 msg["physical_router_user_credentials"] = &value
         }
 
-        if obj.modified & physical_router_physical_router_snmp_credentials != 0 {
+        if obj.modified[physical_router_physical_router_snmp_credentials] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.physical_router_snmp_credentials)
                 if err != nil {
@@ -789,7 +845,7 @@ func (obj *PhysicalRouter) UpdateObject() ([]byte, error) {
                 msg["physical_router_snmp_credentials"] = &value
         }
 
-        if obj.modified & physical_router_physical_router_junos_service_ports != 0 {
+        if obj.modified[physical_router_physical_router_junos_service_ports] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.physical_router_junos_service_ports)
                 if err != nil {
@@ -798,7 +854,7 @@ func (obj *PhysicalRouter) UpdateObject() ([]byte, error) {
                 msg["physical_router_junos_service_ports"] = &value
         }
 
-        if obj.modified & physical_router_id_perms != 0 {
+        if obj.modified[physical_router_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -807,7 +863,16 @@ func (obj *PhysicalRouter) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & physical_router_display_name != 0 {
+        if obj.modified[physical_router_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[physical_router_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -816,7 +881,7 @@ func (obj *PhysicalRouter) UpdateObject() ([]byte, error) {
                 msg["display_name"] = &value
         }
 
-        if obj.modified & physical_router_virtual_router_refs != 0 {
+        if obj.modified[physical_router_virtual_router_refs] {
                 if len(obj.virtual_router_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -836,7 +901,7 @@ func (obj *PhysicalRouter) UpdateObject() ([]byte, error) {
         }
 
 
-        if obj.modified & physical_router_bgp_router_refs != 0 {
+        if obj.modified[physical_router_bgp_router_refs] {
                 if len(obj.bgp_router_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -856,7 +921,7 @@ func (obj *PhysicalRouter) UpdateObject() ([]byte, error) {
         }
 
 
-        if obj.modified & physical_router_virtual_network_refs != 0 {
+        if obj.modified[physical_router_virtual_network_refs] {
                 if len(obj.virtual_network_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -881,7 +946,7 @@ func (obj *PhysicalRouter) UpdateObject() ([]byte, error) {
 
 func (obj *PhysicalRouter) UpdateReferences() error {
 
-        if (obj.modified & physical_router_virtual_router_refs != 0) &&
+        if (obj.modified[physical_router_virtual_router_refs]) &&
            len(obj.virtual_router_refs) > 0 &&
            obj.hasReferenceBase("virtual-router") {
                 err := obj.UpdateReference(
@@ -893,7 +958,7 @@ func (obj *PhysicalRouter) UpdateReferences() error {
                 }
         }
 
-        if (obj.modified & physical_router_bgp_router_refs != 0) &&
+        if (obj.modified[physical_router_bgp_router_refs]) &&
            len(obj.bgp_router_refs) > 0 &&
            obj.hasReferenceBase("bgp-router") {
                 err := obj.UpdateReference(
@@ -905,7 +970,7 @@ func (obj *PhysicalRouter) UpdateReferences() error {
                 }
         }
 
-        if (obj.modified & physical_router_virtual_network_refs != 0) &&
+        if (obj.modified[physical_router_virtual_network_refs]) &&
            len(obj.virtual_network_refs) > 0 &&
            obj.hasReferenceBase("virtual-network") {
                 err := obj.UpdateReference(

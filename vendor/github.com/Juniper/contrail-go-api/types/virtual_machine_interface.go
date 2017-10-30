@@ -11,64 +11,85 @@ import (
 )
 
 const (
-	virtual_machine_interface_virtual_machine_interface_mac_addresses uint64 = 1 << iota
+	virtual_machine_interface_ecmp_hashing_include_fields = iota
+	virtual_machine_interface_virtual_machine_interface_mac_addresses
 	virtual_machine_interface_virtual_machine_interface_dhcp_option_list
 	virtual_machine_interface_virtual_machine_interface_host_routes
 	virtual_machine_interface_virtual_machine_interface_allowed_address_pairs
 	virtual_machine_interface_vrf_assign_table
 	virtual_machine_interface_virtual_machine_interface_device_owner
+	virtual_machine_interface_virtual_machine_interface_disable_policy
 	virtual_machine_interface_virtual_machine_interface_properties
+	virtual_machine_interface_virtual_machine_interface_bindings
 	virtual_machine_interface_virtual_machine_interface_fat_flow_protocols
 	virtual_machine_interface_id_perms
+	virtual_machine_interface_perms2
 	virtual_machine_interface_display_name
-	virtual_machine_interface_qos_forwarding_class_refs
+	virtual_machine_interface_qos_config_refs
 	virtual_machine_interface_security_group_refs
 	virtual_machine_interface_virtual_machine_interface_refs
 	virtual_machine_interface_virtual_machine_refs
 	virtual_machine_interface_virtual_network_refs
 	virtual_machine_interface_routing_instance_refs
+	virtual_machine_interface_port_tuple_refs
+	virtual_machine_interface_service_health_check_refs
 	virtual_machine_interface_interface_route_table_refs
+	virtual_machine_interface_physical_interface_refs
 	virtual_machine_interface_virtual_machine_interface_back_refs
 	virtual_machine_interface_instance_ip_back_refs
 	virtual_machine_interface_subnet_back_refs
 	virtual_machine_interface_floating_ip_back_refs
+	virtual_machine_interface_alias_ip_back_refs
 	virtual_machine_interface_logical_interface_back_refs
+	virtual_machine_interface_bgp_as_a_service_back_refs
 	virtual_machine_interface_customer_attachment_back_refs
 	virtual_machine_interface_logical_router_back_refs
 	virtual_machine_interface_loadbalancer_pool_back_refs
 	virtual_machine_interface_virtual_ip_back_refs
+	virtual_machine_interface_loadbalancer_back_refs
+	virtual_machine_interface_max
 )
 
 type VirtualMachineInterface struct {
         contrail.ObjectBase
+	ecmp_hashing_include_fields EcmpHashingIncludeFields
 	virtual_machine_interface_mac_addresses MacAddressesType
 	virtual_machine_interface_dhcp_option_list DhcpOptionsListType
 	virtual_machine_interface_host_routes RouteTableType
 	virtual_machine_interface_allowed_address_pairs AllowedAddressPairs
 	vrf_assign_table VrfAssignTableType
 	virtual_machine_interface_device_owner string
+	virtual_machine_interface_disable_policy bool
 	virtual_machine_interface_properties VirtualMachineInterfacePropertiesType
+	virtual_machine_interface_bindings KeyValuePairs
 	virtual_machine_interface_fat_flow_protocols FatFlowProtocols
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
-	qos_forwarding_class_refs contrail.ReferenceList
+	qos_config_refs contrail.ReferenceList
 	security_group_refs contrail.ReferenceList
 	virtual_machine_interface_refs contrail.ReferenceList
 	virtual_machine_refs contrail.ReferenceList
 	virtual_network_refs contrail.ReferenceList
 	routing_instance_refs contrail.ReferenceList
+	port_tuple_refs contrail.ReferenceList
+	service_health_check_refs contrail.ReferenceList
 	interface_route_table_refs contrail.ReferenceList
+	physical_interface_refs contrail.ReferenceList
 	virtual_machine_interface_back_refs contrail.ReferenceList
 	instance_ip_back_refs contrail.ReferenceList
 	subnet_back_refs contrail.ReferenceList
 	floating_ip_back_refs contrail.ReferenceList
+	alias_ip_back_refs contrail.ReferenceList
 	logical_interface_back_refs contrail.ReferenceList
+	bgp_as_a_service_back_refs contrail.ReferenceList
 	customer_attachment_back_refs contrail.ReferenceList
 	logical_router_back_refs contrail.ReferenceList
 	loadbalancer_pool_back_refs contrail.ReferenceList
 	virtual_ip_back_refs contrail.ReferenceList
-        valid uint64
-        modified uint64
+	loadbalancer_back_refs contrail.ReferenceList
+        valid [virtual_machine_interface_max] bool
+        modified [virtual_machine_interface_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -112,10 +133,19 @@ func (obj *VirtualMachineInterface) hasReferenceBase(name string) bool {
 }
 
 func (obj *VirtualMachineInterface) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
+
+func (obj *VirtualMachineInterface) GetEcmpHashingIncludeFields() EcmpHashingIncludeFields {
+        return obj.ecmp_hashing_include_fields
+}
+
+func (obj *VirtualMachineInterface) SetEcmpHashingIncludeFields(value *EcmpHashingIncludeFields) {
+        obj.ecmp_hashing_include_fields = *value
+        obj.modified[virtual_machine_interface_ecmp_hashing_include_fields] = true
+}
 
 func (obj *VirtualMachineInterface) GetVirtualMachineInterfaceMacAddresses() MacAddressesType {
         return obj.virtual_machine_interface_mac_addresses
@@ -123,7 +153,7 @@ func (obj *VirtualMachineInterface) GetVirtualMachineInterfaceMacAddresses() Mac
 
 func (obj *VirtualMachineInterface) SetVirtualMachineInterfaceMacAddresses(value *MacAddressesType) {
         obj.virtual_machine_interface_mac_addresses = *value
-        obj.modified |= virtual_machine_interface_virtual_machine_interface_mac_addresses
+        obj.modified[virtual_machine_interface_virtual_machine_interface_mac_addresses] = true
 }
 
 func (obj *VirtualMachineInterface) GetVirtualMachineInterfaceDhcpOptionList() DhcpOptionsListType {
@@ -132,7 +162,7 @@ func (obj *VirtualMachineInterface) GetVirtualMachineInterfaceDhcpOptionList() D
 
 func (obj *VirtualMachineInterface) SetVirtualMachineInterfaceDhcpOptionList(value *DhcpOptionsListType) {
         obj.virtual_machine_interface_dhcp_option_list = *value
-        obj.modified |= virtual_machine_interface_virtual_machine_interface_dhcp_option_list
+        obj.modified[virtual_machine_interface_virtual_machine_interface_dhcp_option_list] = true
 }
 
 func (obj *VirtualMachineInterface) GetVirtualMachineInterfaceHostRoutes() RouteTableType {
@@ -141,7 +171,7 @@ func (obj *VirtualMachineInterface) GetVirtualMachineInterfaceHostRoutes() Route
 
 func (obj *VirtualMachineInterface) SetVirtualMachineInterfaceHostRoutes(value *RouteTableType) {
         obj.virtual_machine_interface_host_routes = *value
-        obj.modified |= virtual_machine_interface_virtual_machine_interface_host_routes
+        obj.modified[virtual_machine_interface_virtual_machine_interface_host_routes] = true
 }
 
 func (obj *VirtualMachineInterface) GetVirtualMachineInterfaceAllowedAddressPairs() AllowedAddressPairs {
@@ -150,7 +180,7 @@ func (obj *VirtualMachineInterface) GetVirtualMachineInterfaceAllowedAddressPair
 
 func (obj *VirtualMachineInterface) SetVirtualMachineInterfaceAllowedAddressPairs(value *AllowedAddressPairs) {
         obj.virtual_machine_interface_allowed_address_pairs = *value
-        obj.modified |= virtual_machine_interface_virtual_machine_interface_allowed_address_pairs
+        obj.modified[virtual_machine_interface_virtual_machine_interface_allowed_address_pairs] = true
 }
 
 func (obj *VirtualMachineInterface) GetVrfAssignTable() VrfAssignTableType {
@@ -159,7 +189,7 @@ func (obj *VirtualMachineInterface) GetVrfAssignTable() VrfAssignTableType {
 
 func (obj *VirtualMachineInterface) SetVrfAssignTable(value *VrfAssignTableType) {
         obj.vrf_assign_table = *value
-        obj.modified |= virtual_machine_interface_vrf_assign_table
+        obj.modified[virtual_machine_interface_vrf_assign_table] = true
 }
 
 func (obj *VirtualMachineInterface) GetVirtualMachineInterfaceDeviceOwner() string {
@@ -168,7 +198,16 @@ func (obj *VirtualMachineInterface) GetVirtualMachineInterfaceDeviceOwner() stri
 
 func (obj *VirtualMachineInterface) SetVirtualMachineInterfaceDeviceOwner(value string) {
         obj.virtual_machine_interface_device_owner = value
-        obj.modified |= virtual_machine_interface_virtual_machine_interface_device_owner
+        obj.modified[virtual_machine_interface_virtual_machine_interface_device_owner] = true
+}
+
+func (obj *VirtualMachineInterface) GetVirtualMachineInterfaceDisablePolicy() bool {
+        return obj.virtual_machine_interface_disable_policy
+}
+
+func (obj *VirtualMachineInterface) SetVirtualMachineInterfaceDisablePolicy(value bool) {
+        obj.virtual_machine_interface_disable_policy = value
+        obj.modified[virtual_machine_interface_virtual_machine_interface_disable_policy] = true
 }
 
 func (obj *VirtualMachineInterface) GetVirtualMachineInterfaceProperties() VirtualMachineInterfacePropertiesType {
@@ -177,7 +216,16 @@ func (obj *VirtualMachineInterface) GetVirtualMachineInterfaceProperties() Virtu
 
 func (obj *VirtualMachineInterface) SetVirtualMachineInterfaceProperties(value *VirtualMachineInterfacePropertiesType) {
         obj.virtual_machine_interface_properties = *value
-        obj.modified |= virtual_machine_interface_virtual_machine_interface_properties
+        obj.modified[virtual_machine_interface_virtual_machine_interface_properties] = true
+}
+
+func (obj *VirtualMachineInterface) GetVirtualMachineInterfaceBindings() KeyValuePairs {
+        return obj.virtual_machine_interface_bindings
+}
+
+func (obj *VirtualMachineInterface) SetVirtualMachineInterfaceBindings(value *KeyValuePairs) {
+        obj.virtual_machine_interface_bindings = *value
+        obj.modified[virtual_machine_interface_virtual_machine_interface_bindings] = true
 }
 
 func (obj *VirtualMachineInterface) GetVirtualMachineInterfaceFatFlowProtocols() FatFlowProtocols {
@@ -186,7 +234,7 @@ func (obj *VirtualMachineInterface) GetVirtualMachineInterfaceFatFlowProtocols()
 
 func (obj *VirtualMachineInterface) SetVirtualMachineInterfaceFatFlowProtocols(value *FatFlowProtocols) {
         obj.virtual_machine_interface_fat_flow_protocols = *value
-        obj.modified |= virtual_machine_interface_virtual_machine_interface_fat_flow_protocols
+        obj.modified[virtual_machine_interface_virtual_machine_interface_fat_flow_protocols] = true
 }
 
 func (obj *VirtualMachineInterface) GetIdPerms() IdPermsType {
@@ -195,7 +243,16 @@ func (obj *VirtualMachineInterface) GetIdPerms() IdPermsType {
 
 func (obj *VirtualMachineInterface) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= virtual_machine_interface_id_perms
+        obj.modified[virtual_machine_interface_id_perms] = true
+}
+
+func (obj *VirtualMachineInterface) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *VirtualMachineInterface) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[virtual_machine_interface_perms2] = true
 }
 
 func (obj *VirtualMachineInterface) GetDisplayName() string {
@@ -204,13 +261,13 @@ func (obj *VirtualMachineInterface) GetDisplayName() string {
 
 func (obj *VirtualMachineInterface) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= virtual_machine_interface_display_name
+        obj.modified[virtual_machine_interface_display_name] = true
 }
 
-func (obj *VirtualMachineInterface) readQosForwardingClassRefs() error {
+func (obj *VirtualMachineInterface) readQosConfigRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_machine_interface_qos_forwarding_class_refs == 0) {
-                err := obj.GetField(obj, "qos_forwarding_class_refs")
+                (!obj.valid[virtual_machine_interface_qos_config_refs]) {
+                err := obj.GetField(obj, "qos_config_refs")
                 if err != nil {
                         return err
                 }
@@ -218,71 +275,71 @@ func (obj *VirtualMachineInterface) readQosForwardingClassRefs() error {
         return nil
 }
 
-func (obj *VirtualMachineInterface) GetQosForwardingClassRefs() (
+func (obj *VirtualMachineInterface) GetQosConfigRefs() (
         contrail.ReferenceList, error) {
-        err := obj.readQosForwardingClassRefs()
+        err := obj.readQosConfigRefs()
         if err != nil {
                 return nil, err
         }
-        return obj.qos_forwarding_class_refs, nil
+        return obj.qos_config_refs, nil
 }
 
-func (obj *VirtualMachineInterface) AddQosForwardingClass(
-        rhs *QosForwardingClass) error {
-        err := obj.readQosForwardingClassRefs()
+func (obj *VirtualMachineInterface) AddQosConfig(
+        rhs *QosConfig) error {
+        err := obj.readQosConfigRefs()
         if err != nil {
                 return err
         }
 
-        if obj.modified & virtual_machine_interface_qos_forwarding_class_refs == 0 {
-                obj.storeReferenceBase("qos-forwarding-class", obj.qos_forwarding_class_refs)
+        if !obj.modified[virtual_machine_interface_qos_config_refs] {
+                obj.storeReferenceBase("qos-config", obj.qos_config_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
-        obj.qos_forwarding_class_refs = append(obj.qos_forwarding_class_refs, ref)
-        obj.modified |= virtual_machine_interface_qos_forwarding_class_refs
+        obj.qos_config_refs = append(obj.qos_config_refs, ref)
+        obj.modified[virtual_machine_interface_qos_config_refs] = true
         return nil
 }
 
-func (obj *VirtualMachineInterface) DeleteQosForwardingClass(uuid string) error {
-        err := obj.readQosForwardingClassRefs()
+func (obj *VirtualMachineInterface) DeleteQosConfig(uuid string) error {
+        err := obj.readQosConfigRefs()
         if err != nil {
                 return err
         }
 
-        if obj.modified & virtual_machine_interface_qos_forwarding_class_refs == 0 {
-                obj.storeReferenceBase("qos-forwarding-class", obj.qos_forwarding_class_refs)
+        if !obj.modified[virtual_machine_interface_qos_config_refs] {
+                obj.storeReferenceBase("qos-config", obj.qos_config_refs)
         }
 
-        for i, ref := range obj.qos_forwarding_class_refs {
+        for i, ref := range obj.qos_config_refs {
                 if ref.Uuid == uuid {
-                        obj.qos_forwarding_class_refs = append(
-                                obj.qos_forwarding_class_refs[:i],
-                                obj.qos_forwarding_class_refs[i+1:]...)
+                        obj.qos_config_refs = append(
+                                obj.qos_config_refs[:i],
+                                obj.qos_config_refs[i+1:]...)
                         break
                 }
         }
-        obj.modified |= virtual_machine_interface_qos_forwarding_class_refs
+        obj.modified[virtual_machine_interface_qos_config_refs] = true
         return nil
 }
 
-func (obj *VirtualMachineInterface) ClearQosForwardingClass() {
-        if (obj.valid & virtual_machine_interface_qos_forwarding_class_refs != 0) &&
-           (obj.modified & virtual_machine_interface_qos_forwarding_class_refs == 0) {
-                obj.storeReferenceBase("qos-forwarding-class", obj.qos_forwarding_class_refs)
+func (obj *VirtualMachineInterface) ClearQosConfig() {
+        if (obj.valid[virtual_machine_interface_qos_config_refs]) &&
+           (!obj.modified[virtual_machine_interface_qos_config_refs]) {
+                obj.storeReferenceBase("qos-config", obj.qos_config_refs)
         }
-        obj.qos_forwarding_class_refs = make([]contrail.Reference, 0)
-        obj.valid |= virtual_machine_interface_qos_forwarding_class_refs
-        obj.modified |= virtual_machine_interface_qos_forwarding_class_refs
+        obj.qos_config_refs = make([]contrail.Reference, 0)
+        obj.valid[virtual_machine_interface_qos_config_refs] = true
+        obj.modified[virtual_machine_interface_qos_config_refs] = true
 }
 
-func (obj *VirtualMachineInterface) SetQosForwardingClassList(
+func (obj *VirtualMachineInterface) SetQosConfigList(
         refList []contrail.ReferencePair) {
-        obj.ClearQosForwardingClass()
-        obj.qos_forwarding_class_refs = make([]contrail.Reference, len(refList))
+        obj.ClearQosConfig()
+        obj.qos_config_refs = make([]contrail.Reference, len(refList))
         for i, pair := range refList {
-                obj.qos_forwarding_class_refs[i] = contrail.Reference {
+                obj.qos_config_refs[i] = contrail.Reference {
                         pair.Object.GetFQName(),
                         pair.Object.GetUuid(),
                         pair.Object.GetHref(),
@@ -294,7 +351,7 @@ func (obj *VirtualMachineInterface) SetQosForwardingClassList(
 
 func (obj *VirtualMachineInterface) readSecurityGroupRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_machine_interface_security_group_refs == 0) {
+                (!obj.valid[virtual_machine_interface_security_group_refs]) {
                 err := obj.GetField(obj, "security_group_refs")
                 if err != nil {
                         return err
@@ -319,14 +376,14 @@ func (obj *VirtualMachineInterface) AddSecurityGroup(
                 return err
         }
 
-        if obj.modified & virtual_machine_interface_security_group_refs == 0 {
+        if !obj.modified[virtual_machine_interface_security_group_refs] {
                 obj.storeReferenceBase("security-group", obj.security_group_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.security_group_refs = append(obj.security_group_refs, ref)
-        obj.modified |= virtual_machine_interface_security_group_refs
+        obj.modified[virtual_machine_interface_security_group_refs] = true
         return nil
 }
 
@@ -336,7 +393,7 @@ func (obj *VirtualMachineInterface) DeleteSecurityGroup(uuid string) error {
                 return err
         }
 
-        if obj.modified & virtual_machine_interface_security_group_refs == 0 {
+        if !obj.modified[virtual_machine_interface_security_group_refs] {
                 obj.storeReferenceBase("security-group", obj.security_group_refs)
         }
 
@@ -348,18 +405,18 @@ func (obj *VirtualMachineInterface) DeleteSecurityGroup(uuid string) error {
                         break
                 }
         }
-        obj.modified |= virtual_machine_interface_security_group_refs
+        obj.modified[virtual_machine_interface_security_group_refs] = true
         return nil
 }
 
 func (obj *VirtualMachineInterface) ClearSecurityGroup() {
-        if (obj.valid & virtual_machine_interface_security_group_refs != 0) &&
-           (obj.modified & virtual_machine_interface_security_group_refs == 0) {
+        if (obj.valid[virtual_machine_interface_security_group_refs]) &&
+           (!obj.modified[virtual_machine_interface_security_group_refs]) {
                 obj.storeReferenceBase("security-group", obj.security_group_refs)
         }
         obj.security_group_refs = make([]contrail.Reference, 0)
-        obj.valid |= virtual_machine_interface_security_group_refs
-        obj.modified |= virtual_machine_interface_security_group_refs
+        obj.valid[virtual_machine_interface_security_group_refs] = true
+        obj.modified[virtual_machine_interface_security_group_refs] = true
 }
 
 func (obj *VirtualMachineInterface) SetSecurityGroupList(
@@ -379,7 +436,7 @@ func (obj *VirtualMachineInterface) SetSecurityGroupList(
 
 func (obj *VirtualMachineInterface) readVirtualMachineInterfaceRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_machine_interface_virtual_machine_interface_refs == 0) {
+                (!obj.valid[virtual_machine_interface_virtual_machine_interface_refs]) {
                 err := obj.GetField(obj, "virtual_machine_interface_refs")
                 if err != nil {
                         return err
@@ -404,14 +461,14 @@ func (obj *VirtualMachineInterface) AddVirtualMachineInterface(
                 return err
         }
 
-        if obj.modified & virtual_machine_interface_virtual_machine_interface_refs == 0 {
+        if !obj.modified[virtual_machine_interface_virtual_machine_interface_refs] {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.virtual_machine_interface_refs = append(obj.virtual_machine_interface_refs, ref)
-        obj.modified |= virtual_machine_interface_virtual_machine_interface_refs
+        obj.modified[virtual_machine_interface_virtual_machine_interface_refs] = true
         return nil
 }
 
@@ -421,7 +478,7 @@ func (obj *VirtualMachineInterface) DeleteVirtualMachineInterface(uuid string) e
                 return err
         }
 
-        if obj.modified & virtual_machine_interface_virtual_machine_interface_refs == 0 {
+        if !obj.modified[virtual_machine_interface_virtual_machine_interface_refs] {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
 
@@ -433,18 +490,18 @@ func (obj *VirtualMachineInterface) DeleteVirtualMachineInterface(uuid string) e
                         break
                 }
         }
-        obj.modified |= virtual_machine_interface_virtual_machine_interface_refs
+        obj.modified[virtual_machine_interface_virtual_machine_interface_refs] = true
         return nil
 }
 
 func (obj *VirtualMachineInterface) ClearVirtualMachineInterface() {
-        if (obj.valid & virtual_machine_interface_virtual_machine_interface_refs != 0) &&
-           (obj.modified & virtual_machine_interface_virtual_machine_interface_refs == 0) {
+        if (obj.valid[virtual_machine_interface_virtual_machine_interface_refs]) &&
+           (!obj.modified[virtual_machine_interface_virtual_machine_interface_refs]) {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
         obj.virtual_machine_interface_refs = make([]contrail.Reference, 0)
-        obj.valid |= virtual_machine_interface_virtual_machine_interface_refs
-        obj.modified |= virtual_machine_interface_virtual_machine_interface_refs
+        obj.valid[virtual_machine_interface_virtual_machine_interface_refs] = true
+        obj.modified[virtual_machine_interface_virtual_machine_interface_refs] = true
 }
 
 func (obj *VirtualMachineInterface) SetVirtualMachineInterfaceList(
@@ -464,7 +521,7 @@ func (obj *VirtualMachineInterface) SetVirtualMachineInterfaceList(
 
 func (obj *VirtualMachineInterface) readVirtualMachineRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_machine_interface_virtual_machine_refs == 0) {
+                (!obj.valid[virtual_machine_interface_virtual_machine_refs]) {
                 err := obj.GetField(obj, "virtual_machine_refs")
                 if err != nil {
                         return err
@@ -489,14 +546,14 @@ func (obj *VirtualMachineInterface) AddVirtualMachine(
                 return err
         }
 
-        if obj.modified & virtual_machine_interface_virtual_machine_refs == 0 {
+        if !obj.modified[virtual_machine_interface_virtual_machine_refs] {
                 obj.storeReferenceBase("virtual-machine", obj.virtual_machine_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.virtual_machine_refs = append(obj.virtual_machine_refs, ref)
-        obj.modified |= virtual_machine_interface_virtual_machine_refs
+        obj.modified[virtual_machine_interface_virtual_machine_refs] = true
         return nil
 }
 
@@ -506,7 +563,7 @@ func (obj *VirtualMachineInterface) DeleteVirtualMachine(uuid string) error {
                 return err
         }
 
-        if obj.modified & virtual_machine_interface_virtual_machine_refs == 0 {
+        if !obj.modified[virtual_machine_interface_virtual_machine_refs] {
                 obj.storeReferenceBase("virtual-machine", obj.virtual_machine_refs)
         }
 
@@ -518,18 +575,18 @@ func (obj *VirtualMachineInterface) DeleteVirtualMachine(uuid string) error {
                         break
                 }
         }
-        obj.modified |= virtual_machine_interface_virtual_machine_refs
+        obj.modified[virtual_machine_interface_virtual_machine_refs] = true
         return nil
 }
 
 func (obj *VirtualMachineInterface) ClearVirtualMachine() {
-        if (obj.valid & virtual_machine_interface_virtual_machine_refs != 0) &&
-           (obj.modified & virtual_machine_interface_virtual_machine_refs == 0) {
+        if (obj.valid[virtual_machine_interface_virtual_machine_refs]) &&
+           (!obj.modified[virtual_machine_interface_virtual_machine_refs]) {
                 obj.storeReferenceBase("virtual-machine", obj.virtual_machine_refs)
         }
         obj.virtual_machine_refs = make([]contrail.Reference, 0)
-        obj.valid |= virtual_machine_interface_virtual_machine_refs
-        obj.modified |= virtual_machine_interface_virtual_machine_refs
+        obj.valid[virtual_machine_interface_virtual_machine_refs] = true
+        obj.modified[virtual_machine_interface_virtual_machine_refs] = true
 }
 
 func (obj *VirtualMachineInterface) SetVirtualMachineList(
@@ -549,7 +606,7 @@ func (obj *VirtualMachineInterface) SetVirtualMachineList(
 
 func (obj *VirtualMachineInterface) readVirtualNetworkRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_machine_interface_virtual_network_refs == 0) {
+                (!obj.valid[virtual_machine_interface_virtual_network_refs]) {
                 err := obj.GetField(obj, "virtual_network_refs")
                 if err != nil {
                         return err
@@ -574,14 +631,14 @@ func (obj *VirtualMachineInterface) AddVirtualNetwork(
                 return err
         }
 
-        if obj.modified & virtual_machine_interface_virtual_network_refs == 0 {
+        if !obj.modified[virtual_machine_interface_virtual_network_refs] {
                 obj.storeReferenceBase("virtual-network", obj.virtual_network_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.virtual_network_refs = append(obj.virtual_network_refs, ref)
-        obj.modified |= virtual_machine_interface_virtual_network_refs
+        obj.modified[virtual_machine_interface_virtual_network_refs] = true
         return nil
 }
 
@@ -591,7 +648,7 @@ func (obj *VirtualMachineInterface) DeleteVirtualNetwork(uuid string) error {
                 return err
         }
 
-        if obj.modified & virtual_machine_interface_virtual_network_refs == 0 {
+        if !obj.modified[virtual_machine_interface_virtual_network_refs] {
                 obj.storeReferenceBase("virtual-network", obj.virtual_network_refs)
         }
 
@@ -603,18 +660,18 @@ func (obj *VirtualMachineInterface) DeleteVirtualNetwork(uuid string) error {
                         break
                 }
         }
-        obj.modified |= virtual_machine_interface_virtual_network_refs
+        obj.modified[virtual_machine_interface_virtual_network_refs] = true
         return nil
 }
 
 func (obj *VirtualMachineInterface) ClearVirtualNetwork() {
-        if (obj.valid & virtual_machine_interface_virtual_network_refs != 0) &&
-           (obj.modified & virtual_machine_interface_virtual_network_refs == 0) {
+        if (obj.valid[virtual_machine_interface_virtual_network_refs]) &&
+           (!obj.modified[virtual_machine_interface_virtual_network_refs]) {
                 obj.storeReferenceBase("virtual-network", obj.virtual_network_refs)
         }
         obj.virtual_network_refs = make([]contrail.Reference, 0)
-        obj.valid |= virtual_machine_interface_virtual_network_refs
-        obj.modified |= virtual_machine_interface_virtual_network_refs
+        obj.valid[virtual_machine_interface_virtual_network_refs] = true
+        obj.modified[virtual_machine_interface_virtual_network_refs] = true
 }
 
 func (obj *VirtualMachineInterface) SetVirtualNetworkList(
@@ -634,7 +691,7 @@ func (obj *VirtualMachineInterface) SetVirtualNetworkList(
 
 func (obj *VirtualMachineInterface) readRoutingInstanceRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_machine_interface_routing_instance_refs == 0) {
+                (!obj.valid[virtual_machine_interface_routing_instance_refs]) {
                 err := obj.GetField(obj, "routing_instance_refs")
                 if err != nil {
                         return err
@@ -659,14 +716,14 @@ func (obj *VirtualMachineInterface) AddRoutingInstance(
                 return err
         }
 
-        if obj.modified & virtual_machine_interface_routing_instance_refs == 0 {
+        if !obj.modified[virtual_machine_interface_routing_instance_refs] {
                 obj.storeReferenceBase("routing-instance", obj.routing_instance_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), data}
         obj.routing_instance_refs = append(obj.routing_instance_refs, ref)
-        obj.modified |= virtual_machine_interface_routing_instance_refs
+        obj.modified[virtual_machine_interface_routing_instance_refs] = true
         return nil
 }
 
@@ -676,7 +733,7 @@ func (obj *VirtualMachineInterface) DeleteRoutingInstance(uuid string) error {
                 return err
         }
 
-        if obj.modified & virtual_machine_interface_routing_instance_refs == 0 {
+        if !obj.modified[virtual_machine_interface_routing_instance_refs] {
                 obj.storeReferenceBase("routing-instance", obj.routing_instance_refs)
         }
 
@@ -688,18 +745,18 @@ func (obj *VirtualMachineInterface) DeleteRoutingInstance(uuid string) error {
                         break
                 }
         }
-        obj.modified |= virtual_machine_interface_routing_instance_refs
+        obj.modified[virtual_machine_interface_routing_instance_refs] = true
         return nil
 }
 
 func (obj *VirtualMachineInterface) ClearRoutingInstance() {
-        if (obj.valid & virtual_machine_interface_routing_instance_refs != 0) &&
-           (obj.modified & virtual_machine_interface_routing_instance_refs == 0) {
+        if (obj.valid[virtual_machine_interface_routing_instance_refs]) &&
+           (!obj.modified[virtual_machine_interface_routing_instance_refs]) {
                 obj.storeReferenceBase("routing-instance", obj.routing_instance_refs)
         }
         obj.routing_instance_refs = make([]contrail.Reference, 0)
-        obj.valid |= virtual_machine_interface_routing_instance_refs
-        obj.modified |= virtual_machine_interface_routing_instance_refs
+        obj.valid[virtual_machine_interface_routing_instance_refs] = true
+        obj.modified[virtual_machine_interface_routing_instance_refs] = true
 }
 
 func (obj *VirtualMachineInterface) SetRoutingInstanceList(
@@ -717,9 +774,179 @@ func (obj *VirtualMachineInterface) SetRoutingInstanceList(
 }
 
 
+func (obj *VirtualMachineInterface) readPortTupleRefs() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[virtual_machine_interface_port_tuple_refs]) {
+                err := obj.GetField(obj, "port_tuple_refs")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *VirtualMachineInterface) GetPortTupleRefs() (
+        contrail.ReferenceList, error) {
+        err := obj.readPortTupleRefs()
+        if err != nil {
+                return nil, err
+        }
+        return obj.port_tuple_refs, nil
+}
+
+func (obj *VirtualMachineInterface) AddPortTuple(
+        rhs *PortTuple) error {
+        err := obj.readPortTupleRefs()
+        if err != nil {
+                return err
+        }
+
+        if !obj.modified[virtual_machine_interface_port_tuple_refs] {
+                obj.storeReferenceBase("port-tuple", obj.port_tuple_refs)
+        }
+
+        ref := contrail.Reference {
+                rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
+        obj.port_tuple_refs = append(obj.port_tuple_refs, ref)
+        obj.modified[virtual_machine_interface_port_tuple_refs] = true
+        return nil
+}
+
+func (obj *VirtualMachineInterface) DeletePortTuple(uuid string) error {
+        err := obj.readPortTupleRefs()
+        if err != nil {
+                return err
+        }
+
+        if !obj.modified[virtual_machine_interface_port_tuple_refs] {
+                obj.storeReferenceBase("port-tuple", obj.port_tuple_refs)
+        }
+
+        for i, ref := range obj.port_tuple_refs {
+                if ref.Uuid == uuid {
+                        obj.port_tuple_refs = append(
+                                obj.port_tuple_refs[:i],
+                                obj.port_tuple_refs[i+1:]...)
+                        break
+                }
+        }
+        obj.modified[virtual_machine_interface_port_tuple_refs] = true
+        return nil
+}
+
+func (obj *VirtualMachineInterface) ClearPortTuple() {
+        if (obj.valid[virtual_machine_interface_port_tuple_refs]) &&
+           (!obj.modified[virtual_machine_interface_port_tuple_refs]) {
+                obj.storeReferenceBase("port-tuple", obj.port_tuple_refs)
+        }
+        obj.port_tuple_refs = make([]contrail.Reference, 0)
+        obj.valid[virtual_machine_interface_port_tuple_refs] = true
+        obj.modified[virtual_machine_interface_port_tuple_refs] = true
+}
+
+func (obj *VirtualMachineInterface) SetPortTupleList(
+        refList []contrail.ReferencePair) {
+        obj.ClearPortTuple()
+        obj.port_tuple_refs = make([]contrail.Reference, len(refList))
+        for i, pair := range refList {
+                obj.port_tuple_refs[i] = contrail.Reference {
+                        pair.Object.GetFQName(),
+                        pair.Object.GetUuid(),
+                        pair.Object.GetHref(),
+                        pair.Attribute,
+                }
+        }
+}
+
+
+func (obj *VirtualMachineInterface) readServiceHealthCheckRefs() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[virtual_machine_interface_service_health_check_refs]) {
+                err := obj.GetField(obj, "service_health_check_refs")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *VirtualMachineInterface) GetServiceHealthCheckRefs() (
+        contrail.ReferenceList, error) {
+        err := obj.readServiceHealthCheckRefs()
+        if err != nil {
+                return nil, err
+        }
+        return obj.service_health_check_refs, nil
+}
+
+func (obj *VirtualMachineInterface) AddServiceHealthCheck(
+        rhs *ServiceHealthCheck) error {
+        err := obj.readServiceHealthCheckRefs()
+        if err != nil {
+                return err
+        }
+
+        if !obj.modified[virtual_machine_interface_service_health_check_refs] {
+                obj.storeReferenceBase("service-health-check", obj.service_health_check_refs)
+        }
+
+        ref := contrail.Reference {
+                rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
+        obj.service_health_check_refs = append(obj.service_health_check_refs, ref)
+        obj.modified[virtual_machine_interface_service_health_check_refs] = true
+        return nil
+}
+
+func (obj *VirtualMachineInterface) DeleteServiceHealthCheck(uuid string) error {
+        err := obj.readServiceHealthCheckRefs()
+        if err != nil {
+                return err
+        }
+
+        if !obj.modified[virtual_machine_interface_service_health_check_refs] {
+                obj.storeReferenceBase("service-health-check", obj.service_health_check_refs)
+        }
+
+        for i, ref := range obj.service_health_check_refs {
+                if ref.Uuid == uuid {
+                        obj.service_health_check_refs = append(
+                                obj.service_health_check_refs[:i],
+                                obj.service_health_check_refs[i+1:]...)
+                        break
+                }
+        }
+        obj.modified[virtual_machine_interface_service_health_check_refs] = true
+        return nil
+}
+
+func (obj *VirtualMachineInterface) ClearServiceHealthCheck() {
+        if (obj.valid[virtual_machine_interface_service_health_check_refs]) &&
+           (!obj.modified[virtual_machine_interface_service_health_check_refs]) {
+                obj.storeReferenceBase("service-health-check", obj.service_health_check_refs)
+        }
+        obj.service_health_check_refs = make([]contrail.Reference, 0)
+        obj.valid[virtual_machine_interface_service_health_check_refs] = true
+        obj.modified[virtual_machine_interface_service_health_check_refs] = true
+}
+
+func (obj *VirtualMachineInterface) SetServiceHealthCheckList(
+        refList []contrail.ReferencePair) {
+        obj.ClearServiceHealthCheck()
+        obj.service_health_check_refs = make([]contrail.Reference, len(refList))
+        for i, pair := range refList {
+                obj.service_health_check_refs[i] = contrail.Reference {
+                        pair.Object.GetFQName(),
+                        pair.Object.GetUuid(),
+                        pair.Object.GetHref(),
+                        pair.Attribute,
+                }
+        }
+}
+
+
 func (obj *VirtualMachineInterface) readInterfaceRouteTableRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_machine_interface_interface_route_table_refs == 0) {
+                (!obj.valid[virtual_machine_interface_interface_route_table_refs]) {
                 err := obj.GetField(obj, "interface_route_table_refs")
                 if err != nil {
                         return err
@@ -744,14 +971,14 @@ func (obj *VirtualMachineInterface) AddInterfaceRouteTable(
                 return err
         }
 
-        if obj.modified & virtual_machine_interface_interface_route_table_refs == 0 {
+        if !obj.modified[virtual_machine_interface_interface_route_table_refs] {
                 obj.storeReferenceBase("interface-route-table", obj.interface_route_table_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.interface_route_table_refs = append(obj.interface_route_table_refs, ref)
-        obj.modified |= virtual_machine_interface_interface_route_table_refs
+        obj.modified[virtual_machine_interface_interface_route_table_refs] = true
         return nil
 }
 
@@ -761,7 +988,7 @@ func (obj *VirtualMachineInterface) DeleteInterfaceRouteTable(uuid string) error
                 return err
         }
 
-        if obj.modified & virtual_machine_interface_interface_route_table_refs == 0 {
+        if !obj.modified[virtual_machine_interface_interface_route_table_refs] {
                 obj.storeReferenceBase("interface-route-table", obj.interface_route_table_refs)
         }
 
@@ -773,18 +1000,18 @@ func (obj *VirtualMachineInterface) DeleteInterfaceRouteTable(uuid string) error
                         break
                 }
         }
-        obj.modified |= virtual_machine_interface_interface_route_table_refs
+        obj.modified[virtual_machine_interface_interface_route_table_refs] = true
         return nil
 }
 
 func (obj *VirtualMachineInterface) ClearInterfaceRouteTable() {
-        if (obj.valid & virtual_machine_interface_interface_route_table_refs != 0) &&
-           (obj.modified & virtual_machine_interface_interface_route_table_refs == 0) {
+        if (obj.valid[virtual_machine_interface_interface_route_table_refs]) &&
+           (!obj.modified[virtual_machine_interface_interface_route_table_refs]) {
                 obj.storeReferenceBase("interface-route-table", obj.interface_route_table_refs)
         }
         obj.interface_route_table_refs = make([]contrail.Reference, 0)
-        obj.valid |= virtual_machine_interface_interface_route_table_refs
-        obj.modified |= virtual_machine_interface_interface_route_table_refs
+        obj.valid[virtual_machine_interface_interface_route_table_refs] = true
+        obj.modified[virtual_machine_interface_interface_route_table_refs] = true
 }
 
 func (obj *VirtualMachineInterface) SetInterfaceRouteTableList(
@@ -802,9 +1029,94 @@ func (obj *VirtualMachineInterface) SetInterfaceRouteTableList(
 }
 
 
+func (obj *VirtualMachineInterface) readPhysicalInterfaceRefs() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[virtual_machine_interface_physical_interface_refs]) {
+                err := obj.GetField(obj, "physical_interface_refs")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *VirtualMachineInterface) GetPhysicalInterfaceRefs() (
+        contrail.ReferenceList, error) {
+        err := obj.readPhysicalInterfaceRefs()
+        if err != nil {
+                return nil, err
+        }
+        return obj.physical_interface_refs, nil
+}
+
+func (obj *VirtualMachineInterface) AddPhysicalInterface(
+        rhs *PhysicalInterface) error {
+        err := obj.readPhysicalInterfaceRefs()
+        if err != nil {
+                return err
+        }
+
+        if !obj.modified[virtual_machine_interface_physical_interface_refs] {
+                obj.storeReferenceBase("physical-interface", obj.physical_interface_refs)
+        }
+
+        ref := contrail.Reference {
+                rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
+        obj.physical_interface_refs = append(obj.physical_interface_refs, ref)
+        obj.modified[virtual_machine_interface_physical_interface_refs] = true
+        return nil
+}
+
+func (obj *VirtualMachineInterface) DeletePhysicalInterface(uuid string) error {
+        err := obj.readPhysicalInterfaceRefs()
+        if err != nil {
+                return err
+        }
+
+        if !obj.modified[virtual_machine_interface_physical_interface_refs] {
+                obj.storeReferenceBase("physical-interface", obj.physical_interface_refs)
+        }
+
+        for i, ref := range obj.physical_interface_refs {
+                if ref.Uuid == uuid {
+                        obj.physical_interface_refs = append(
+                                obj.physical_interface_refs[:i],
+                                obj.physical_interface_refs[i+1:]...)
+                        break
+                }
+        }
+        obj.modified[virtual_machine_interface_physical_interface_refs] = true
+        return nil
+}
+
+func (obj *VirtualMachineInterface) ClearPhysicalInterface() {
+        if (obj.valid[virtual_machine_interface_physical_interface_refs]) &&
+           (!obj.modified[virtual_machine_interface_physical_interface_refs]) {
+                obj.storeReferenceBase("physical-interface", obj.physical_interface_refs)
+        }
+        obj.physical_interface_refs = make([]contrail.Reference, 0)
+        obj.valid[virtual_machine_interface_physical_interface_refs] = true
+        obj.modified[virtual_machine_interface_physical_interface_refs] = true
+}
+
+func (obj *VirtualMachineInterface) SetPhysicalInterfaceList(
+        refList []contrail.ReferencePair) {
+        obj.ClearPhysicalInterface()
+        obj.physical_interface_refs = make([]contrail.Reference, len(refList))
+        for i, pair := range refList {
+                obj.physical_interface_refs[i] = contrail.Reference {
+                        pair.Object.GetFQName(),
+                        pair.Object.GetUuid(),
+                        pair.Object.GetHref(),
+                        pair.Attribute,
+                }
+        }
+}
+
+
 func (obj *VirtualMachineInterface) readVirtualMachineInterfaceBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_machine_interface_virtual_machine_interface_back_refs == 0) {
+                (!obj.valid[virtual_machine_interface_virtual_machine_interface_back_refs]) {
                 err := obj.GetField(obj, "virtual_machine_interface_back_refs")
                 if err != nil {
                         return err
@@ -824,7 +1136,7 @@ func (obj *VirtualMachineInterface) GetVirtualMachineInterfaceBackRefs() (
 
 func (obj *VirtualMachineInterface) readInstanceIpBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_machine_interface_instance_ip_back_refs == 0) {
+                (!obj.valid[virtual_machine_interface_instance_ip_back_refs]) {
                 err := obj.GetField(obj, "instance_ip_back_refs")
                 if err != nil {
                         return err
@@ -844,7 +1156,7 @@ func (obj *VirtualMachineInterface) GetInstanceIpBackRefs() (
 
 func (obj *VirtualMachineInterface) readSubnetBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_machine_interface_subnet_back_refs == 0) {
+                (!obj.valid[virtual_machine_interface_subnet_back_refs]) {
                 err := obj.GetField(obj, "subnet_back_refs")
                 if err != nil {
                         return err
@@ -864,7 +1176,7 @@ func (obj *VirtualMachineInterface) GetSubnetBackRefs() (
 
 func (obj *VirtualMachineInterface) readFloatingIpBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_machine_interface_floating_ip_back_refs == 0) {
+                (!obj.valid[virtual_machine_interface_floating_ip_back_refs]) {
                 err := obj.GetField(obj, "floating_ip_back_refs")
                 if err != nil {
                         return err
@@ -882,9 +1194,29 @@ func (obj *VirtualMachineInterface) GetFloatingIpBackRefs() (
         return obj.floating_ip_back_refs, nil
 }
 
+func (obj *VirtualMachineInterface) readAliasIpBackRefs() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[virtual_machine_interface_alias_ip_back_refs]) {
+                err := obj.GetField(obj, "alias_ip_back_refs")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *VirtualMachineInterface) GetAliasIpBackRefs() (
+        contrail.ReferenceList, error) {
+        err := obj.readAliasIpBackRefs()
+        if err != nil {
+                return nil, err
+        }
+        return obj.alias_ip_back_refs, nil
+}
+
 func (obj *VirtualMachineInterface) readLogicalInterfaceBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_machine_interface_logical_interface_back_refs == 0) {
+                (!obj.valid[virtual_machine_interface_logical_interface_back_refs]) {
                 err := obj.GetField(obj, "logical_interface_back_refs")
                 if err != nil {
                         return err
@@ -902,9 +1234,29 @@ func (obj *VirtualMachineInterface) GetLogicalInterfaceBackRefs() (
         return obj.logical_interface_back_refs, nil
 }
 
+func (obj *VirtualMachineInterface) readBgpAsAServiceBackRefs() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[virtual_machine_interface_bgp_as_a_service_back_refs]) {
+                err := obj.GetField(obj, "bgp_as_a_service_back_refs")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *VirtualMachineInterface) GetBgpAsAServiceBackRefs() (
+        contrail.ReferenceList, error) {
+        err := obj.readBgpAsAServiceBackRefs()
+        if err != nil {
+                return nil, err
+        }
+        return obj.bgp_as_a_service_back_refs, nil
+}
+
 func (obj *VirtualMachineInterface) readCustomerAttachmentBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_machine_interface_customer_attachment_back_refs == 0) {
+                (!obj.valid[virtual_machine_interface_customer_attachment_back_refs]) {
                 err := obj.GetField(obj, "customer_attachment_back_refs")
                 if err != nil {
                         return err
@@ -924,7 +1276,7 @@ func (obj *VirtualMachineInterface) GetCustomerAttachmentBackRefs() (
 
 func (obj *VirtualMachineInterface) readLogicalRouterBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_machine_interface_logical_router_back_refs == 0) {
+                (!obj.valid[virtual_machine_interface_logical_router_back_refs]) {
                 err := obj.GetField(obj, "logical_router_back_refs")
                 if err != nil {
                         return err
@@ -944,7 +1296,7 @@ func (obj *VirtualMachineInterface) GetLogicalRouterBackRefs() (
 
 func (obj *VirtualMachineInterface) readLoadbalancerPoolBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_machine_interface_loadbalancer_pool_back_refs == 0) {
+                (!obj.valid[virtual_machine_interface_loadbalancer_pool_back_refs]) {
                 err := obj.GetField(obj, "loadbalancer_pool_back_refs")
                 if err != nil {
                         return err
@@ -964,7 +1316,7 @@ func (obj *VirtualMachineInterface) GetLoadbalancerPoolBackRefs() (
 
 func (obj *VirtualMachineInterface) readVirtualIpBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & virtual_machine_interface_virtual_ip_back_refs == 0) {
+                (!obj.valid[virtual_machine_interface_virtual_ip_back_refs]) {
                 err := obj.GetField(obj, "virtual_ip_back_refs")
                 if err != nil {
                         return err
@@ -982,6 +1334,26 @@ func (obj *VirtualMachineInterface) GetVirtualIpBackRefs() (
         return obj.virtual_ip_back_refs, nil
 }
 
+func (obj *VirtualMachineInterface) readLoadbalancerBackRefs() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[virtual_machine_interface_loadbalancer_back_refs]) {
+                err := obj.GetField(obj, "loadbalancer_back_refs")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *VirtualMachineInterface) GetLoadbalancerBackRefs() (
+        contrail.ReferenceList, error) {
+        err := obj.readLoadbalancerBackRefs()
+        if err != nil {
+                return nil, err
+        }
+        return obj.loadbalancer_back_refs, nil
+}
+
 func (obj *VirtualMachineInterface) MarshalJSON() ([]byte, error) {
         msg := map[string]*json.RawMessage {
         }
@@ -990,7 +1362,16 @@ func (obj *VirtualMachineInterface) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & virtual_machine_interface_virtual_machine_interface_mac_addresses != 0 {
+        if obj.modified[virtual_machine_interface_ecmp_hashing_include_fields] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.ecmp_hashing_include_fields)
+                if err != nil {
+                        return nil, err
+                }
+                msg["ecmp_hashing_include_fields"] = &value
+        }
+
+        if obj.modified[virtual_machine_interface_virtual_machine_interface_mac_addresses] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.virtual_machine_interface_mac_addresses)
                 if err != nil {
@@ -999,7 +1380,7 @@ func (obj *VirtualMachineInterface) MarshalJSON() ([]byte, error) {
                 msg["virtual_machine_interface_mac_addresses"] = &value
         }
 
-        if obj.modified & virtual_machine_interface_virtual_machine_interface_dhcp_option_list != 0 {
+        if obj.modified[virtual_machine_interface_virtual_machine_interface_dhcp_option_list] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.virtual_machine_interface_dhcp_option_list)
                 if err != nil {
@@ -1008,7 +1389,7 @@ func (obj *VirtualMachineInterface) MarshalJSON() ([]byte, error) {
                 msg["virtual_machine_interface_dhcp_option_list"] = &value
         }
 
-        if obj.modified & virtual_machine_interface_virtual_machine_interface_host_routes != 0 {
+        if obj.modified[virtual_machine_interface_virtual_machine_interface_host_routes] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.virtual_machine_interface_host_routes)
                 if err != nil {
@@ -1017,7 +1398,7 @@ func (obj *VirtualMachineInterface) MarshalJSON() ([]byte, error) {
                 msg["virtual_machine_interface_host_routes"] = &value
         }
 
-        if obj.modified & virtual_machine_interface_virtual_machine_interface_allowed_address_pairs != 0 {
+        if obj.modified[virtual_machine_interface_virtual_machine_interface_allowed_address_pairs] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.virtual_machine_interface_allowed_address_pairs)
                 if err != nil {
@@ -1026,7 +1407,7 @@ func (obj *VirtualMachineInterface) MarshalJSON() ([]byte, error) {
                 msg["virtual_machine_interface_allowed_address_pairs"] = &value
         }
 
-        if obj.modified & virtual_machine_interface_vrf_assign_table != 0 {
+        if obj.modified[virtual_machine_interface_vrf_assign_table] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.vrf_assign_table)
                 if err != nil {
@@ -1035,7 +1416,7 @@ func (obj *VirtualMachineInterface) MarshalJSON() ([]byte, error) {
                 msg["vrf_assign_table"] = &value
         }
 
-        if obj.modified & virtual_machine_interface_virtual_machine_interface_device_owner != 0 {
+        if obj.modified[virtual_machine_interface_virtual_machine_interface_device_owner] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.virtual_machine_interface_device_owner)
                 if err != nil {
@@ -1044,7 +1425,16 @@ func (obj *VirtualMachineInterface) MarshalJSON() ([]byte, error) {
                 msg["virtual_machine_interface_device_owner"] = &value
         }
 
-        if obj.modified & virtual_machine_interface_virtual_machine_interface_properties != 0 {
+        if obj.modified[virtual_machine_interface_virtual_machine_interface_disable_policy] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.virtual_machine_interface_disable_policy)
+                if err != nil {
+                        return nil, err
+                }
+                msg["virtual_machine_interface_disable_policy"] = &value
+        }
+
+        if obj.modified[virtual_machine_interface_virtual_machine_interface_properties] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.virtual_machine_interface_properties)
                 if err != nil {
@@ -1053,7 +1443,16 @@ func (obj *VirtualMachineInterface) MarshalJSON() ([]byte, error) {
                 msg["virtual_machine_interface_properties"] = &value
         }
 
-        if obj.modified & virtual_machine_interface_virtual_machine_interface_fat_flow_protocols != 0 {
+        if obj.modified[virtual_machine_interface_virtual_machine_interface_bindings] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.virtual_machine_interface_bindings)
+                if err != nil {
+                        return nil, err
+                }
+                msg["virtual_machine_interface_bindings"] = &value
+        }
+
+        if obj.modified[virtual_machine_interface_virtual_machine_interface_fat_flow_protocols] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.virtual_machine_interface_fat_flow_protocols)
                 if err != nil {
@@ -1062,7 +1461,7 @@ func (obj *VirtualMachineInterface) MarshalJSON() ([]byte, error) {
                 msg["virtual_machine_interface_fat_flow_protocols"] = &value
         }
 
-        if obj.modified & virtual_machine_interface_id_perms != 0 {
+        if obj.modified[virtual_machine_interface_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -1071,7 +1470,16 @@ func (obj *VirtualMachineInterface) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & virtual_machine_interface_display_name != 0 {
+        if obj.modified[virtual_machine_interface_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[virtual_machine_interface_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -1080,13 +1488,13 @@ func (obj *VirtualMachineInterface) MarshalJSON() ([]byte, error) {
                 msg["display_name"] = &value
         }
 
-        if len(obj.qos_forwarding_class_refs) > 0 {
+        if len(obj.qos_config_refs) > 0 {
                 var value json.RawMessage
-                value, err := json.Marshal(&obj.qos_forwarding_class_refs)
+                value, err := json.Marshal(&obj.qos_config_refs)
                 if err != nil {
                         return nil, err
                 }
-                msg["qos_forwarding_class_refs"] = &value
+                msg["qos_config_refs"] = &value
         }
 
         if len(obj.security_group_refs) > 0 {
@@ -1134,6 +1542,24 @@ func (obj *VirtualMachineInterface) MarshalJSON() ([]byte, error) {
                 msg["routing_instance_refs"] = &value
         }
 
+        if len(obj.port_tuple_refs) > 0 {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.port_tuple_refs)
+                if err != nil {
+                        return nil, err
+                }
+                msg["port_tuple_refs"] = &value
+        }
+
+        if len(obj.service_health_check_refs) > 0 {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.service_health_check_refs)
+                if err != nil {
+                        return nil, err
+                }
+                msg["service_health_check_refs"] = &value
+        }
+
         if len(obj.interface_route_table_refs) > 0 {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.interface_route_table_refs)
@@ -1141,6 +1567,15 @@ func (obj *VirtualMachineInterface) MarshalJSON() ([]byte, error) {
                         return nil, err
                 }
                 msg["interface_route_table_refs"] = &value
+        }
+
+        if len(obj.physical_interface_refs) > 0 {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.physical_interface_refs)
+                if err != nil {
+                        return nil, err
+                }
+                msg["physical_interface_refs"] = &value
         }
 
         return json.Marshal(msg)
@@ -1156,156 +1591,217 @@ func (obj *VirtualMachineInterface) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
+                case "ecmp_hashing_include_fields":
+                        err = json.Unmarshal(value, &obj.ecmp_hashing_include_fields)
+                        if err == nil {
+                                obj.valid[virtual_machine_interface_ecmp_hashing_include_fields] = true
+                        }
+                        break
                 case "virtual_machine_interface_mac_addresses":
                         err = json.Unmarshal(value, &obj.virtual_machine_interface_mac_addresses)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_virtual_machine_interface_mac_addresses
+                                obj.valid[virtual_machine_interface_virtual_machine_interface_mac_addresses] = true
                         }
                         break
                 case "virtual_machine_interface_dhcp_option_list":
                         err = json.Unmarshal(value, &obj.virtual_machine_interface_dhcp_option_list)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_virtual_machine_interface_dhcp_option_list
+                                obj.valid[virtual_machine_interface_virtual_machine_interface_dhcp_option_list] = true
                         }
                         break
                 case "virtual_machine_interface_host_routes":
                         err = json.Unmarshal(value, &obj.virtual_machine_interface_host_routes)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_virtual_machine_interface_host_routes
+                                obj.valid[virtual_machine_interface_virtual_machine_interface_host_routes] = true
                         }
                         break
                 case "virtual_machine_interface_allowed_address_pairs":
                         err = json.Unmarshal(value, &obj.virtual_machine_interface_allowed_address_pairs)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_virtual_machine_interface_allowed_address_pairs
+                                obj.valid[virtual_machine_interface_virtual_machine_interface_allowed_address_pairs] = true
                         }
                         break
                 case "vrf_assign_table":
                         err = json.Unmarshal(value, &obj.vrf_assign_table)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_vrf_assign_table
+                                obj.valid[virtual_machine_interface_vrf_assign_table] = true
                         }
                         break
                 case "virtual_machine_interface_device_owner":
                         err = json.Unmarshal(value, &obj.virtual_machine_interface_device_owner)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_virtual_machine_interface_device_owner
+                                obj.valid[virtual_machine_interface_virtual_machine_interface_device_owner] = true
+                        }
+                        break
+                case "virtual_machine_interface_disable_policy":
+                        err = json.Unmarshal(value, &obj.virtual_machine_interface_disable_policy)
+                        if err == nil {
+                                obj.valid[virtual_machine_interface_virtual_machine_interface_disable_policy] = true
                         }
                         break
                 case "virtual_machine_interface_properties":
                         err = json.Unmarshal(value, &obj.virtual_machine_interface_properties)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_virtual_machine_interface_properties
+                                obj.valid[virtual_machine_interface_virtual_machine_interface_properties] = true
+                        }
+                        break
+                case "virtual_machine_interface_bindings":
+                        err = json.Unmarshal(value, &obj.virtual_machine_interface_bindings)
+                        if err == nil {
+                                obj.valid[virtual_machine_interface_virtual_machine_interface_bindings] = true
                         }
                         break
                 case "virtual_machine_interface_fat_flow_protocols":
                         err = json.Unmarshal(value, &obj.virtual_machine_interface_fat_flow_protocols)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_virtual_machine_interface_fat_flow_protocols
+                                obj.valid[virtual_machine_interface_virtual_machine_interface_fat_flow_protocols] = true
                         }
                         break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_id_perms
+                                obj.valid[virtual_machine_interface_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[virtual_machine_interface_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_display_name
+                                obj.valid[virtual_machine_interface_display_name] = true
                         }
                         break
-                case "qos_forwarding_class_refs":
-                        err = json.Unmarshal(value, &obj.qos_forwarding_class_refs)
+                case "qos_config_refs":
+                        err = json.Unmarshal(value, &obj.qos_config_refs)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_qos_forwarding_class_refs
+                                obj.valid[virtual_machine_interface_qos_config_refs] = true
                         }
                         break
                 case "security_group_refs":
                         err = json.Unmarshal(value, &obj.security_group_refs)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_security_group_refs
+                                obj.valid[virtual_machine_interface_security_group_refs] = true
                         }
                         break
                 case "virtual_machine_interface_refs":
                         err = json.Unmarshal(value, &obj.virtual_machine_interface_refs)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_virtual_machine_interface_refs
+                                obj.valid[virtual_machine_interface_virtual_machine_interface_refs] = true
                         }
                         break
                 case "virtual_machine_refs":
                         err = json.Unmarshal(value, &obj.virtual_machine_refs)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_virtual_machine_refs
+                                obj.valid[virtual_machine_interface_virtual_machine_refs] = true
                         }
                         break
                 case "virtual_network_refs":
                         err = json.Unmarshal(value, &obj.virtual_network_refs)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_virtual_network_refs
+                                obj.valid[virtual_machine_interface_virtual_network_refs] = true
+                        }
+                        break
+                case "port_tuple_refs":
+                        err = json.Unmarshal(value, &obj.port_tuple_refs)
+                        if err == nil {
+                                obj.valid[virtual_machine_interface_port_tuple_refs] = true
+                        }
+                        break
+                case "service_health_check_refs":
+                        err = json.Unmarshal(value, &obj.service_health_check_refs)
+                        if err == nil {
+                                obj.valid[virtual_machine_interface_service_health_check_refs] = true
                         }
                         break
                 case "interface_route_table_refs":
                         err = json.Unmarshal(value, &obj.interface_route_table_refs)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_interface_route_table_refs
+                                obj.valid[virtual_machine_interface_interface_route_table_refs] = true
+                        }
+                        break
+                case "physical_interface_refs":
+                        err = json.Unmarshal(value, &obj.physical_interface_refs)
+                        if err == nil {
+                                obj.valid[virtual_machine_interface_physical_interface_refs] = true
                         }
                         break
                 case "virtual_machine_interface_back_refs":
                         err = json.Unmarshal(value, &obj.virtual_machine_interface_back_refs)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_virtual_machine_interface_back_refs
+                                obj.valid[virtual_machine_interface_virtual_machine_interface_back_refs] = true
                         }
                         break
                 case "instance_ip_back_refs":
                         err = json.Unmarshal(value, &obj.instance_ip_back_refs)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_instance_ip_back_refs
+                                obj.valid[virtual_machine_interface_instance_ip_back_refs] = true
                         }
                         break
                 case "subnet_back_refs":
                         err = json.Unmarshal(value, &obj.subnet_back_refs)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_subnet_back_refs
+                                obj.valid[virtual_machine_interface_subnet_back_refs] = true
                         }
                         break
                 case "floating_ip_back_refs":
                         err = json.Unmarshal(value, &obj.floating_ip_back_refs)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_floating_ip_back_refs
+                                obj.valid[virtual_machine_interface_floating_ip_back_refs] = true
+                        }
+                        break
+                case "alias_ip_back_refs":
+                        err = json.Unmarshal(value, &obj.alias_ip_back_refs)
+                        if err == nil {
+                                obj.valid[virtual_machine_interface_alias_ip_back_refs] = true
                         }
                         break
                 case "logical_interface_back_refs":
                         err = json.Unmarshal(value, &obj.logical_interface_back_refs)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_logical_interface_back_refs
+                                obj.valid[virtual_machine_interface_logical_interface_back_refs] = true
+                        }
+                        break
+                case "bgp_as_a_service_back_refs":
+                        err = json.Unmarshal(value, &obj.bgp_as_a_service_back_refs)
+                        if err == nil {
+                                obj.valid[virtual_machine_interface_bgp_as_a_service_back_refs] = true
                         }
                         break
                 case "customer_attachment_back_refs":
                         err = json.Unmarshal(value, &obj.customer_attachment_back_refs)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_customer_attachment_back_refs
+                                obj.valid[virtual_machine_interface_customer_attachment_back_refs] = true
                         }
                         break
                 case "logical_router_back_refs":
                         err = json.Unmarshal(value, &obj.logical_router_back_refs)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_logical_router_back_refs
+                                obj.valid[virtual_machine_interface_logical_router_back_refs] = true
                         }
                         break
                 case "loadbalancer_pool_back_refs":
                         err = json.Unmarshal(value, &obj.loadbalancer_pool_back_refs)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_loadbalancer_pool_back_refs
+                                obj.valid[virtual_machine_interface_loadbalancer_pool_back_refs] = true
                         }
                         break
                 case "virtual_ip_back_refs":
                         err = json.Unmarshal(value, &obj.virtual_ip_back_refs)
                         if err == nil {
-                                obj.valid |= virtual_machine_interface_virtual_ip_back_refs
+                                obj.valid[virtual_machine_interface_virtual_ip_back_refs] = true
+                        }
+                        break
+                case "loadbalancer_back_refs":
+                        err = json.Unmarshal(value, &obj.loadbalancer_back_refs)
+                        if err == nil {
+                                obj.valid[virtual_machine_interface_loadbalancer_back_refs] = true
                         }
                         break
                 case "routing_instance_refs": {
@@ -1320,7 +1816,7 @@ func (obj *VirtualMachineInterface) UnmarshalJSON(body []byte) error {
                         if err != nil {
                             break
                         }
-                        obj.valid |= virtual_machine_interface_routing_instance_refs
+                        obj.valid[virtual_machine_interface_routing_instance_refs] = true
                         obj.routing_instance_refs = make(contrail.ReferenceList, 0)
                         for _, element := range array {
                                 ref := contrail.Reference {
@@ -1349,7 +1845,16 @@ func (obj *VirtualMachineInterface) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & virtual_machine_interface_virtual_machine_interface_mac_addresses != 0 {
+        if obj.modified[virtual_machine_interface_ecmp_hashing_include_fields] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.ecmp_hashing_include_fields)
+                if err != nil {
+                        return nil, err
+                }
+                msg["ecmp_hashing_include_fields"] = &value
+        }
+
+        if obj.modified[virtual_machine_interface_virtual_machine_interface_mac_addresses] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.virtual_machine_interface_mac_addresses)
                 if err != nil {
@@ -1358,7 +1863,7 @@ func (obj *VirtualMachineInterface) UpdateObject() ([]byte, error) {
                 msg["virtual_machine_interface_mac_addresses"] = &value
         }
 
-        if obj.modified & virtual_machine_interface_virtual_machine_interface_dhcp_option_list != 0 {
+        if obj.modified[virtual_machine_interface_virtual_machine_interface_dhcp_option_list] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.virtual_machine_interface_dhcp_option_list)
                 if err != nil {
@@ -1367,7 +1872,7 @@ func (obj *VirtualMachineInterface) UpdateObject() ([]byte, error) {
                 msg["virtual_machine_interface_dhcp_option_list"] = &value
         }
 
-        if obj.modified & virtual_machine_interface_virtual_machine_interface_host_routes != 0 {
+        if obj.modified[virtual_machine_interface_virtual_machine_interface_host_routes] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.virtual_machine_interface_host_routes)
                 if err != nil {
@@ -1376,7 +1881,7 @@ func (obj *VirtualMachineInterface) UpdateObject() ([]byte, error) {
                 msg["virtual_machine_interface_host_routes"] = &value
         }
 
-        if obj.modified & virtual_machine_interface_virtual_machine_interface_allowed_address_pairs != 0 {
+        if obj.modified[virtual_machine_interface_virtual_machine_interface_allowed_address_pairs] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.virtual_machine_interface_allowed_address_pairs)
                 if err != nil {
@@ -1385,7 +1890,7 @@ func (obj *VirtualMachineInterface) UpdateObject() ([]byte, error) {
                 msg["virtual_machine_interface_allowed_address_pairs"] = &value
         }
 
-        if obj.modified & virtual_machine_interface_vrf_assign_table != 0 {
+        if obj.modified[virtual_machine_interface_vrf_assign_table] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.vrf_assign_table)
                 if err != nil {
@@ -1394,7 +1899,7 @@ func (obj *VirtualMachineInterface) UpdateObject() ([]byte, error) {
                 msg["vrf_assign_table"] = &value
         }
 
-        if obj.modified & virtual_machine_interface_virtual_machine_interface_device_owner != 0 {
+        if obj.modified[virtual_machine_interface_virtual_machine_interface_device_owner] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.virtual_machine_interface_device_owner)
                 if err != nil {
@@ -1403,7 +1908,16 @@ func (obj *VirtualMachineInterface) UpdateObject() ([]byte, error) {
                 msg["virtual_machine_interface_device_owner"] = &value
         }
 
-        if obj.modified & virtual_machine_interface_virtual_machine_interface_properties != 0 {
+        if obj.modified[virtual_machine_interface_virtual_machine_interface_disable_policy] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.virtual_machine_interface_disable_policy)
+                if err != nil {
+                        return nil, err
+                }
+                msg["virtual_machine_interface_disable_policy"] = &value
+        }
+
+        if obj.modified[virtual_machine_interface_virtual_machine_interface_properties] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.virtual_machine_interface_properties)
                 if err != nil {
@@ -1412,7 +1926,16 @@ func (obj *VirtualMachineInterface) UpdateObject() ([]byte, error) {
                 msg["virtual_machine_interface_properties"] = &value
         }
 
-        if obj.modified & virtual_machine_interface_virtual_machine_interface_fat_flow_protocols != 0 {
+        if obj.modified[virtual_machine_interface_virtual_machine_interface_bindings] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.virtual_machine_interface_bindings)
+                if err != nil {
+                        return nil, err
+                }
+                msg["virtual_machine_interface_bindings"] = &value
+        }
+
+        if obj.modified[virtual_machine_interface_virtual_machine_interface_fat_flow_protocols] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.virtual_machine_interface_fat_flow_protocols)
                 if err != nil {
@@ -1421,7 +1944,7 @@ func (obj *VirtualMachineInterface) UpdateObject() ([]byte, error) {
                 msg["virtual_machine_interface_fat_flow_protocols"] = &value
         }
 
-        if obj.modified & virtual_machine_interface_id_perms != 0 {
+        if obj.modified[virtual_machine_interface_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -1430,7 +1953,16 @@ func (obj *VirtualMachineInterface) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & virtual_machine_interface_display_name != 0 {
+        if obj.modified[virtual_machine_interface_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[virtual_machine_interface_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -1439,27 +1971,27 @@ func (obj *VirtualMachineInterface) UpdateObject() ([]byte, error) {
                 msg["display_name"] = &value
         }
 
-        if obj.modified & virtual_machine_interface_qos_forwarding_class_refs != 0 {
-                if len(obj.qos_forwarding_class_refs) == 0 {
+        if obj.modified[virtual_machine_interface_qos_config_refs] {
+                if len(obj.qos_config_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
                                           make([]contrail.Reference, 0))
                         if err != nil {
                                 return nil, err
                         }
-                        msg["qos_forwarding_class_refs"] = &value
-                } else if !obj.hasReferenceBase("qos-forwarding-class") {
+                        msg["qos_config_refs"] = &value
+                } else if !obj.hasReferenceBase("qos-config") {
                         var value json.RawMessage
-                        value, err := json.Marshal(&obj.qos_forwarding_class_refs)
+                        value, err := json.Marshal(&obj.qos_config_refs)
                         if err != nil {
                                 return nil, err
                         }
-                        msg["qos_forwarding_class_refs"] = &value
+                        msg["qos_config_refs"] = &value
                 }
         }
 
 
-        if obj.modified & virtual_machine_interface_security_group_refs != 0 {
+        if obj.modified[virtual_machine_interface_security_group_refs] {
                 if len(obj.security_group_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -1479,7 +2011,7 @@ func (obj *VirtualMachineInterface) UpdateObject() ([]byte, error) {
         }
 
 
-        if obj.modified & virtual_machine_interface_virtual_machine_interface_refs != 0 {
+        if obj.modified[virtual_machine_interface_virtual_machine_interface_refs] {
                 if len(obj.virtual_machine_interface_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -1499,7 +2031,7 @@ func (obj *VirtualMachineInterface) UpdateObject() ([]byte, error) {
         }
 
 
-        if obj.modified & virtual_machine_interface_virtual_machine_refs != 0 {
+        if obj.modified[virtual_machine_interface_virtual_machine_refs] {
                 if len(obj.virtual_machine_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -1519,7 +2051,7 @@ func (obj *VirtualMachineInterface) UpdateObject() ([]byte, error) {
         }
 
 
-        if obj.modified & virtual_machine_interface_virtual_network_refs != 0 {
+        if obj.modified[virtual_machine_interface_virtual_network_refs] {
                 if len(obj.virtual_network_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -1539,7 +2071,7 @@ func (obj *VirtualMachineInterface) UpdateObject() ([]byte, error) {
         }
 
 
-        if obj.modified & virtual_machine_interface_routing_instance_refs != 0 {
+        if obj.modified[virtual_machine_interface_routing_instance_refs] {
                 if len(obj.routing_instance_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -1559,7 +2091,47 @@ func (obj *VirtualMachineInterface) UpdateObject() ([]byte, error) {
         }
 
 
-        if obj.modified & virtual_machine_interface_interface_route_table_refs != 0 {
+        if obj.modified[virtual_machine_interface_port_tuple_refs] {
+                if len(obj.port_tuple_refs) == 0 {
+                        var value json.RawMessage
+                        value, err := json.Marshal(
+                                          make([]contrail.Reference, 0))
+                        if err != nil {
+                                return nil, err
+                        }
+                        msg["port_tuple_refs"] = &value
+                } else if !obj.hasReferenceBase("port-tuple") {
+                        var value json.RawMessage
+                        value, err := json.Marshal(&obj.port_tuple_refs)
+                        if err != nil {
+                                return nil, err
+                        }
+                        msg["port_tuple_refs"] = &value
+                }
+        }
+
+
+        if obj.modified[virtual_machine_interface_service_health_check_refs] {
+                if len(obj.service_health_check_refs) == 0 {
+                        var value json.RawMessage
+                        value, err := json.Marshal(
+                                          make([]contrail.Reference, 0))
+                        if err != nil {
+                                return nil, err
+                        }
+                        msg["service_health_check_refs"] = &value
+                } else if !obj.hasReferenceBase("service-health-check") {
+                        var value json.RawMessage
+                        value, err := json.Marshal(&obj.service_health_check_refs)
+                        if err != nil {
+                                return nil, err
+                        }
+                        msg["service_health_check_refs"] = &value
+                }
+        }
+
+
+        if obj.modified[virtual_machine_interface_interface_route_table_refs] {
                 if len(obj.interface_route_table_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -1579,24 +2151,44 @@ func (obj *VirtualMachineInterface) UpdateObject() ([]byte, error) {
         }
 
 
+        if obj.modified[virtual_machine_interface_physical_interface_refs] {
+                if len(obj.physical_interface_refs) == 0 {
+                        var value json.RawMessage
+                        value, err := json.Marshal(
+                                          make([]contrail.Reference, 0))
+                        if err != nil {
+                                return nil, err
+                        }
+                        msg["physical_interface_refs"] = &value
+                } else if !obj.hasReferenceBase("physical-interface") {
+                        var value json.RawMessage
+                        value, err := json.Marshal(&obj.physical_interface_refs)
+                        if err != nil {
+                                return nil, err
+                        }
+                        msg["physical_interface_refs"] = &value
+                }
+        }
+
+
         return json.Marshal(msg)
 }
 
 func (obj *VirtualMachineInterface) UpdateReferences() error {
 
-        if (obj.modified & virtual_machine_interface_qos_forwarding_class_refs != 0) &&
-           len(obj.qos_forwarding_class_refs) > 0 &&
-           obj.hasReferenceBase("qos-forwarding-class") {
+        if (obj.modified[virtual_machine_interface_qos_config_refs]) &&
+           len(obj.qos_config_refs) > 0 &&
+           obj.hasReferenceBase("qos-config") {
                 err := obj.UpdateReference(
-                        obj, "qos-forwarding-class",
-                        obj.qos_forwarding_class_refs,
-                        obj.baseMap["qos-forwarding-class"])
+                        obj, "qos-config",
+                        obj.qos_config_refs,
+                        obj.baseMap["qos-config"])
                 if err != nil {
                         return err
                 }
         }
 
-        if (obj.modified & virtual_machine_interface_security_group_refs != 0) &&
+        if (obj.modified[virtual_machine_interface_security_group_refs]) &&
            len(obj.security_group_refs) > 0 &&
            obj.hasReferenceBase("security-group") {
                 err := obj.UpdateReference(
@@ -1608,7 +2200,7 @@ func (obj *VirtualMachineInterface) UpdateReferences() error {
                 }
         }
 
-        if (obj.modified & virtual_machine_interface_virtual_machine_interface_refs != 0) &&
+        if (obj.modified[virtual_machine_interface_virtual_machine_interface_refs]) &&
            len(obj.virtual_machine_interface_refs) > 0 &&
            obj.hasReferenceBase("virtual-machine-interface") {
                 err := obj.UpdateReference(
@@ -1620,7 +2212,7 @@ func (obj *VirtualMachineInterface) UpdateReferences() error {
                 }
         }
 
-        if (obj.modified & virtual_machine_interface_virtual_machine_refs != 0) &&
+        if (obj.modified[virtual_machine_interface_virtual_machine_refs]) &&
            len(obj.virtual_machine_refs) > 0 &&
            obj.hasReferenceBase("virtual-machine") {
                 err := obj.UpdateReference(
@@ -1632,7 +2224,7 @@ func (obj *VirtualMachineInterface) UpdateReferences() error {
                 }
         }
 
-        if (obj.modified & virtual_machine_interface_virtual_network_refs != 0) &&
+        if (obj.modified[virtual_machine_interface_virtual_network_refs]) &&
            len(obj.virtual_network_refs) > 0 &&
            obj.hasReferenceBase("virtual-network") {
                 err := obj.UpdateReference(
@@ -1644,7 +2236,7 @@ func (obj *VirtualMachineInterface) UpdateReferences() error {
                 }
         }
 
-        if (obj.modified & virtual_machine_interface_routing_instance_refs != 0) &&
+        if (obj.modified[virtual_machine_interface_routing_instance_refs]) &&
            len(obj.routing_instance_refs) > 0 &&
            obj.hasReferenceBase("routing-instance") {
                 err := obj.UpdateReference(
@@ -1656,13 +2248,49 @@ func (obj *VirtualMachineInterface) UpdateReferences() error {
                 }
         }
 
-        if (obj.modified & virtual_machine_interface_interface_route_table_refs != 0) &&
+        if (obj.modified[virtual_machine_interface_port_tuple_refs]) &&
+           len(obj.port_tuple_refs) > 0 &&
+           obj.hasReferenceBase("port-tuple") {
+                err := obj.UpdateReference(
+                        obj, "port-tuple",
+                        obj.port_tuple_refs,
+                        obj.baseMap["port-tuple"])
+                if err != nil {
+                        return err
+                }
+        }
+
+        if (obj.modified[virtual_machine_interface_service_health_check_refs]) &&
+           len(obj.service_health_check_refs) > 0 &&
+           obj.hasReferenceBase("service-health-check") {
+                err := obj.UpdateReference(
+                        obj, "service-health-check",
+                        obj.service_health_check_refs,
+                        obj.baseMap["service-health-check"])
+                if err != nil {
+                        return err
+                }
+        }
+
+        if (obj.modified[virtual_machine_interface_interface_route_table_refs]) &&
            len(obj.interface_route_table_refs) > 0 &&
            obj.hasReferenceBase("interface-route-table") {
                 err := obj.UpdateReference(
                         obj, "interface-route-table",
                         obj.interface_route_table_refs,
                         obj.baseMap["interface-route-table"])
+                if err != nil {
+                        return err
+                }
+        }
+
+        if (obj.modified[virtual_machine_interface_physical_interface_refs]) &&
+           len(obj.physical_interface_refs) > 0 &&
+           obj.hasReferenceBase("physical-interface") {
+                err := obj.UpdateReference(
+                        obj, "physical-interface",
+                        obj.physical_interface_refs,
+                        obj.baseMap["physical-interface"])
                 if err != nil {
                         return err
                 }

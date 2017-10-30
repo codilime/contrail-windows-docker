@@ -11,22 +11,29 @@ import (
 )
 
 const (
-	network_ipam_network_ipam_mgmt uint64 = 1 << iota
+	network_ipam_network_ipam_mgmt = iota
+	network_ipam_ipam_subnets
+	network_ipam_ipam_subnet_method
 	network_ipam_id_perms
+	network_ipam_perms2
 	network_ipam_display_name
 	network_ipam_virtual_DNS_refs
 	network_ipam_virtual_network_back_refs
+	network_ipam_max
 )
 
 type NetworkIpam struct {
         contrail.ObjectBase
 	network_ipam_mgmt IpamType
+	ipam_subnets IpamSubnets
+	ipam_subnet_method string
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
 	virtual_DNS_refs contrail.ReferenceList
 	virtual_network_back_refs contrail.ReferenceList
-        valid uint64
-        modified uint64
+        valid [network_ipam_max] bool
+        modified [network_ipam_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -70,7 +77,7 @@ func (obj *NetworkIpam) hasReferenceBase(name string) bool {
 }
 
 func (obj *NetworkIpam) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -81,7 +88,25 @@ func (obj *NetworkIpam) GetNetworkIpamMgmt() IpamType {
 
 func (obj *NetworkIpam) SetNetworkIpamMgmt(value *IpamType) {
         obj.network_ipam_mgmt = *value
-        obj.modified |= network_ipam_network_ipam_mgmt
+        obj.modified[network_ipam_network_ipam_mgmt] = true
+}
+
+func (obj *NetworkIpam) GetIpamSubnets() IpamSubnets {
+        return obj.ipam_subnets
+}
+
+func (obj *NetworkIpam) SetIpamSubnets(value *IpamSubnets) {
+        obj.ipam_subnets = *value
+        obj.modified[network_ipam_ipam_subnets] = true
+}
+
+func (obj *NetworkIpam) GetIpamSubnetMethod() string {
+        return obj.ipam_subnet_method
+}
+
+func (obj *NetworkIpam) SetIpamSubnetMethod(value string) {
+        obj.ipam_subnet_method = value
+        obj.modified[network_ipam_ipam_subnet_method] = true
 }
 
 func (obj *NetworkIpam) GetIdPerms() IdPermsType {
@@ -90,7 +115,16 @@ func (obj *NetworkIpam) GetIdPerms() IdPermsType {
 
 func (obj *NetworkIpam) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= network_ipam_id_perms
+        obj.modified[network_ipam_id_perms] = true
+}
+
+func (obj *NetworkIpam) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *NetworkIpam) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[network_ipam_perms2] = true
 }
 
 func (obj *NetworkIpam) GetDisplayName() string {
@@ -99,12 +133,12 @@ func (obj *NetworkIpam) GetDisplayName() string {
 
 func (obj *NetworkIpam) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= network_ipam_display_name
+        obj.modified[network_ipam_display_name] = true
 }
 
 func (obj *NetworkIpam) readVirtualDnsRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & network_ipam_virtual_DNS_refs == 0) {
+                (!obj.valid[network_ipam_virtual_DNS_refs]) {
                 err := obj.GetField(obj, "virtual_DNS_refs")
                 if err != nil {
                         return err
@@ -129,14 +163,14 @@ func (obj *NetworkIpam) AddVirtualDns(
                 return err
         }
 
-        if obj.modified & network_ipam_virtual_DNS_refs == 0 {
+        if !obj.modified[network_ipam_virtual_DNS_refs] {
                 obj.storeReferenceBase("virtual-DNS", obj.virtual_DNS_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.virtual_DNS_refs = append(obj.virtual_DNS_refs, ref)
-        obj.modified |= network_ipam_virtual_DNS_refs
+        obj.modified[network_ipam_virtual_DNS_refs] = true
         return nil
 }
 
@@ -146,7 +180,7 @@ func (obj *NetworkIpam) DeleteVirtualDns(uuid string) error {
                 return err
         }
 
-        if obj.modified & network_ipam_virtual_DNS_refs == 0 {
+        if !obj.modified[network_ipam_virtual_DNS_refs] {
                 obj.storeReferenceBase("virtual-DNS", obj.virtual_DNS_refs)
         }
 
@@ -158,18 +192,18 @@ func (obj *NetworkIpam) DeleteVirtualDns(uuid string) error {
                         break
                 }
         }
-        obj.modified |= network_ipam_virtual_DNS_refs
+        obj.modified[network_ipam_virtual_DNS_refs] = true
         return nil
 }
 
 func (obj *NetworkIpam) ClearVirtualDns() {
-        if (obj.valid & network_ipam_virtual_DNS_refs != 0) &&
-           (obj.modified & network_ipam_virtual_DNS_refs == 0) {
+        if (obj.valid[network_ipam_virtual_DNS_refs]) &&
+           (!obj.modified[network_ipam_virtual_DNS_refs]) {
                 obj.storeReferenceBase("virtual-DNS", obj.virtual_DNS_refs)
         }
         obj.virtual_DNS_refs = make([]contrail.Reference, 0)
-        obj.valid |= network_ipam_virtual_DNS_refs
-        obj.modified |= network_ipam_virtual_DNS_refs
+        obj.valid[network_ipam_virtual_DNS_refs] = true
+        obj.modified[network_ipam_virtual_DNS_refs] = true
 }
 
 func (obj *NetworkIpam) SetVirtualDnsList(
@@ -189,7 +223,7 @@ func (obj *NetworkIpam) SetVirtualDnsList(
 
 func (obj *NetworkIpam) readVirtualNetworkBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & network_ipam_virtual_network_back_refs == 0) {
+                (!obj.valid[network_ipam_virtual_network_back_refs]) {
                 err := obj.GetField(obj, "virtual_network_back_refs")
                 if err != nil {
                         return err
@@ -215,7 +249,7 @@ func (obj *NetworkIpam) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & network_ipam_network_ipam_mgmt != 0 {
+        if obj.modified[network_ipam_network_ipam_mgmt] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.network_ipam_mgmt)
                 if err != nil {
@@ -224,7 +258,25 @@ func (obj *NetworkIpam) MarshalJSON() ([]byte, error) {
                 msg["network_ipam_mgmt"] = &value
         }
 
-        if obj.modified & network_ipam_id_perms != 0 {
+        if obj.modified[network_ipam_ipam_subnets] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.ipam_subnets)
+                if err != nil {
+                        return nil, err
+                }
+                msg["ipam_subnets"] = &value
+        }
+
+        if obj.modified[network_ipam_ipam_subnet_method] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.ipam_subnet_method)
+                if err != nil {
+                        return nil, err
+                }
+                msg["ipam_subnet_method"] = &value
+        }
+
+        if obj.modified[network_ipam_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -233,7 +285,16 @@ func (obj *NetworkIpam) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & network_ipam_display_name != 0 {
+        if obj.modified[network_ipam_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[network_ipam_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -264,30 +325,49 @@ func (obj *NetworkIpam) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "network_ipam_mgmt":
                         err = json.Unmarshal(value, &obj.network_ipam_mgmt)
                         if err == nil {
-                                obj.valid |= network_ipam_network_ipam_mgmt
+                                obj.valid[network_ipam_network_ipam_mgmt] = true
+                        }
+                        break
+                case "ipam_subnets":
+                        err = json.Unmarshal(value, &obj.ipam_subnets)
+                        if err == nil {
+                                obj.valid[network_ipam_ipam_subnets] = true
+                        }
+                        break
+                case "ipam_subnet_method":
+                        err = json.Unmarshal(value, &obj.ipam_subnet_method)
+                        if err == nil {
+                                obj.valid[network_ipam_ipam_subnet_method] = true
                         }
                         break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= network_ipam_id_perms
+                                obj.valid[network_ipam_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[network_ipam_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= network_ipam_display_name
+                                obj.valid[network_ipam_display_name] = true
                         }
                         break
                 case "virtual_DNS_refs":
                         err = json.Unmarshal(value, &obj.virtual_DNS_refs)
                         if err == nil {
-                                obj.valid |= network_ipam_virtual_DNS_refs
+                                obj.valid[network_ipam_virtual_DNS_refs] = true
                         }
                         break
                 case "virtual_network_back_refs": {
@@ -302,7 +382,7 @@ func (obj *NetworkIpam) UnmarshalJSON(body []byte) error {
                         if err != nil {
                             break
                         }
-                        obj.valid |= network_ipam_virtual_network_back_refs
+                        obj.valid[network_ipam_virtual_network_back_refs] = true
                         obj.virtual_network_back_refs = make(contrail.ReferenceList, 0)
                         for _, element := range array {
                                 ref := contrail.Reference {
@@ -331,7 +411,7 @@ func (obj *NetworkIpam) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & network_ipam_network_ipam_mgmt != 0 {
+        if obj.modified[network_ipam_network_ipam_mgmt] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.network_ipam_mgmt)
                 if err != nil {
@@ -340,7 +420,25 @@ func (obj *NetworkIpam) UpdateObject() ([]byte, error) {
                 msg["network_ipam_mgmt"] = &value
         }
 
-        if obj.modified & network_ipam_id_perms != 0 {
+        if obj.modified[network_ipam_ipam_subnets] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.ipam_subnets)
+                if err != nil {
+                        return nil, err
+                }
+                msg["ipam_subnets"] = &value
+        }
+
+        if obj.modified[network_ipam_ipam_subnet_method] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.ipam_subnet_method)
+                if err != nil {
+                        return nil, err
+                }
+                msg["ipam_subnet_method"] = &value
+        }
+
+        if obj.modified[network_ipam_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -349,7 +447,16 @@ func (obj *NetworkIpam) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & network_ipam_display_name != 0 {
+        if obj.modified[network_ipam_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[network_ipam_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -358,7 +465,7 @@ func (obj *NetworkIpam) UpdateObject() ([]byte, error) {
                 msg["display_name"] = &value
         }
 
-        if obj.modified & network_ipam_virtual_DNS_refs != 0 {
+        if obj.modified[network_ipam_virtual_DNS_refs] {
                 if len(obj.virtual_DNS_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -383,7 +490,7 @@ func (obj *NetworkIpam) UpdateObject() ([]byte, error) {
 
 func (obj *NetworkIpam) UpdateReferences() error {
 
-        if (obj.modified & network_ipam_virtual_DNS_refs != 0) &&
+        if (obj.modified[network_ipam_virtual_DNS_refs]) &&
            len(obj.virtual_DNS_refs) > 0 &&
            obj.hasReferenceBase("virtual-DNS") {
                 err := obj.UpdateReference(

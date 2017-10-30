@@ -11,20 +11,25 @@ import (
 )
 
 const (
-	interface_route_table_interface_route_table_routes uint64 = 1 << iota
+	interface_route_table_interface_route_table_routes = iota
 	interface_route_table_id_perms
+	interface_route_table_perms2
 	interface_route_table_display_name
+	interface_route_table_service_instance_refs
 	interface_route_table_virtual_machine_interface_back_refs
+	interface_route_table_max
 )
 
 type InterfaceRouteTable struct {
         contrail.ObjectBase
 	interface_route_table_routes RouteTableType
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
+	service_instance_refs contrail.ReferenceList
 	virtual_machine_interface_back_refs contrail.ReferenceList
-        valid uint64
-        modified uint64
+        valid [interface_route_table_max] bool
+        modified [interface_route_table_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -68,7 +73,7 @@ func (obj *InterfaceRouteTable) hasReferenceBase(name string) bool {
 }
 
 func (obj *InterfaceRouteTable) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -79,7 +84,7 @@ func (obj *InterfaceRouteTable) GetInterfaceRouteTableRoutes() RouteTableType {
 
 func (obj *InterfaceRouteTable) SetInterfaceRouteTableRoutes(value *RouteTableType) {
         obj.interface_route_table_routes = *value
-        obj.modified |= interface_route_table_interface_route_table_routes
+        obj.modified[interface_route_table_interface_route_table_routes] = true
 }
 
 func (obj *InterfaceRouteTable) GetIdPerms() IdPermsType {
@@ -88,7 +93,16 @@ func (obj *InterfaceRouteTable) GetIdPerms() IdPermsType {
 
 func (obj *InterfaceRouteTable) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= interface_route_table_id_perms
+        obj.modified[interface_route_table_id_perms] = true
+}
+
+func (obj *InterfaceRouteTable) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *InterfaceRouteTable) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[interface_route_table_perms2] = true
 }
 
 func (obj *InterfaceRouteTable) GetDisplayName() string {
@@ -97,12 +111,97 @@ func (obj *InterfaceRouteTable) GetDisplayName() string {
 
 func (obj *InterfaceRouteTable) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= interface_route_table_display_name
+        obj.modified[interface_route_table_display_name] = true
 }
+
+func (obj *InterfaceRouteTable) readServiceInstanceRefs() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[interface_route_table_service_instance_refs]) {
+                err := obj.GetField(obj, "service_instance_refs")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *InterfaceRouteTable) GetServiceInstanceRefs() (
+        contrail.ReferenceList, error) {
+        err := obj.readServiceInstanceRefs()
+        if err != nil {
+                return nil, err
+        }
+        return obj.service_instance_refs, nil
+}
+
+func (obj *InterfaceRouteTable) AddServiceInstance(
+        rhs *ServiceInstance, data ServiceInterfaceTag) error {
+        err := obj.readServiceInstanceRefs()
+        if err != nil {
+                return err
+        }
+
+        if !obj.modified[interface_route_table_service_instance_refs] {
+                obj.storeReferenceBase("service-instance", obj.service_instance_refs)
+        }
+
+        ref := contrail.Reference {
+                rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), data}
+        obj.service_instance_refs = append(obj.service_instance_refs, ref)
+        obj.modified[interface_route_table_service_instance_refs] = true
+        return nil
+}
+
+func (obj *InterfaceRouteTable) DeleteServiceInstance(uuid string) error {
+        err := obj.readServiceInstanceRefs()
+        if err != nil {
+                return err
+        }
+
+        if !obj.modified[interface_route_table_service_instance_refs] {
+                obj.storeReferenceBase("service-instance", obj.service_instance_refs)
+        }
+
+        for i, ref := range obj.service_instance_refs {
+                if ref.Uuid == uuid {
+                        obj.service_instance_refs = append(
+                                obj.service_instance_refs[:i],
+                                obj.service_instance_refs[i+1:]...)
+                        break
+                }
+        }
+        obj.modified[interface_route_table_service_instance_refs] = true
+        return nil
+}
+
+func (obj *InterfaceRouteTable) ClearServiceInstance() {
+        if (obj.valid[interface_route_table_service_instance_refs]) &&
+           (!obj.modified[interface_route_table_service_instance_refs]) {
+                obj.storeReferenceBase("service-instance", obj.service_instance_refs)
+        }
+        obj.service_instance_refs = make([]contrail.Reference, 0)
+        obj.valid[interface_route_table_service_instance_refs] = true
+        obj.modified[interface_route_table_service_instance_refs] = true
+}
+
+func (obj *InterfaceRouteTable) SetServiceInstanceList(
+        refList []contrail.ReferencePair) {
+        obj.ClearServiceInstance()
+        obj.service_instance_refs = make([]contrail.Reference, len(refList))
+        for i, pair := range refList {
+                obj.service_instance_refs[i] = contrail.Reference {
+                        pair.Object.GetFQName(),
+                        pair.Object.GetUuid(),
+                        pair.Object.GetHref(),
+                        pair.Attribute,
+                }
+        }
+}
+
 
 func (obj *InterfaceRouteTable) readVirtualMachineInterfaceBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & interface_route_table_virtual_machine_interface_back_refs == 0) {
+                (!obj.valid[interface_route_table_virtual_machine_interface_back_refs]) {
                 err := obj.GetField(obj, "virtual_machine_interface_back_refs")
                 if err != nil {
                         return err
@@ -128,7 +227,7 @@ func (obj *InterfaceRouteTable) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & interface_route_table_interface_route_table_routes != 0 {
+        if obj.modified[interface_route_table_interface_route_table_routes] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.interface_route_table_routes)
                 if err != nil {
@@ -137,7 +236,7 @@ func (obj *InterfaceRouteTable) MarshalJSON() ([]byte, error) {
                 msg["interface_route_table_routes"] = &value
         }
 
-        if obj.modified & interface_route_table_id_perms != 0 {
+        if obj.modified[interface_route_table_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -146,13 +245,31 @@ func (obj *InterfaceRouteTable) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & interface_route_table_display_name != 0 {
+        if obj.modified[interface_route_table_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[interface_route_table_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
                         return nil, err
                 }
                 msg["display_name"] = &value
+        }
+
+        if len(obj.service_instance_refs) > 0 {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.service_instance_refs)
+                if err != nil {
+                        return nil, err
+                }
+                msg["service_instance_refs"] = &value
         }
 
         return json.Marshal(msg)
@@ -168,32 +285,64 @@ func (obj *InterfaceRouteTable) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "interface_route_table_routes":
                         err = json.Unmarshal(value, &obj.interface_route_table_routes)
                         if err == nil {
-                                obj.valid |= interface_route_table_interface_route_table_routes
+                                obj.valid[interface_route_table_interface_route_table_routes] = true
                         }
                         break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= interface_route_table_id_perms
+                                obj.valid[interface_route_table_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[interface_route_table_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= interface_route_table_display_name
+                                obj.valid[interface_route_table_display_name] = true
                         }
                         break
                 case "virtual_machine_interface_back_refs":
                         err = json.Unmarshal(value, &obj.virtual_machine_interface_back_refs)
                         if err == nil {
-                                obj.valid |= interface_route_table_virtual_machine_interface_back_refs
+                                obj.valid[interface_route_table_virtual_machine_interface_back_refs] = true
                         }
                         break
+                case "service_instance_refs": {
+                        type ReferenceElement struct {
+                                To []string
+                                Uuid string
+                                Href string
+                                Attr ServiceInterfaceTag
+                        }
+                        var array []ReferenceElement
+                        err = json.Unmarshal(value, &array)
+                        if err != nil {
+                            break
+                        }
+                        obj.valid[interface_route_table_service_instance_refs] = true
+                        obj.service_instance_refs = make(contrail.ReferenceList, 0)
+                        for _, element := range array {
+                                ref := contrail.Reference {
+                                        element.To,
+                                        element.Uuid,
+                                        element.Href,
+                                        element.Attr,
+                                }
+                                obj.service_instance_refs = append(obj.service_instance_refs, ref)
+                        }
+                        break
+                }
                 }
                 if err != nil {
                         return err
@@ -210,7 +359,7 @@ func (obj *InterfaceRouteTable) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & interface_route_table_interface_route_table_routes != 0 {
+        if obj.modified[interface_route_table_interface_route_table_routes] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.interface_route_table_routes)
                 if err != nil {
@@ -219,7 +368,7 @@ func (obj *InterfaceRouteTable) UpdateObject() ([]byte, error) {
                 msg["interface_route_table_routes"] = &value
         }
 
-        if obj.modified & interface_route_table_id_perms != 0 {
+        if obj.modified[interface_route_table_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -228,7 +377,16 @@ func (obj *InterfaceRouteTable) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & interface_route_table_display_name != 0 {
+        if obj.modified[interface_route_table_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[interface_route_table_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -237,10 +395,42 @@ func (obj *InterfaceRouteTable) UpdateObject() ([]byte, error) {
                 msg["display_name"] = &value
         }
 
+        if obj.modified[interface_route_table_service_instance_refs] {
+                if len(obj.service_instance_refs) == 0 {
+                        var value json.RawMessage
+                        value, err := json.Marshal(
+                                          make([]contrail.Reference, 0))
+                        if err != nil {
+                                return nil, err
+                        }
+                        msg["service_instance_refs"] = &value
+                } else if !obj.hasReferenceBase("service-instance") {
+                        var value json.RawMessage
+                        value, err := json.Marshal(&obj.service_instance_refs)
+                        if err != nil {
+                                return nil, err
+                        }
+                        msg["service_instance_refs"] = &value
+                }
+        }
+
+
         return json.Marshal(msg)
 }
 
 func (obj *InterfaceRouteTable) UpdateReferences() error {
+
+        if (obj.modified[interface_route_table_service_instance_refs]) &&
+           len(obj.service_instance_refs) > 0 &&
+           obj.hasReferenceBase("service-instance") {
+                err := obj.UpdateReference(
+                        obj, "service-instance",
+                        obj.service_instance_refs,
+                        obj.baseMap["service-instance"])
+                if err != nil {
+                        return err
+                }
+        }
 
         return nil
 }

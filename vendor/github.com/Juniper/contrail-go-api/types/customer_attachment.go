@@ -11,20 +11,23 @@ import (
 )
 
 const (
-	customer_attachment_id_perms uint64 = 1 << iota
+	customer_attachment_id_perms = iota
+	customer_attachment_perms2
 	customer_attachment_display_name
 	customer_attachment_virtual_machine_interface_refs
 	customer_attachment_floating_ip_refs
+	customer_attachment_max
 )
 
 type CustomerAttachment struct {
         contrail.ObjectBase
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
 	virtual_machine_interface_refs contrail.ReferenceList
 	floating_ip_refs contrail.ReferenceList
-        valid uint64
-        modified uint64
+        valid [customer_attachment_max] bool
+        modified [customer_attachment_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -68,7 +71,7 @@ func (obj *CustomerAttachment) hasReferenceBase(name string) bool {
 }
 
 func (obj *CustomerAttachment) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -79,7 +82,16 @@ func (obj *CustomerAttachment) GetIdPerms() IdPermsType {
 
 func (obj *CustomerAttachment) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= customer_attachment_id_perms
+        obj.modified[customer_attachment_id_perms] = true
+}
+
+func (obj *CustomerAttachment) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *CustomerAttachment) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[customer_attachment_perms2] = true
 }
 
 func (obj *CustomerAttachment) GetDisplayName() string {
@@ -88,12 +100,12 @@ func (obj *CustomerAttachment) GetDisplayName() string {
 
 func (obj *CustomerAttachment) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= customer_attachment_display_name
+        obj.modified[customer_attachment_display_name] = true
 }
 
 func (obj *CustomerAttachment) readVirtualMachineInterfaceRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & customer_attachment_virtual_machine_interface_refs == 0) {
+                (!obj.valid[customer_attachment_virtual_machine_interface_refs]) {
                 err := obj.GetField(obj, "virtual_machine_interface_refs")
                 if err != nil {
                         return err
@@ -118,14 +130,14 @@ func (obj *CustomerAttachment) AddVirtualMachineInterface(
                 return err
         }
 
-        if obj.modified & customer_attachment_virtual_machine_interface_refs == 0 {
+        if !obj.modified[customer_attachment_virtual_machine_interface_refs] {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.virtual_machine_interface_refs = append(obj.virtual_machine_interface_refs, ref)
-        obj.modified |= customer_attachment_virtual_machine_interface_refs
+        obj.modified[customer_attachment_virtual_machine_interface_refs] = true
         return nil
 }
 
@@ -135,7 +147,7 @@ func (obj *CustomerAttachment) DeleteVirtualMachineInterface(uuid string) error 
                 return err
         }
 
-        if obj.modified & customer_attachment_virtual_machine_interface_refs == 0 {
+        if !obj.modified[customer_attachment_virtual_machine_interface_refs] {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
 
@@ -147,18 +159,18 @@ func (obj *CustomerAttachment) DeleteVirtualMachineInterface(uuid string) error 
                         break
                 }
         }
-        obj.modified |= customer_attachment_virtual_machine_interface_refs
+        obj.modified[customer_attachment_virtual_machine_interface_refs] = true
         return nil
 }
 
 func (obj *CustomerAttachment) ClearVirtualMachineInterface() {
-        if (obj.valid & customer_attachment_virtual_machine_interface_refs != 0) &&
-           (obj.modified & customer_attachment_virtual_machine_interface_refs == 0) {
+        if (obj.valid[customer_attachment_virtual_machine_interface_refs]) &&
+           (!obj.modified[customer_attachment_virtual_machine_interface_refs]) {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
         obj.virtual_machine_interface_refs = make([]contrail.Reference, 0)
-        obj.valid |= customer_attachment_virtual_machine_interface_refs
-        obj.modified |= customer_attachment_virtual_machine_interface_refs
+        obj.valid[customer_attachment_virtual_machine_interface_refs] = true
+        obj.modified[customer_attachment_virtual_machine_interface_refs] = true
 }
 
 func (obj *CustomerAttachment) SetVirtualMachineInterfaceList(
@@ -178,7 +190,7 @@ func (obj *CustomerAttachment) SetVirtualMachineInterfaceList(
 
 func (obj *CustomerAttachment) readFloatingIpRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & customer_attachment_floating_ip_refs == 0) {
+                (!obj.valid[customer_attachment_floating_ip_refs]) {
                 err := obj.GetField(obj, "floating_ip_refs")
                 if err != nil {
                         return err
@@ -203,14 +215,14 @@ func (obj *CustomerAttachment) AddFloatingIp(
                 return err
         }
 
-        if obj.modified & customer_attachment_floating_ip_refs == 0 {
+        if !obj.modified[customer_attachment_floating_ip_refs] {
                 obj.storeReferenceBase("floating-ip", obj.floating_ip_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.floating_ip_refs = append(obj.floating_ip_refs, ref)
-        obj.modified |= customer_attachment_floating_ip_refs
+        obj.modified[customer_attachment_floating_ip_refs] = true
         return nil
 }
 
@@ -220,7 +232,7 @@ func (obj *CustomerAttachment) DeleteFloatingIp(uuid string) error {
                 return err
         }
 
-        if obj.modified & customer_attachment_floating_ip_refs == 0 {
+        if !obj.modified[customer_attachment_floating_ip_refs] {
                 obj.storeReferenceBase("floating-ip", obj.floating_ip_refs)
         }
 
@@ -232,18 +244,18 @@ func (obj *CustomerAttachment) DeleteFloatingIp(uuid string) error {
                         break
                 }
         }
-        obj.modified |= customer_attachment_floating_ip_refs
+        obj.modified[customer_attachment_floating_ip_refs] = true
         return nil
 }
 
 func (obj *CustomerAttachment) ClearFloatingIp() {
-        if (obj.valid & customer_attachment_floating_ip_refs != 0) &&
-           (obj.modified & customer_attachment_floating_ip_refs == 0) {
+        if (obj.valid[customer_attachment_floating_ip_refs]) &&
+           (!obj.modified[customer_attachment_floating_ip_refs]) {
                 obj.storeReferenceBase("floating-ip", obj.floating_ip_refs)
         }
         obj.floating_ip_refs = make([]contrail.Reference, 0)
-        obj.valid |= customer_attachment_floating_ip_refs
-        obj.modified |= customer_attachment_floating_ip_refs
+        obj.valid[customer_attachment_floating_ip_refs] = true
+        obj.modified[customer_attachment_floating_ip_refs] = true
 }
 
 func (obj *CustomerAttachment) SetFloatingIpList(
@@ -269,7 +281,7 @@ func (obj *CustomerAttachment) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & customer_attachment_id_perms != 0 {
+        if obj.modified[customer_attachment_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -278,7 +290,16 @@ func (obj *CustomerAttachment) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & customer_attachment_display_name != 0 {
+        if obj.modified[customer_attachment_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[customer_attachment_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -318,30 +339,37 @@ func (obj *CustomerAttachment) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= customer_attachment_id_perms
+                                obj.valid[customer_attachment_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[customer_attachment_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= customer_attachment_display_name
+                                obj.valid[customer_attachment_display_name] = true
                         }
                         break
                 case "virtual_machine_interface_refs":
                         err = json.Unmarshal(value, &obj.virtual_machine_interface_refs)
                         if err == nil {
-                                obj.valid |= customer_attachment_virtual_machine_interface_refs
+                                obj.valid[customer_attachment_virtual_machine_interface_refs] = true
                         }
                         break
                 case "floating_ip_refs":
                         err = json.Unmarshal(value, &obj.floating_ip_refs)
                         if err == nil {
-                                obj.valid |= customer_attachment_floating_ip_refs
+                                obj.valid[customer_attachment_floating_ip_refs] = true
                         }
                         break
                 }
@@ -360,7 +388,7 @@ func (obj *CustomerAttachment) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & customer_attachment_id_perms != 0 {
+        if obj.modified[customer_attachment_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -369,7 +397,16 @@ func (obj *CustomerAttachment) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & customer_attachment_display_name != 0 {
+        if obj.modified[customer_attachment_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[customer_attachment_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -378,7 +415,7 @@ func (obj *CustomerAttachment) UpdateObject() ([]byte, error) {
                 msg["display_name"] = &value
         }
 
-        if obj.modified & customer_attachment_virtual_machine_interface_refs != 0 {
+        if obj.modified[customer_attachment_virtual_machine_interface_refs] {
                 if len(obj.virtual_machine_interface_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -398,7 +435,7 @@ func (obj *CustomerAttachment) UpdateObject() ([]byte, error) {
         }
 
 
-        if obj.modified & customer_attachment_floating_ip_refs != 0 {
+        if obj.modified[customer_attachment_floating_ip_refs] {
                 if len(obj.floating_ip_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -423,7 +460,7 @@ func (obj *CustomerAttachment) UpdateObject() ([]byte, error) {
 
 func (obj *CustomerAttachment) UpdateReferences() error {
 
-        if (obj.modified & customer_attachment_virtual_machine_interface_refs != 0) &&
+        if (obj.modified[customer_attachment_virtual_machine_interface_refs]) &&
            len(obj.virtual_machine_interface_refs) > 0 &&
            obj.hasReferenceBase("virtual-machine-interface") {
                 err := obj.UpdateReference(
@@ -435,7 +472,7 @@ func (obj *CustomerAttachment) UpdateReferences() error {
                 }
         }
 
-        if (obj.modified & customer_attachment_floating_ip_refs != 0) &&
+        if (obj.modified[customer_attachment_floating_ip_refs]) &&
            len(obj.floating_ip_refs) > 0 &&
            obj.hasReferenceBase("floating-ip") {
                 err := obj.UpdateReference(

@@ -11,18 +11,21 @@ import (
 )
 
 const (
-	loadbalancer_member_loadbalancer_member_properties uint64 = 1 << iota
+	loadbalancer_member_loadbalancer_member_properties = iota
 	loadbalancer_member_id_perms
+	loadbalancer_member_perms2
 	loadbalancer_member_display_name
+	loadbalancer_member_max
 )
 
 type LoadbalancerMember struct {
         contrail.ObjectBase
 	loadbalancer_member_properties LoadbalancerMemberType
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
-        valid uint64
-        modified uint64
+        valid [loadbalancer_member_max] bool
+        modified [loadbalancer_member_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -66,7 +69,7 @@ func (obj *LoadbalancerMember) hasReferenceBase(name string) bool {
 }
 
 func (obj *LoadbalancerMember) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -77,7 +80,7 @@ func (obj *LoadbalancerMember) GetLoadbalancerMemberProperties() LoadbalancerMem
 
 func (obj *LoadbalancerMember) SetLoadbalancerMemberProperties(value *LoadbalancerMemberType) {
         obj.loadbalancer_member_properties = *value
-        obj.modified |= loadbalancer_member_loadbalancer_member_properties
+        obj.modified[loadbalancer_member_loadbalancer_member_properties] = true
 }
 
 func (obj *LoadbalancerMember) GetIdPerms() IdPermsType {
@@ -86,7 +89,16 @@ func (obj *LoadbalancerMember) GetIdPerms() IdPermsType {
 
 func (obj *LoadbalancerMember) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= loadbalancer_member_id_perms
+        obj.modified[loadbalancer_member_id_perms] = true
+}
+
+func (obj *LoadbalancerMember) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *LoadbalancerMember) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[loadbalancer_member_perms2] = true
 }
 
 func (obj *LoadbalancerMember) GetDisplayName() string {
@@ -95,7 +107,7 @@ func (obj *LoadbalancerMember) GetDisplayName() string {
 
 func (obj *LoadbalancerMember) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= loadbalancer_member_display_name
+        obj.modified[loadbalancer_member_display_name] = true
 }
 
 func (obj *LoadbalancerMember) MarshalJSON() ([]byte, error) {
@@ -106,7 +118,7 @@ func (obj *LoadbalancerMember) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & loadbalancer_member_loadbalancer_member_properties != 0 {
+        if obj.modified[loadbalancer_member_loadbalancer_member_properties] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.loadbalancer_member_properties)
                 if err != nil {
@@ -115,7 +127,7 @@ func (obj *LoadbalancerMember) MarshalJSON() ([]byte, error) {
                 msg["loadbalancer_member_properties"] = &value
         }
 
-        if obj.modified & loadbalancer_member_id_perms != 0 {
+        if obj.modified[loadbalancer_member_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -124,7 +136,16 @@ func (obj *LoadbalancerMember) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & loadbalancer_member_display_name != 0 {
+        if obj.modified[loadbalancer_member_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[loadbalancer_member_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -146,24 +167,31 @@ func (obj *LoadbalancerMember) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "loadbalancer_member_properties":
                         err = json.Unmarshal(value, &obj.loadbalancer_member_properties)
                         if err == nil {
-                                obj.valid |= loadbalancer_member_loadbalancer_member_properties
+                                obj.valid[loadbalancer_member_loadbalancer_member_properties] = true
                         }
                         break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= loadbalancer_member_id_perms
+                                obj.valid[loadbalancer_member_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[loadbalancer_member_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= loadbalancer_member_display_name
+                                obj.valid[loadbalancer_member_display_name] = true
                         }
                         break
                 }
@@ -182,7 +210,7 @@ func (obj *LoadbalancerMember) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & loadbalancer_member_loadbalancer_member_properties != 0 {
+        if obj.modified[loadbalancer_member_loadbalancer_member_properties] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.loadbalancer_member_properties)
                 if err != nil {
@@ -191,7 +219,7 @@ func (obj *LoadbalancerMember) UpdateObject() ([]byte, error) {
                 msg["loadbalancer_member_properties"] = &value
         }
 
-        if obj.modified & loadbalancer_member_id_perms != 0 {
+        if obj.modified[loadbalancer_member_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -200,7 +228,16 @@ func (obj *LoadbalancerMember) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & loadbalancer_member_display_name != 0 {
+        if obj.modified[loadbalancer_member_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[loadbalancer_member_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {

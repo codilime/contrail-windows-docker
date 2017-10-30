@@ -11,24 +11,31 @@ import (
 )
 
 const (
-	logical_router_id_perms uint64 = 1 << iota
+	logical_router_configured_route_target_list = iota
+	logical_router_id_perms
+	logical_router_perms2
 	logical_router_display_name
 	logical_router_virtual_machine_interface_refs
 	logical_router_route_target_refs
+	logical_router_route_table_refs
 	logical_router_virtual_network_refs
 	logical_router_service_instance_refs
+	logical_router_max
 )
 
 type LogicalRouter struct {
         contrail.ObjectBase
+	configured_route_target_list RouteTargetList
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
 	virtual_machine_interface_refs contrail.ReferenceList
 	route_target_refs contrail.ReferenceList
+	route_table_refs contrail.ReferenceList
 	virtual_network_refs contrail.ReferenceList
 	service_instance_refs contrail.ReferenceList
-        valid uint64
-        modified uint64
+        valid [logical_router_max] bool
+        modified [logical_router_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -72,10 +79,19 @@ func (obj *LogicalRouter) hasReferenceBase(name string) bool {
 }
 
 func (obj *LogicalRouter) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
+
+func (obj *LogicalRouter) GetConfiguredRouteTargetList() RouteTargetList {
+        return obj.configured_route_target_list
+}
+
+func (obj *LogicalRouter) SetConfiguredRouteTargetList(value *RouteTargetList) {
+        obj.configured_route_target_list = *value
+        obj.modified[logical_router_configured_route_target_list] = true
+}
 
 func (obj *LogicalRouter) GetIdPerms() IdPermsType {
         return obj.id_perms
@@ -83,7 +99,16 @@ func (obj *LogicalRouter) GetIdPerms() IdPermsType {
 
 func (obj *LogicalRouter) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= logical_router_id_perms
+        obj.modified[logical_router_id_perms] = true
+}
+
+func (obj *LogicalRouter) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *LogicalRouter) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[logical_router_perms2] = true
 }
 
 func (obj *LogicalRouter) GetDisplayName() string {
@@ -92,12 +117,12 @@ func (obj *LogicalRouter) GetDisplayName() string {
 
 func (obj *LogicalRouter) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= logical_router_display_name
+        obj.modified[logical_router_display_name] = true
 }
 
 func (obj *LogicalRouter) readVirtualMachineInterfaceRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & logical_router_virtual_machine_interface_refs == 0) {
+                (!obj.valid[logical_router_virtual_machine_interface_refs]) {
                 err := obj.GetField(obj, "virtual_machine_interface_refs")
                 if err != nil {
                         return err
@@ -122,14 +147,14 @@ func (obj *LogicalRouter) AddVirtualMachineInterface(
                 return err
         }
 
-        if obj.modified & logical_router_virtual_machine_interface_refs == 0 {
+        if !obj.modified[logical_router_virtual_machine_interface_refs] {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.virtual_machine_interface_refs = append(obj.virtual_machine_interface_refs, ref)
-        obj.modified |= logical_router_virtual_machine_interface_refs
+        obj.modified[logical_router_virtual_machine_interface_refs] = true
         return nil
 }
 
@@ -139,7 +164,7 @@ func (obj *LogicalRouter) DeleteVirtualMachineInterface(uuid string) error {
                 return err
         }
 
-        if obj.modified & logical_router_virtual_machine_interface_refs == 0 {
+        if !obj.modified[logical_router_virtual_machine_interface_refs] {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
 
@@ -151,18 +176,18 @@ func (obj *LogicalRouter) DeleteVirtualMachineInterface(uuid string) error {
                         break
                 }
         }
-        obj.modified |= logical_router_virtual_machine_interface_refs
+        obj.modified[logical_router_virtual_machine_interface_refs] = true
         return nil
 }
 
 func (obj *LogicalRouter) ClearVirtualMachineInterface() {
-        if (obj.valid & logical_router_virtual_machine_interface_refs != 0) &&
-           (obj.modified & logical_router_virtual_machine_interface_refs == 0) {
+        if (obj.valid[logical_router_virtual_machine_interface_refs]) &&
+           (!obj.modified[logical_router_virtual_machine_interface_refs]) {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
         obj.virtual_machine_interface_refs = make([]contrail.Reference, 0)
-        obj.valid |= logical_router_virtual_machine_interface_refs
-        obj.modified |= logical_router_virtual_machine_interface_refs
+        obj.valid[logical_router_virtual_machine_interface_refs] = true
+        obj.modified[logical_router_virtual_machine_interface_refs] = true
 }
 
 func (obj *LogicalRouter) SetVirtualMachineInterfaceList(
@@ -182,7 +207,7 @@ func (obj *LogicalRouter) SetVirtualMachineInterfaceList(
 
 func (obj *LogicalRouter) readRouteTargetRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & logical_router_route_target_refs == 0) {
+                (!obj.valid[logical_router_route_target_refs]) {
                 err := obj.GetField(obj, "route_target_refs")
                 if err != nil {
                         return err
@@ -207,14 +232,14 @@ func (obj *LogicalRouter) AddRouteTarget(
                 return err
         }
 
-        if obj.modified & logical_router_route_target_refs == 0 {
+        if !obj.modified[logical_router_route_target_refs] {
                 obj.storeReferenceBase("route-target", obj.route_target_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.route_target_refs = append(obj.route_target_refs, ref)
-        obj.modified |= logical_router_route_target_refs
+        obj.modified[logical_router_route_target_refs] = true
         return nil
 }
 
@@ -224,7 +249,7 @@ func (obj *LogicalRouter) DeleteRouteTarget(uuid string) error {
                 return err
         }
 
-        if obj.modified & logical_router_route_target_refs == 0 {
+        if !obj.modified[logical_router_route_target_refs] {
                 obj.storeReferenceBase("route-target", obj.route_target_refs)
         }
 
@@ -236,18 +261,18 @@ func (obj *LogicalRouter) DeleteRouteTarget(uuid string) error {
                         break
                 }
         }
-        obj.modified |= logical_router_route_target_refs
+        obj.modified[logical_router_route_target_refs] = true
         return nil
 }
 
 func (obj *LogicalRouter) ClearRouteTarget() {
-        if (obj.valid & logical_router_route_target_refs != 0) &&
-           (obj.modified & logical_router_route_target_refs == 0) {
+        if (obj.valid[logical_router_route_target_refs]) &&
+           (!obj.modified[logical_router_route_target_refs]) {
                 obj.storeReferenceBase("route-target", obj.route_target_refs)
         }
         obj.route_target_refs = make([]contrail.Reference, 0)
-        obj.valid |= logical_router_route_target_refs
-        obj.modified |= logical_router_route_target_refs
+        obj.valid[logical_router_route_target_refs] = true
+        obj.modified[logical_router_route_target_refs] = true
 }
 
 func (obj *LogicalRouter) SetRouteTargetList(
@@ -265,9 +290,94 @@ func (obj *LogicalRouter) SetRouteTargetList(
 }
 
 
+func (obj *LogicalRouter) readRouteTableRefs() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[logical_router_route_table_refs]) {
+                err := obj.GetField(obj, "route_table_refs")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *LogicalRouter) GetRouteTableRefs() (
+        contrail.ReferenceList, error) {
+        err := obj.readRouteTableRefs()
+        if err != nil {
+                return nil, err
+        }
+        return obj.route_table_refs, nil
+}
+
+func (obj *LogicalRouter) AddRouteTable(
+        rhs *RouteTable) error {
+        err := obj.readRouteTableRefs()
+        if err != nil {
+                return err
+        }
+
+        if !obj.modified[logical_router_route_table_refs] {
+                obj.storeReferenceBase("route-table", obj.route_table_refs)
+        }
+
+        ref := contrail.Reference {
+                rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
+        obj.route_table_refs = append(obj.route_table_refs, ref)
+        obj.modified[logical_router_route_table_refs] = true
+        return nil
+}
+
+func (obj *LogicalRouter) DeleteRouteTable(uuid string) error {
+        err := obj.readRouteTableRefs()
+        if err != nil {
+                return err
+        }
+
+        if !obj.modified[logical_router_route_table_refs] {
+                obj.storeReferenceBase("route-table", obj.route_table_refs)
+        }
+
+        for i, ref := range obj.route_table_refs {
+                if ref.Uuid == uuid {
+                        obj.route_table_refs = append(
+                                obj.route_table_refs[:i],
+                                obj.route_table_refs[i+1:]...)
+                        break
+                }
+        }
+        obj.modified[logical_router_route_table_refs] = true
+        return nil
+}
+
+func (obj *LogicalRouter) ClearRouteTable() {
+        if (obj.valid[logical_router_route_table_refs]) &&
+           (!obj.modified[logical_router_route_table_refs]) {
+                obj.storeReferenceBase("route-table", obj.route_table_refs)
+        }
+        obj.route_table_refs = make([]contrail.Reference, 0)
+        obj.valid[logical_router_route_table_refs] = true
+        obj.modified[logical_router_route_table_refs] = true
+}
+
+func (obj *LogicalRouter) SetRouteTableList(
+        refList []contrail.ReferencePair) {
+        obj.ClearRouteTable()
+        obj.route_table_refs = make([]contrail.Reference, len(refList))
+        for i, pair := range refList {
+                obj.route_table_refs[i] = contrail.Reference {
+                        pair.Object.GetFQName(),
+                        pair.Object.GetUuid(),
+                        pair.Object.GetHref(),
+                        pair.Attribute,
+                }
+        }
+}
+
+
 func (obj *LogicalRouter) readVirtualNetworkRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & logical_router_virtual_network_refs == 0) {
+                (!obj.valid[logical_router_virtual_network_refs]) {
                 err := obj.GetField(obj, "virtual_network_refs")
                 if err != nil {
                         return err
@@ -292,14 +402,14 @@ func (obj *LogicalRouter) AddVirtualNetwork(
                 return err
         }
 
-        if obj.modified & logical_router_virtual_network_refs == 0 {
+        if !obj.modified[logical_router_virtual_network_refs] {
                 obj.storeReferenceBase("virtual-network", obj.virtual_network_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.virtual_network_refs = append(obj.virtual_network_refs, ref)
-        obj.modified |= logical_router_virtual_network_refs
+        obj.modified[logical_router_virtual_network_refs] = true
         return nil
 }
 
@@ -309,7 +419,7 @@ func (obj *LogicalRouter) DeleteVirtualNetwork(uuid string) error {
                 return err
         }
 
-        if obj.modified & logical_router_virtual_network_refs == 0 {
+        if !obj.modified[logical_router_virtual_network_refs] {
                 obj.storeReferenceBase("virtual-network", obj.virtual_network_refs)
         }
 
@@ -321,18 +431,18 @@ func (obj *LogicalRouter) DeleteVirtualNetwork(uuid string) error {
                         break
                 }
         }
-        obj.modified |= logical_router_virtual_network_refs
+        obj.modified[logical_router_virtual_network_refs] = true
         return nil
 }
 
 func (obj *LogicalRouter) ClearVirtualNetwork() {
-        if (obj.valid & logical_router_virtual_network_refs != 0) &&
-           (obj.modified & logical_router_virtual_network_refs == 0) {
+        if (obj.valid[logical_router_virtual_network_refs]) &&
+           (!obj.modified[logical_router_virtual_network_refs]) {
                 obj.storeReferenceBase("virtual-network", obj.virtual_network_refs)
         }
         obj.virtual_network_refs = make([]contrail.Reference, 0)
-        obj.valid |= logical_router_virtual_network_refs
-        obj.modified |= logical_router_virtual_network_refs
+        obj.valid[logical_router_virtual_network_refs] = true
+        obj.modified[logical_router_virtual_network_refs] = true
 }
 
 func (obj *LogicalRouter) SetVirtualNetworkList(
@@ -352,7 +462,7 @@ func (obj *LogicalRouter) SetVirtualNetworkList(
 
 func (obj *LogicalRouter) readServiceInstanceRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & logical_router_service_instance_refs == 0) {
+                (!obj.valid[logical_router_service_instance_refs]) {
                 err := obj.GetField(obj, "service_instance_refs")
                 if err != nil {
                         return err
@@ -377,14 +487,14 @@ func (obj *LogicalRouter) AddServiceInstance(
                 return err
         }
 
-        if obj.modified & logical_router_service_instance_refs == 0 {
+        if !obj.modified[logical_router_service_instance_refs] {
                 obj.storeReferenceBase("service-instance", obj.service_instance_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.service_instance_refs = append(obj.service_instance_refs, ref)
-        obj.modified |= logical_router_service_instance_refs
+        obj.modified[logical_router_service_instance_refs] = true
         return nil
 }
 
@@ -394,7 +504,7 @@ func (obj *LogicalRouter) DeleteServiceInstance(uuid string) error {
                 return err
         }
 
-        if obj.modified & logical_router_service_instance_refs == 0 {
+        if !obj.modified[logical_router_service_instance_refs] {
                 obj.storeReferenceBase("service-instance", obj.service_instance_refs)
         }
 
@@ -406,18 +516,18 @@ func (obj *LogicalRouter) DeleteServiceInstance(uuid string) error {
                         break
                 }
         }
-        obj.modified |= logical_router_service_instance_refs
+        obj.modified[logical_router_service_instance_refs] = true
         return nil
 }
 
 func (obj *LogicalRouter) ClearServiceInstance() {
-        if (obj.valid & logical_router_service_instance_refs != 0) &&
-           (obj.modified & logical_router_service_instance_refs == 0) {
+        if (obj.valid[logical_router_service_instance_refs]) &&
+           (!obj.modified[logical_router_service_instance_refs]) {
                 obj.storeReferenceBase("service-instance", obj.service_instance_refs)
         }
         obj.service_instance_refs = make([]contrail.Reference, 0)
-        obj.valid |= logical_router_service_instance_refs
-        obj.modified |= logical_router_service_instance_refs
+        obj.valid[logical_router_service_instance_refs] = true
+        obj.modified[logical_router_service_instance_refs] = true
 }
 
 func (obj *LogicalRouter) SetServiceInstanceList(
@@ -443,7 +553,16 @@ func (obj *LogicalRouter) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & logical_router_id_perms != 0 {
+        if obj.modified[logical_router_configured_route_target_list] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.configured_route_target_list)
+                if err != nil {
+                        return nil, err
+                }
+                msg["configured_route_target_list"] = &value
+        }
+
+        if obj.modified[logical_router_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -452,7 +571,16 @@ func (obj *LogicalRouter) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & logical_router_display_name != 0 {
+        if obj.modified[logical_router_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[logical_router_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -477,6 +605,15 @@ func (obj *LogicalRouter) MarshalJSON() ([]byte, error) {
                         return nil, err
                 }
                 msg["route_target_refs"] = &value
+        }
+
+        if len(obj.route_table_refs) > 0 {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.route_table_refs)
+                if err != nil {
+                        return nil, err
+                }
+                msg["route_table_refs"] = &value
         }
 
         if len(obj.virtual_network_refs) > 0 {
@@ -510,42 +647,61 @@ func (obj *LogicalRouter) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
+                case "configured_route_target_list":
+                        err = json.Unmarshal(value, &obj.configured_route_target_list)
+                        if err == nil {
+                                obj.valid[logical_router_configured_route_target_list] = true
+                        }
+                        break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= logical_router_id_perms
+                                obj.valid[logical_router_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[logical_router_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= logical_router_display_name
+                                obj.valid[logical_router_display_name] = true
                         }
                         break
                 case "virtual_machine_interface_refs":
                         err = json.Unmarshal(value, &obj.virtual_machine_interface_refs)
                         if err == nil {
-                                obj.valid |= logical_router_virtual_machine_interface_refs
+                                obj.valid[logical_router_virtual_machine_interface_refs] = true
                         }
                         break
                 case "route_target_refs":
                         err = json.Unmarshal(value, &obj.route_target_refs)
                         if err == nil {
-                                obj.valid |= logical_router_route_target_refs
+                                obj.valid[logical_router_route_target_refs] = true
+                        }
+                        break
+                case "route_table_refs":
+                        err = json.Unmarshal(value, &obj.route_table_refs)
+                        if err == nil {
+                                obj.valid[logical_router_route_table_refs] = true
                         }
                         break
                 case "virtual_network_refs":
                         err = json.Unmarshal(value, &obj.virtual_network_refs)
                         if err == nil {
-                                obj.valid |= logical_router_virtual_network_refs
+                                obj.valid[logical_router_virtual_network_refs] = true
                         }
                         break
                 case "service_instance_refs":
                         err = json.Unmarshal(value, &obj.service_instance_refs)
                         if err == nil {
-                                obj.valid |= logical_router_service_instance_refs
+                                obj.valid[logical_router_service_instance_refs] = true
                         }
                         break
                 }
@@ -564,7 +720,16 @@ func (obj *LogicalRouter) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & logical_router_id_perms != 0 {
+        if obj.modified[logical_router_configured_route_target_list] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.configured_route_target_list)
+                if err != nil {
+                        return nil, err
+                }
+                msg["configured_route_target_list"] = &value
+        }
+
+        if obj.modified[logical_router_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -573,7 +738,16 @@ func (obj *LogicalRouter) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & logical_router_display_name != 0 {
+        if obj.modified[logical_router_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[logical_router_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -582,7 +756,7 @@ func (obj *LogicalRouter) UpdateObject() ([]byte, error) {
                 msg["display_name"] = &value
         }
 
-        if obj.modified & logical_router_virtual_machine_interface_refs != 0 {
+        if obj.modified[logical_router_virtual_machine_interface_refs] {
                 if len(obj.virtual_machine_interface_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -602,7 +776,7 @@ func (obj *LogicalRouter) UpdateObject() ([]byte, error) {
         }
 
 
-        if obj.modified & logical_router_route_target_refs != 0 {
+        if obj.modified[logical_router_route_target_refs] {
                 if len(obj.route_target_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -622,7 +796,27 @@ func (obj *LogicalRouter) UpdateObject() ([]byte, error) {
         }
 
 
-        if obj.modified & logical_router_virtual_network_refs != 0 {
+        if obj.modified[logical_router_route_table_refs] {
+                if len(obj.route_table_refs) == 0 {
+                        var value json.RawMessage
+                        value, err := json.Marshal(
+                                          make([]contrail.Reference, 0))
+                        if err != nil {
+                                return nil, err
+                        }
+                        msg["route_table_refs"] = &value
+                } else if !obj.hasReferenceBase("route-table") {
+                        var value json.RawMessage
+                        value, err := json.Marshal(&obj.route_table_refs)
+                        if err != nil {
+                                return nil, err
+                        }
+                        msg["route_table_refs"] = &value
+                }
+        }
+
+
+        if obj.modified[logical_router_virtual_network_refs] {
                 if len(obj.virtual_network_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -642,7 +836,7 @@ func (obj *LogicalRouter) UpdateObject() ([]byte, error) {
         }
 
 
-        if obj.modified & logical_router_service_instance_refs != 0 {
+        if obj.modified[logical_router_service_instance_refs] {
                 if len(obj.service_instance_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -667,7 +861,7 @@ func (obj *LogicalRouter) UpdateObject() ([]byte, error) {
 
 func (obj *LogicalRouter) UpdateReferences() error {
 
-        if (obj.modified & logical_router_virtual_machine_interface_refs != 0) &&
+        if (obj.modified[logical_router_virtual_machine_interface_refs]) &&
            len(obj.virtual_machine_interface_refs) > 0 &&
            obj.hasReferenceBase("virtual-machine-interface") {
                 err := obj.UpdateReference(
@@ -679,7 +873,7 @@ func (obj *LogicalRouter) UpdateReferences() error {
                 }
         }
 
-        if (obj.modified & logical_router_route_target_refs != 0) &&
+        if (obj.modified[logical_router_route_target_refs]) &&
            len(obj.route_target_refs) > 0 &&
            obj.hasReferenceBase("route-target") {
                 err := obj.UpdateReference(
@@ -691,7 +885,19 @@ func (obj *LogicalRouter) UpdateReferences() error {
                 }
         }
 
-        if (obj.modified & logical_router_virtual_network_refs != 0) &&
+        if (obj.modified[logical_router_route_table_refs]) &&
+           len(obj.route_table_refs) > 0 &&
+           obj.hasReferenceBase("route-table") {
+                err := obj.UpdateReference(
+                        obj, "route-table",
+                        obj.route_table_refs,
+                        obj.baseMap["route-table"])
+                if err != nil {
+                        return err
+                }
+        }
+
+        if (obj.modified[logical_router_virtual_network_refs]) &&
            len(obj.virtual_network_refs) > 0 &&
            obj.hasReferenceBase("virtual-network") {
                 err := obj.UpdateReference(
@@ -703,7 +909,7 @@ func (obj *LogicalRouter) UpdateReferences() error {
                 }
         }
 
-        if (obj.modified & logical_router_service_instance_refs != 0) &&
+        if (obj.modified[logical_router_service_instance_refs]) &&
            len(obj.service_instance_refs) > 0 &&
            obj.hasReferenceBase("service-instance") {
                 err := obj.UpdateReference(

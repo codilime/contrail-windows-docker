@@ -11,15 +11,17 @@ import (
 )
 
 const (
-	floating_ip_floating_ip_address uint64 = 1 << iota
+	floating_ip_floating_ip_address = iota
 	floating_ip_floating_ip_is_virtual_ip
 	floating_ip_floating_ip_fixed_ip_address
 	floating_ip_floating_ip_address_family
 	floating_ip_id_perms
+	floating_ip_perms2
 	floating_ip_display_name
 	floating_ip_project_refs
 	floating_ip_virtual_machine_interface_refs
 	floating_ip_customer_attachment_back_refs
+	floating_ip_max
 )
 
 type FloatingIp struct {
@@ -29,12 +31,13 @@ type FloatingIp struct {
 	floating_ip_fixed_ip_address string
 	floating_ip_address_family string
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
 	project_refs contrail.ReferenceList
 	virtual_machine_interface_refs contrail.ReferenceList
 	customer_attachment_back_refs contrail.ReferenceList
-        valid uint64
-        modified uint64
+        valid [floating_ip_max] bool
+        modified [floating_ip_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -78,7 +81,7 @@ func (obj *FloatingIp) hasReferenceBase(name string) bool {
 }
 
 func (obj *FloatingIp) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -89,7 +92,7 @@ func (obj *FloatingIp) GetFloatingIpAddress() string {
 
 func (obj *FloatingIp) SetFloatingIpAddress(value string) {
         obj.floating_ip_address = value
-        obj.modified |= floating_ip_floating_ip_address
+        obj.modified[floating_ip_floating_ip_address] = true
 }
 
 func (obj *FloatingIp) GetFloatingIpIsVirtualIp() bool {
@@ -98,7 +101,7 @@ func (obj *FloatingIp) GetFloatingIpIsVirtualIp() bool {
 
 func (obj *FloatingIp) SetFloatingIpIsVirtualIp(value bool) {
         obj.floating_ip_is_virtual_ip = value
-        obj.modified |= floating_ip_floating_ip_is_virtual_ip
+        obj.modified[floating_ip_floating_ip_is_virtual_ip] = true
 }
 
 func (obj *FloatingIp) GetFloatingIpFixedIpAddress() string {
@@ -107,7 +110,7 @@ func (obj *FloatingIp) GetFloatingIpFixedIpAddress() string {
 
 func (obj *FloatingIp) SetFloatingIpFixedIpAddress(value string) {
         obj.floating_ip_fixed_ip_address = value
-        obj.modified |= floating_ip_floating_ip_fixed_ip_address
+        obj.modified[floating_ip_floating_ip_fixed_ip_address] = true
 }
 
 func (obj *FloatingIp) GetFloatingIpAddressFamily() string {
@@ -116,7 +119,7 @@ func (obj *FloatingIp) GetFloatingIpAddressFamily() string {
 
 func (obj *FloatingIp) SetFloatingIpAddressFamily(value string) {
         obj.floating_ip_address_family = value
-        obj.modified |= floating_ip_floating_ip_address_family
+        obj.modified[floating_ip_floating_ip_address_family] = true
 }
 
 func (obj *FloatingIp) GetIdPerms() IdPermsType {
@@ -125,7 +128,16 @@ func (obj *FloatingIp) GetIdPerms() IdPermsType {
 
 func (obj *FloatingIp) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= floating_ip_id_perms
+        obj.modified[floating_ip_id_perms] = true
+}
+
+func (obj *FloatingIp) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *FloatingIp) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[floating_ip_perms2] = true
 }
 
 func (obj *FloatingIp) GetDisplayName() string {
@@ -134,12 +146,12 @@ func (obj *FloatingIp) GetDisplayName() string {
 
 func (obj *FloatingIp) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= floating_ip_display_name
+        obj.modified[floating_ip_display_name] = true
 }
 
 func (obj *FloatingIp) readProjectRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & floating_ip_project_refs == 0) {
+                (!obj.valid[floating_ip_project_refs]) {
                 err := obj.GetField(obj, "project_refs")
                 if err != nil {
                         return err
@@ -164,14 +176,14 @@ func (obj *FloatingIp) AddProject(
                 return err
         }
 
-        if obj.modified & floating_ip_project_refs == 0 {
+        if !obj.modified[floating_ip_project_refs] {
                 obj.storeReferenceBase("project", obj.project_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.project_refs = append(obj.project_refs, ref)
-        obj.modified |= floating_ip_project_refs
+        obj.modified[floating_ip_project_refs] = true
         return nil
 }
 
@@ -181,7 +193,7 @@ func (obj *FloatingIp) DeleteProject(uuid string) error {
                 return err
         }
 
-        if obj.modified & floating_ip_project_refs == 0 {
+        if !obj.modified[floating_ip_project_refs] {
                 obj.storeReferenceBase("project", obj.project_refs)
         }
 
@@ -193,18 +205,18 @@ func (obj *FloatingIp) DeleteProject(uuid string) error {
                         break
                 }
         }
-        obj.modified |= floating_ip_project_refs
+        obj.modified[floating_ip_project_refs] = true
         return nil
 }
 
 func (obj *FloatingIp) ClearProject() {
-        if (obj.valid & floating_ip_project_refs != 0) &&
-           (obj.modified & floating_ip_project_refs == 0) {
+        if (obj.valid[floating_ip_project_refs]) &&
+           (!obj.modified[floating_ip_project_refs]) {
                 obj.storeReferenceBase("project", obj.project_refs)
         }
         obj.project_refs = make([]contrail.Reference, 0)
-        obj.valid |= floating_ip_project_refs
-        obj.modified |= floating_ip_project_refs
+        obj.valid[floating_ip_project_refs] = true
+        obj.modified[floating_ip_project_refs] = true
 }
 
 func (obj *FloatingIp) SetProjectList(
@@ -224,7 +236,7 @@ func (obj *FloatingIp) SetProjectList(
 
 func (obj *FloatingIp) readVirtualMachineInterfaceRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & floating_ip_virtual_machine_interface_refs == 0) {
+                (!obj.valid[floating_ip_virtual_machine_interface_refs]) {
                 err := obj.GetField(obj, "virtual_machine_interface_refs")
                 if err != nil {
                         return err
@@ -249,14 +261,14 @@ func (obj *FloatingIp) AddVirtualMachineInterface(
                 return err
         }
 
-        if obj.modified & floating_ip_virtual_machine_interface_refs == 0 {
+        if !obj.modified[floating_ip_virtual_machine_interface_refs] {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.virtual_machine_interface_refs = append(obj.virtual_machine_interface_refs, ref)
-        obj.modified |= floating_ip_virtual_machine_interface_refs
+        obj.modified[floating_ip_virtual_machine_interface_refs] = true
         return nil
 }
 
@@ -266,7 +278,7 @@ func (obj *FloatingIp) DeleteVirtualMachineInterface(uuid string) error {
                 return err
         }
 
-        if obj.modified & floating_ip_virtual_machine_interface_refs == 0 {
+        if !obj.modified[floating_ip_virtual_machine_interface_refs] {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
 
@@ -278,18 +290,18 @@ func (obj *FloatingIp) DeleteVirtualMachineInterface(uuid string) error {
                         break
                 }
         }
-        obj.modified |= floating_ip_virtual_machine_interface_refs
+        obj.modified[floating_ip_virtual_machine_interface_refs] = true
         return nil
 }
 
 func (obj *FloatingIp) ClearVirtualMachineInterface() {
-        if (obj.valid & floating_ip_virtual_machine_interface_refs != 0) &&
-           (obj.modified & floating_ip_virtual_machine_interface_refs == 0) {
+        if (obj.valid[floating_ip_virtual_machine_interface_refs]) &&
+           (!obj.modified[floating_ip_virtual_machine_interface_refs]) {
                 obj.storeReferenceBase("virtual-machine-interface", obj.virtual_machine_interface_refs)
         }
         obj.virtual_machine_interface_refs = make([]contrail.Reference, 0)
-        obj.valid |= floating_ip_virtual_machine_interface_refs
-        obj.modified |= floating_ip_virtual_machine_interface_refs
+        obj.valid[floating_ip_virtual_machine_interface_refs] = true
+        obj.modified[floating_ip_virtual_machine_interface_refs] = true
 }
 
 func (obj *FloatingIp) SetVirtualMachineInterfaceList(
@@ -309,7 +321,7 @@ func (obj *FloatingIp) SetVirtualMachineInterfaceList(
 
 func (obj *FloatingIp) readCustomerAttachmentBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & floating_ip_customer_attachment_back_refs == 0) {
+                (!obj.valid[floating_ip_customer_attachment_back_refs]) {
                 err := obj.GetField(obj, "customer_attachment_back_refs")
                 if err != nil {
                         return err
@@ -335,7 +347,7 @@ func (obj *FloatingIp) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & floating_ip_floating_ip_address != 0 {
+        if obj.modified[floating_ip_floating_ip_address] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.floating_ip_address)
                 if err != nil {
@@ -344,7 +356,7 @@ func (obj *FloatingIp) MarshalJSON() ([]byte, error) {
                 msg["floating_ip_address"] = &value
         }
 
-        if obj.modified & floating_ip_floating_ip_is_virtual_ip != 0 {
+        if obj.modified[floating_ip_floating_ip_is_virtual_ip] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.floating_ip_is_virtual_ip)
                 if err != nil {
@@ -353,7 +365,7 @@ func (obj *FloatingIp) MarshalJSON() ([]byte, error) {
                 msg["floating_ip_is_virtual_ip"] = &value
         }
 
-        if obj.modified & floating_ip_floating_ip_fixed_ip_address != 0 {
+        if obj.modified[floating_ip_floating_ip_fixed_ip_address] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.floating_ip_fixed_ip_address)
                 if err != nil {
@@ -362,7 +374,7 @@ func (obj *FloatingIp) MarshalJSON() ([]byte, error) {
                 msg["floating_ip_fixed_ip_address"] = &value
         }
 
-        if obj.modified & floating_ip_floating_ip_address_family != 0 {
+        if obj.modified[floating_ip_floating_ip_address_family] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.floating_ip_address_family)
                 if err != nil {
@@ -371,7 +383,7 @@ func (obj *FloatingIp) MarshalJSON() ([]byte, error) {
                 msg["floating_ip_address_family"] = &value
         }
 
-        if obj.modified & floating_ip_id_perms != 0 {
+        if obj.modified[floating_ip_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -380,7 +392,16 @@ func (obj *FloatingIp) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & floating_ip_display_name != 0 {
+        if obj.modified[floating_ip_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[floating_ip_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -420,60 +441,67 @@ func (obj *FloatingIp) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "floating_ip_address":
                         err = json.Unmarshal(value, &obj.floating_ip_address)
                         if err == nil {
-                                obj.valid |= floating_ip_floating_ip_address
+                                obj.valid[floating_ip_floating_ip_address] = true
                         }
                         break
                 case "floating_ip_is_virtual_ip":
                         err = json.Unmarshal(value, &obj.floating_ip_is_virtual_ip)
                         if err == nil {
-                                obj.valid |= floating_ip_floating_ip_is_virtual_ip
+                                obj.valid[floating_ip_floating_ip_is_virtual_ip] = true
                         }
                         break
                 case "floating_ip_fixed_ip_address":
                         err = json.Unmarshal(value, &obj.floating_ip_fixed_ip_address)
                         if err == nil {
-                                obj.valid |= floating_ip_floating_ip_fixed_ip_address
+                                obj.valid[floating_ip_floating_ip_fixed_ip_address] = true
                         }
                         break
                 case "floating_ip_address_family":
                         err = json.Unmarshal(value, &obj.floating_ip_address_family)
                         if err == nil {
-                                obj.valid |= floating_ip_floating_ip_address_family
+                                obj.valid[floating_ip_floating_ip_address_family] = true
                         }
                         break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= floating_ip_id_perms
+                                obj.valid[floating_ip_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[floating_ip_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= floating_ip_display_name
+                                obj.valid[floating_ip_display_name] = true
                         }
                         break
                 case "project_refs":
                         err = json.Unmarshal(value, &obj.project_refs)
                         if err == nil {
-                                obj.valid |= floating_ip_project_refs
+                                obj.valid[floating_ip_project_refs] = true
                         }
                         break
                 case "virtual_machine_interface_refs":
                         err = json.Unmarshal(value, &obj.virtual_machine_interface_refs)
                         if err == nil {
-                                obj.valid |= floating_ip_virtual_machine_interface_refs
+                                obj.valid[floating_ip_virtual_machine_interface_refs] = true
                         }
                         break
                 case "customer_attachment_back_refs":
                         err = json.Unmarshal(value, &obj.customer_attachment_back_refs)
                         if err == nil {
-                                obj.valid |= floating_ip_customer_attachment_back_refs
+                                obj.valid[floating_ip_customer_attachment_back_refs] = true
                         }
                         break
                 }
@@ -492,7 +520,7 @@ func (obj *FloatingIp) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & floating_ip_floating_ip_address != 0 {
+        if obj.modified[floating_ip_floating_ip_address] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.floating_ip_address)
                 if err != nil {
@@ -501,7 +529,7 @@ func (obj *FloatingIp) UpdateObject() ([]byte, error) {
                 msg["floating_ip_address"] = &value
         }
 
-        if obj.modified & floating_ip_floating_ip_is_virtual_ip != 0 {
+        if obj.modified[floating_ip_floating_ip_is_virtual_ip] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.floating_ip_is_virtual_ip)
                 if err != nil {
@@ -510,7 +538,7 @@ func (obj *FloatingIp) UpdateObject() ([]byte, error) {
                 msg["floating_ip_is_virtual_ip"] = &value
         }
 
-        if obj.modified & floating_ip_floating_ip_fixed_ip_address != 0 {
+        if obj.modified[floating_ip_floating_ip_fixed_ip_address] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.floating_ip_fixed_ip_address)
                 if err != nil {
@@ -519,7 +547,7 @@ func (obj *FloatingIp) UpdateObject() ([]byte, error) {
                 msg["floating_ip_fixed_ip_address"] = &value
         }
 
-        if obj.modified & floating_ip_floating_ip_address_family != 0 {
+        if obj.modified[floating_ip_floating_ip_address_family] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.floating_ip_address_family)
                 if err != nil {
@@ -528,7 +556,7 @@ func (obj *FloatingIp) UpdateObject() ([]byte, error) {
                 msg["floating_ip_address_family"] = &value
         }
 
-        if obj.modified & floating_ip_id_perms != 0 {
+        if obj.modified[floating_ip_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -537,7 +565,16 @@ func (obj *FloatingIp) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & floating_ip_display_name != 0 {
+        if obj.modified[floating_ip_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[floating_ip_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -546,7 +583,7 @@ func (obj *FloatingIp) UpdateObject() ([]byte, error) {
                 msg["display_name"] = &value
         }
 
-        if obj.modified & floating_ip_project_refs != 0 {
+        if obj.modified[floating_ip_project_refs] {
                 if len(obj.project_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -566,7 +603,7 @@ func (obj *FloatingIp) UpdateObject() ([]byte, error) {
         }
 
 
-        if obj.modified & floating_ip_virtual_machine_interface_refs != 0 {
+        if obj.modified[floating_ip_virtual_machine_interface_refs] {
                 if len(obj.virtual_machine_interface_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -591,7 +628,7 @@ func (obj *FloatingIp) UpdateObject() ([]byte, error) {
 
 func (obj *FloatingIp) UpdateReferences() error {
 
-        if (obj.modified & floating_ip_project_refs != 0) &&
+        if (obj.modified[floating_ip_project_refs]) &&
            len(obj.project_refs) > 0 &&
            obj.hasReferenceBase("project") {
                 err := obj.UpdateReference(
@@ -603,7 +640,7 @@ func (obj *FloatingIp) UpdateReferences() error {
                 }
         }
 
-        if (obj.modified & floating_ip_virtual_machine_interface_refs != 0) &&
+        if (obj.modified[floating_ip_virtual_machine_interface_refs]) &&
            len(obj.virtual_machine_interface_refs) > 0 &&
            obj.hasReferenceBase("virtual-machine-interface") {
                 err := obj.UpdateReference(

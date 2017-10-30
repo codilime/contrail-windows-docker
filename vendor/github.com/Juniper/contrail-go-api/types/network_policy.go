@@ -11,20 +11,23 @@ import (
 )
 
 const (
-	network_policy_network_policy_entries uint64 = 1 << iota
+	network_policy_network_policy_entries = iota
 	network_policy_id_perms
+	network_policy_perms2
 	network_policy_display_name
 	network_policy_virtual_network_back_refs
+	network_policy_max
 )
 
 type NetworkPolicy struct {
         contrail.ObjectBase
 	network_policy_entries PolicyEntriesType
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
 	virtual_network_back_refs contrail.ReferenceList
-        valid uint64
-        modified uint64
+        valid [network_policy_max] bool
+        modified [network_policy_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -68,7 +71,7 @@ func (obj *NetworkPolicy) hasReferenceBase(name string) bool {
 }
 
 func (obj *NetworkPolicy) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -79,7 +82,7 @@ func (obj *NetworkPolicy) GetNetworkPolicyEntries() PolicyEntriesType {
 
 func (obj *NetworkPolicy) SetNetworkPolicyEntries(value *PolicyEntriesType) {
         obj.network_policy_entries = *value
-        obj.modified |= network_policy_network_policy_entries
+        obj.modified[network_policy_network_policy_entries] = true
 }
 
 func (obj *NetworkPolicy) GetIdPerms() IdPermsType {
@@ -88,7 +91,16 @@ func (obj *NetworkPolicy) GetIdPerms() IdPermsType {
 
 func (obj *NetworkPolicy) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= network_policy_id_perms
+        obj.modified[network_policy_id_perms] = true
+}
+
+func (obj *NetworkPolicy) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *NetworkPolicy) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[network_policy_perms2] = true
 }
 
 func (obj *NetworkPolicy) GetDisplayName() string {
@@ -97,12 +109,12 @@ func (obj *NetworkPolicy) GetDisplayName() string {
 
 func (obj *NetworkPolicy) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= network_policy_display_name
+        obj.modified[network_policy_display_name] = true
 }
 
 func (obj *NetworkPolicy) readVirtualNetworkBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & network_policy_virtual_network_back_refs == 0) {
+                (!obj.valid[network_policy_virtual_network_back_refs]) {
                 err := obj.GetField(obj, "virtual_network_back_refs")
                 if err != nil {
                         return err
@@ -128,7 +140,7 @@ func (obj *NetworkPolicy) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & network_policy_network_policy_entries != 0 {
+        if obj.modified[network_policy_network_policy_entries] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.network_policy_entries)
                 if err != nil {
@@ -137,7 +149,7 @@ func (obj *NetworkPolicy) MarshalJSON() ([]byte, error) {
                 msg["network_policy_entries"] = &value
         }
 
-        if obj.modified & network_policy_id_perms != 0 {
+        if obj.modified[network_policy_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -146,7 +158,16 @@ func (obj *NetworkPolicy) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & network_policy_display_name != 0 {
+        if obj.modified[network_policy_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[network_policy_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -168,24 +189,31 @@ func (obj *NetworkPolicy) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "network_policy_entries":
                         err = json.Unmarshal(value, &obj.network_policy_entries)
                         if err == nil {
-                                obj.valid |= network_policy_network_policy_entries
+                                obj.valid[network_policy_network_policy_entries] = true
                         }
                         break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= network_policy_id_perms
+                                obj.valid[network_policy_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[network_policy_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= network_policy_display_name
+                                obj.valid[network_policy_display_name] = true
                         }
                         break
                 case "virtual_network_back_refs": {
@@ -200,7 +228,7 @@ func (obj *NetworkPolicy) UnmarshalJSON(body []byte) error {
                         if err != nil {
                             break
                         }
-                        obj.valid |= network_policy_virtual_network_back_refs
+                        obj.valid[network_policy_virtual_network_back_refs] = true
                         obj.virtual_network_back_refs = make(contrail.ReferenceList, 0)
                         for _, element := range array {
                                 ref := contrail.Reference {
@@ -229,7 +257,7 @@ func (obj *NetworkPolicy) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & network_policy_network_policy_entries != 0 {
+        if obj.modified[network_policy_network_policy_entries] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.network_policy_entries)
                 if err != nil {
@@ -238,7 +266,7 @@ func (obj *NetworkPolicy) UpdateObject() ([]byte, error) {
                 msg["network_policy_entries"] = &value
         }
 
-        if obj.modified & network_policy_id_perms != 0 {
+        if obj.modified[network_policy_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -247,7 +275,16 @@ func (obj *NetworkPolicy) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & network_policy_display_name != 0 {
+        if obj.modified[network_policy_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[network_policy_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {

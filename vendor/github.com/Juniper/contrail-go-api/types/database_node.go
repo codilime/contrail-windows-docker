@@ -11,18 +11,21 @@ import (
 )
 
 const (
-	database_node_database_node_ip_address uint64 = 1 << iota
+	database_node_database_node_ip_address = iota
 	database_node_id_perms
+	database_node_perms2
 	database_node_display_name
+	database_node_max
 )
 
 type DatabaseNode struct {
         contrail.ObjectBase
 	database_node_ip_address string
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
-        valid uint64
-        modified uint64
+        valid [database_node_max] bool
+        modified [database_node_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -66,7 +69,7 @@ func (obj *DatabaseNode) hasReferenceBase(name string) bool {
 }
 
 func (obj *DatabaseNode) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -77,7 +80,7 @@ func (obj *DatabaseNode) GetDatabaseNodeIpAddress() string {
 
 func (obj *DatabaseNode) SetDatabaseNodeIpAddress(value string) {
         obj.database_node_ip_address = value
-        obj.modified |= database_node_database_node_ip_address
+        obj.modified[database_node_database_node_ip_address] = true
 }
 
 func (obj *DatabaseNode) GetIdPerms() IdPermsType {
@@ -86,7 +89,16 @@ func (obj *DatabaseNode) GetIdPerms() IdPermsType {
 
 func (obj *DatabaseNode) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= database_node_id_perms
+        obj.modified[database_node_id_perms] = true
+}
+
+func (obj *DatabaseNode) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *DatabaseNode) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[database_node_perms2] = true
 }
 
 func (obj *DatabaseNode) GetDisplayName() string {
@@ -95,7 +107,7 @@ func (obj *DatabaseNode) GetDisplayName() string {
 
 func (obj *DatabaseNode) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= database_node_display_name
+        obj.modified[database_node_display_name] = true
 }
 
 func (obj *DatabaseNode) MarshalJSON() ([]byte, error) {
@@ -106,7 +118,7 @@ func (obj *DatabaseNode) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & database_node_database_node_ip_address != 0 {
+        if obj.modified[database_node_database_node_ip_address] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.database_node_ip_address)
                 if err != nil {
@@ -115,7 +127,7 @@ func (obj *DatabaseNode) MarshalJSON() ([]byte, error) {
                 msg["database_node_ip_address"] = &value
         }
 
-        if obj.modified & database_node_id_perms != 0 {
+        if obj.modified[database_node_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -124,7 +136,16 @@ func (obj *DatabaseNode) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & database_node_display_name != 0 {
+        if obj.modified[database_node_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[database_node_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -146,24 +167,31 @@ func (obj *DatabaseNode) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "database_node_ip_address":
                         err = json.Unmarshal(value, &obj.database_node_ip_address)
                         if err == nil {
-                                obj.valid |= database_node_database_node_ip_address
+                                obj.valid[database_node_database_node_ip_address] = true
                         }
                         break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= database_node_id_perms
+                                obj.valid[database_node_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[database_node_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= database_node_display_name
+                                obj.valid[database_node_display_name] = true
                         }
                         break
                 }
@@ -182,7 +210,7 @@ func (obj *DatabaseNode) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & database_node_database_node_ip_address != 0 {
+        if obj.modified[database_node_database_node_ip_address] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.database_node_ip_address)
                 if err != nil {
@@ -191,7 +219,7 @@ func (obj *DatabaseNode) UpdateObject() ([]byte, error) {
                 msg["database_node_ip_address"] = &value
         }
 
-        if obj.modified & database_node_id_perms != 0 {
+        if obj.modified[database_node_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -200,7 +228,16 @@ func (obj *DatabaseNode) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & database_node_display_name != 0 {
+        if obj.modified[database_node_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[database_node_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {

@@ -11,20 +11,25 @@ import (
 )
 
 const (
-	service_template_service_template_properties uint64 = 1 << iota
+	service_template_service_template_properties = iota
 	service_template_id_perms
+	service_template_perms2
 	service_template_display_name
+	service_template_service_appliance_set_refs
 	service_template_service_instance_back_refs
+	service_template_max
 )
 
 type ServiceTemplate struct {
         contrail.ObjectBase
 	service_template_properties ServiceTemplateType
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
+	service_appliance_set_refs contrail.ReferenceList
 	service_instance_back_refs contrail.ReferenceList
-        valid uint64
-        modified uint64
+        valid [service_template_max] bool
+        modified [service_template_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -68,7 +73,7 @@ func (obj *ServiceTemplate) hasReferenceBase(name string) bool {
 }
 
 func (obj *ServiceTemplate) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -79,7 +84,7 @@ func (obj *ServiceTemplate) GetServiceTemplateProperties() ServiceTemplateType {
 
 func (obj *ServiceTemplate) SetServiceTemplateProperties(value *ServiceTemplateType) {
         obj.service_template_properties = *value
-        obj.modified |= service_template_service_template_properties
+        obj.modified[service_template_service_template_properties] = true
 }
 
 func (obj *ServiceTemplate) GetIdPerms() IdPermsType {
@@ -88,7 +93,16 @@ func (obj *ServiceTemplate) GetIdPerms() IdPermsType {
 
 func (obj *ServiceTemplate) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= service_template_id_perms
+        obj.modified[service_template_id_perms] = true
+}
+
+func (obj *ServiceTemplate) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *ServiceTemplate) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[service_template_perms2] = true
 }
 
 func (obj *ServiceTemplate) GetDisplayName() string {
@@ -97,12 +111,97 @@ func (obj *ServiceTemplate) GetDisplayName() string {
 
 func (obj *ServiceTemplate) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= service_template_display_name
+        obj.modified[service_template_display_name] = true
 }
+
+func (obj *ServiceTemplate) readServiceApplianceSetRefs() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[service_template_service_appliance_set_refs]) {
+                err := obj.GetField(obj, "service_appliance_set_refs")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *ServiceTemplate) GetServiceApplianceSetRefs() (
+        contrail.ReferenceList, error) {
+        err := obj.readServiceApplianceSetRefs()
+        if err != nil {
+                return nil, err
+        }
+        return obj.service_appliance_set_refs, nil
+}
+
+func (obj *ServiceTemplate) AddServiceApplianceSet(
+        rhs *ServiceApplianceSet) error {
+        err := obj.readServiceApplianceSetRefs()
+        if err != nil {
+                return err
+        }
+
+        if !obj.modified[service_template_service_appliance_set_refs] {
+                obj.storeReferenceBase("service-appliance-set", obj.service_appliance_set_refs)
+        }
+
+        ref := contrail.Reference {
+                rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
+        obj.service_appliance_set_refs = append(obj.service_appliance_set_refs, ref)
+        obj.modified[service_template_service_appliance_set_refs] = true
+        return nil
+}
+
+func (obj *ServiceTemplate) DeleteServiceApplianceSet(uuid string) error {
+        err := obj.readServiceApplianceSetRefs()
+        if err != nil {
+                return err
+        }
+
+        if !obj.modified[service_template_service_appliance_set_refs] {
+                obj.storeReferenceBase("service-appliance-set", obj.service_appliance_set_refs)
+        }
+
+        for i, ref := range obj.service_appliance_set_refs {
+                if ref.Uuid == uuid {
+                        obj.service_appliance_set_refs = append(
+                                obj.service_appliance_set_refs[:i],
+                                obj.service_appliance_set_refs[i+1:]...)
+                        break
+                }
+        }
+        obj.modified[service_template_service_appliance_set_refs] = true
+        return nil
+}
+
+func (obj *ServiceTemplate) ClearServiceApplianceSet() {
+        if (obj.valid[service_template_service_appliance_set_refs]) &&
+           (!obj.modified[service_template_service_appliance_set_refs]) {
+                obj.storeReferenceBase("service-appliance-set", obj.service_appliance_set_refs)
+        }
+        obj.service_appliance_set_refs = make([]contrail.Reference, 0)
+        obj.valid[service_template_service_appliance_set_refs] = true
+        obj.modified[service_template_service_appliance_set_refs] = true
+}
+
+func (obj *ServiceTemplate) SetServiceApplianceSetList(
+        refList []contrail.ReferencePair) {
+        obj.ClearServiceApplianceSet()
+        obj.service_appliance_set_refs = make([]contrail.Reference, len(refList))
+        for i, pair := range refList {
+                obj.service_appliance_set_refs[i] = contrail.Reference {
+                        pair.Object.GetFQName(),
+                        pair.Object.GetUuid(),
+                        pair.Object.GetHref(),
+                        pair.Attribute,
+                }
+        }
+}
+
 
 func (obj *ServiceTemplate) readServiceInstanceBackRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & service_template_service_instance_back_refs == 0) {
+                (!obj.valid[service_template_service_instance_back_refs]) {
                 err := obj.GetField(obj, "service_instance_back_refs")
                 if err != nil {
                         return err
@@ -128,7 +227,7 @@ func (obj *ServiceTemplate) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & service_template_service_template_properties != 0 {
+        if obj.modified[service_template_service_template_properties] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.service_template_properties)
                 if err != nil {
@@ -137,7 +236,7 @@ func (obj *ServiceTemplate) MarshalJSON() ([]byte, error) {
                 msg["service_template_properties"] = &value
         }
 
-        if obj.modified & service_template_id_perms != 0 {
+        if obj.modified[service_template_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -146,13 +245,31 @@ func (obj *ServiceTemplate) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & service_template_display_name != 0 {
+        if obj.modified[service_template_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[service_template_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
                         return nil, err
                 }
                 msg["display_name"] = &value
+        }
+
+        if len(obj.service_appliance_set_refs) > 0 {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.service_appliance_set_refs)
+                if err != nil {
+                        return nil, err
+                }
+                msg["service_appliance_set_refs"] = &value
         }
 
         return json.Marshal(msg)
@@ -168,30 +285,43 @@ func (obj *ServiceTemplate) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "service_template_properties":
                         err = json.Unmarshal(value, &obj.service_template_properties)
                         if err == nil {
-                                obj.valid |= service_template_service_template_properties
+                                obj.valid[service_template_service_template_properties] = true
                         }
                         break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= service_template_id_perms
+                                obj.valid[service_template_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[service_template_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= service_template_display_name
+                                obj.valid[service_template_display_name] = true
+                        }
+                        break
+                case "service_appliance_set_refs":
+                        err = json.Unmarshal(value, &obj.service_appliance_set_refs)
+                        if err == nil {
+                                obj.valid[service_template_service_appliance_set_refs] = true
                         }
                         break
                 case "service_instance_back_refs":
                         err = json.Unmarshal(value, &obj.service_instance_back_refs)
                         if err == nil {
-                                obj.valid |= service_template_service_instance_back_refs
+                                obj.valid[service_template_service_instance_back_refs] = true
                         }
                         break
                 }
@@ -210,7 +340,7 @@ func (obj *ServiceTemplate) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & service_template_service_template_properties != 0 {
+        if obj.modified[service_template_service_template_properties] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.service_template_properties)
                 if err != nil {
@@ -219,7 +349,7 @@ func (obj *ServiceTemplate) UpdateObject() ([]byte, error) {
                 msg["service_template_properties"] = &value
         }
 
-        if obj.modified & service_template_id_perms != 0 {
+        if obj.modified[service_template_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -228,7 +358,16 @@ func (obj *ServiceTemplate) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & service_template_display_name != 0 {
+        if obj.modified[service_template_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[service_template_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -237,10 +376,42 @@ func (obj *ServiceTemplate) UpdateObject() ([]byte, error) {
                 msg["display_name"] = &value
         }
 
+        if obj.modified[service_template_service_appliance_set_refs] {
+                if len(obj.service_appliance_set_refs) == 0 {
+                        var value json.RawMessage
+                        value, err := json.Marshal(
+                                          make([]contrail.Reference, 0))
+                        if err != nil {
+                                return nil, err
+                        }
+                        msg["service_appliance_set_refs"] = &value
+                } else if !obj.hasReferenceBase("service-appliance-set") {
+                        var value json.RawMessage
+                        value, err := json.Marshal(&obj.service_appliance_set_refs)
+                        if err != nil {
+                                return nil, err
+                        }
+                        msg["service_appliance_set_refs"] = &value
+                }
+        }
+
+
         return json.Marshal(msg)
 }
 
 func (obj *ServiceTemplate) UpdateReferences() error {
+
+        if (obj.modified[service_template_service_appliance_set_refs]) &&
+           len(obj.service_appliance_set_refs) > 0 &&
+           obj.hasReferenceBase("service-appliance-set") {
+                err := obj.UpdateReference(
+                        obj, "service-appliance-set",
+                        obj.service_appliance_set_refs,
+                        obj.baseMap["service-appliance-set"])
+                if err != nil {
+                        return err
+                }
+        }
 
         return nil
 }

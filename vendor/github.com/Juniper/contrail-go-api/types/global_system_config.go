@@ -11,42 +11,59 @@ import (
 )
 
 const (
-	global_system_config_autonomous_system uint64 = 1 << iota
+	global_system_config_autonomous_system = iota
 	global_system_config_config_version
+	global_system_config_graceful_restart_params
 	global_system_config_plugin_tuning
 	global_system_config_ibgp_auto_mesh
 	global_system_config_ip_fabric_subnets
+	global_system_config_alarm_enable
+	global_system_config_user_defined_log_statistics
 	global_system_config_id_perms
+	global_system_config_perms2
 	global_system_config_display_name
 	global_system_config_bgp_router_refs
 	global_system_config_global_vrouter_configs
+	global_system_config_global_qos_configs
 	global_system_config_physical_routers
 	global_system_config_virtual_routers
 	global_system_config_config_nodes
 	global_system_config_analytics_nodes
 	global_system_config_database_nodes
 	global_system_config_service_appliance_sets
+	global_system_config_api_access_lists
+	global_system_config_alarms
+	global_system_config_qos_config_back_refs
+	global_system_config_max
 )
 
 type GlobalSystemConfig struct {
         contrail.ObjectBase
 	autonomous_system int
 	config_version string
+	graceful_restart_params GracefulRestartType
 	plugin_tuning PluginProperties
 	ibgp_auto_mesh bool
 	ip_fabric_subnets SubnetListType
+	alarm_enable bool
+	user_defined_log_statistics UserDefinedLogStatList
 	id_perms IdPermsType
+	perms2 PermType2
 	display_name string
 	bgp_router_refs contrail.ReferenceList
 	global_vrouter_configs contrail.ReferenceList
+	global_qos_configs contrail.ReferenceList
 	physical_routers contrail.ReferenceList
 	virtual_routers contrail.ReferenceList
 	config_nodes contrail.ReferenceList
 	analytics_nodes contrail.ReferenceList
 	database_nodes contrail.ReferenceList
 	service_appliance_sets contrail.ReferenceList
-        valid uint64
-        modified uint64
+	api_access_lists contrail.ReferenceList
+	alarms contrail.ReferenceList
+	qos_config_back_refs contrail.ReferenceList
+        valid [global_system_config_max] bool
+        modified [global_system_config_max] bool
         baseMap map[string]contrail.ReferenceList
 }
 
@@ -90,7 +107,7 @@ func (obj *GlobalSystemConfig) hasReferenceBase(name string) bool {
 }
 
 func (obj *GlobalSystemConfig) UpdateDone() {
-        obj.modified = 0
+        for i := range obj.modified { obj.modified[i] = false }
         obj.baseMap = nil
 }
 
@@ -101,7 +118,7 @@ func (obj *GlobalSystemConfig) GetAutonomousSystem() int {
 
 func (obj *GlobalSystemConfig) SetAutonomousSystem(value int) {
         obj.autonomous_system = value
-        obj.modified |= global_system_config_autonomous_system
+        obj.modified[global_system_config_autonomous_system] = true
 }
 
 func (obj *GlobalSystemConfig) GetConfigVersion() string {
@@ -110,7 +127,16 @@ func (obj *GlobalSystemConfig) GetConfigVersion() string {
 
 func (obj *GlobalSystemConfig) SetConfigVersion(value string) {
         obj.config_version = value
-        obj.modified |= global_system_config_config_version
+        obj.modified[global_system_config_config_version] = true
+}
+
+func (obj *GlobalSystemConfig) GetGracefulRestartParams() GracefulRestartType {
+        return obj.graceful_restart_params
+}
+
+func (obj *GlobalSystemConfig) SetGracefulRestartParams(value *GracefulRestartType) {
+        obj.graceful_restart_params = *value
+        obj.modified[global_system_config_graceful_restart_params] = true
 }
 
 func (obj *GlobalSystemConfig) GetPluginTuning() PluginProperties {
@@ -119,7 +145,7 @@ func (obj *GlobalSystemConfig) GetPluginTuning() PluginProperties {
 
 func (obj *GlobalSystemConfig) SetPluginTuning(value *PluginProperties) {
         obj.plugin_tuning = *value
-        obj.modified |= global_system_config_plugin_tuning
+        obj.modified[global_system_config_plugin_tuning] = true
 }
 
 func (obj *GlobalSystemConfig) GetIbgpAutoMesh() bool {
@@ -128,7 +154,7 @@ func (obj *GlobalSystemConfig) GetIbgpAutoMesh() bool {
 
 func (obj *GlobalSystemConfig) SetIbgpAutoMesh(value bool) {
         obj.ibgp_auto_mesh = value
-        obj.modified |= global_system_config_ibgp_auto_mesh
+        obj.modified[global_system_config_ibgp_auto_mesh] = true
 }
 
 func (obj *GlobalSystemConfig) GetIpFabricSubnets() SubnetListType {
@@ -137,7 +163,25 @@ func (obj *GlobalSystemConfig) GetIpFabricSubnets() SubnetListType {
 
 func (obj *GlobalSystemConfig) SetIpFabricSubnets(value *SubnetListType) {
         obj.ip_fabric_subnets = *value
-        obj.modified |= global_system_config_ip_fabric_subnets
+        obj.modified[global_system_config_ip_fabric_subnets] = true
+}
+
+func (obj *GlobalSystemConfig) GetAlarmEnable() bool {
+        return obj.alarm_enable
+}
+
+func (obj *GlobalSystemConfig) SetAlarmEnable(value bool) {
+        obj.alarm_enable = value
+        obj.modified[global_system_config_alarm_enable] = true
+}
+
+func (obj *GlobalSystemConfig) GetUserDefinedLogStatistics() UserDefinedLogStatList {
+        return obj.user_defined_log_statistics
+}
+
+func (obj *GlobalSystemConfig) SetUserDefinedLogStatistics(value *UserDefinedLogStatList) {
+        obj.user_defined_log_statistics = *value
+        obj.modified[global_system_config_user_defined_log_statistics] = true
 }
 
 func (obj *GlobalSystemConfig) GetIdPerms() IdPermsType {
@@ -146,7 +190,16 @@ func (obj *GlobalSystemConfig) GetIdPerms() IdPermsType {
 
 func (obj *GlobalSystemConfig) SetIdPerms(value *IdPermsType) {
         obj.id_perms = *value
-        obj.modified |= global_system_config_id_perms
+        obj.modified[global_system_config_id_perms] = true
+}
+
+func (obj *GlobalSystemConfig) GetPerms2() PermType2 {
+        return obj.perms2
+}
+
+func (obj *GlobalSystemConfig) SetPerms2(value *PermType2) {
+        obj.perms2 = *value
+        obj.modified[global_system_config_perms2] = true
 }
 
 func (obj *GlobalSystemConfig) GetDisplayName() string {
@@ -155,12 +208,12 @@ func (obj *GlobalSystemConfig) GetDisplayName() string {
 
 func (obj *GlobalSystemConfig) SetDisplayName(value string) {
         obj.display_name = value
-        obj.modified |= global_system_config_display_name
+        obj.modified[global_system_config_display_name] = true
 }
 
 func (obj *GlobalSystemConfig) readGlobalVrouterConfigs() error {
         if !obj.IsTransient() &&
-                (obj.valid & global_system_config_global_vrouter_configs == 0) {
+                (!obj.valid[global_system_config_global_vrouter_configs]) {
                 err := obj.GetField(obj, "global_vrouter_configs")
                 if err != nil {
                         return err
@@ -178,9 +231,29 @@ func (obj *GlobalSystemConfig) GetGlobalVrouterConfigs() (
         return obj.global_vrouter_configs, nil
 }
 
+func (obj *GlobalSystemConfig) readGlobalQosConfigs() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[global_system_config_global_qos_configs]) {
+                err := obj.GetField(obj, "global_qos_configs")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *GlobalSystemConfig) GetGlobalQosConfigs() (
+        contrail.ReferenceList, error) {
+        err := obj.readGlobalQosConfigs()
+        if err != nil {
+                return nil, err
+        }
+        return obj.global_qos_configs, nil
+}
+
 func (obj *GlobalSystemConfig) readPhysicalRouters() error {
         if !obj.IsTransient() &&
-                (obj.valid & global_system_config_physical_routers == 0) {
+                (!obj.valid[global_system_config_physical_routers]) {
                 err := obj.GetField(obj, "physical_routers")
                 if err != nil {
                         return err
@@ -200,7 +273,7 @@ func (obj *GlobalSystemConfig) GetPhysicalRouters() (
 
 func (obj *GlobalSystemConfig) readVirtualRouters() error {
         if !obj.IsTransient() &&
-                (obj.valid & global_system_config_virtual_routers == 0) {
+                (!obj.valid[global_system_config_virtual_routers]) {
                 err := obj.GetField(obj, "virtual_routers")
                 if err != nil {
                         return err
@@ -220,7 +293,7 @@ func (obj *GlobalSystemConfig) GetVirtualRouters() (
 
 func (obj *GlobalSystemConfig) readConfigNodes() error {
         if !obj.IsTransient() &&
-                (obj.valid & global_system_config_config_nodes == 0) {
+                (!obj.valid[global_system_config_config_nodes]) {
                 err := obj.GetField(obj, "config_nodes")
                 if err != nil {
                         return err
@@ -240,7 +313,7 @@ func (obj *GlobalSystemConfig) GetConfigNodes() (
 
 func (obj *GlobalSystemConfig) readAnalyticsNodes() error {
         if !obj.IsTransient() &&
-                (obj.valid & global_system_config_analytics_nodes == 0) {
+                (!obj.valid[global_system_config_analytics_nodes]) {
                 err := obj.GetField(obj, "analytics_nodes")
                 if err != nil {
                         return err
@@ -260,7 +333,7 @@ func (obj *GlobalSystemConfig) GetAnalyticsNodes() (
 
 func (obj *GlobalSystemConfig) readDatabaseNodes() error {
         if !obj.IsTransient() &&
-                (obj.valid & global_system_config_database_nodes == 0) {
+                (!obj.valid[global_system_config_database_nodes]) {
                 err := obj.GetField(obj, "database_nodes")
                 if err != nil {
                         return err
@@ -280,7 +353,7 @@ func (obj *GlobalSystemConfig) GetDatabaseNodes() (
 
 func (obj *GlobalSystemConfig) readServiceApplianceSets() error {
         if !obj.IsTransient() &&
-                (obj.valid & global_system_config_service_appliance_sets == 0) {
+                (!obj.valid[global_system_config_service_appliance_sets]) {
                 err := obj.GetField(obj, "service_appliance_sets")
                 if err != nil {
                         return err
@@ -298,9 +371,49 @@ func (obj *GlobalSystemConfig) GetServiceApplianceSets() (
         return obj.service_appliance_sets, nil
 }
 
+func (obj *GlobalSystemConfig) readApiAccessLists() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[global_system_config_api_access_lists]) {
+                err := obj.GetField(obj, "api_access_lists")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *GlobalSystemConfig) GetApiAccessLists() (
+        contrail.ReferenceList, error) {
+        err := obj.readApiAccessLists()
+        if err != nil {
+                return nil, err
+        }
+        return obj.api_access_lists, nil
+}
+
+func (obj *GlobalSystemConfig) readAlarms() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[global_system_config_alarms]) {
+                err := obj.GetField(obj, "alarms")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *GlobalSystemConfig) GetAlarms() (
+        contrail.ReferenceList, error) {
+        err := obj.readAlarms()
+        if err != nil {
+                return nil, err
+        }
+        return obj.alarms, nil
+}
+
 func (obj *GlobalSystemConfig) readBgpRouterRefs() error {
         if !obj.IsTransient() &&
-                (obj.valid & global_system_config_bgp_router_refs == 0) {
+                (!obj.valid[global_system_config_bgp_router_refs]) {
                 err := obj.GetField(obj, "bgp_router_refs")
                 if err != nil {
                         return err
@@ -325,14 +438,14 @@ func (obj *GlobalSystemConfig) AddBgpRouter(
                 return err
         }
 
-        if obj.modified & global_system_config_bgp_router_refs == 0 {
+        if !obj.modified[global_system_config_bgp_router_refs] {
                 obj.storeReferenceBase("bgp-router", obj.bgp_router_refs)
         }
 
         ref := contrail.Reference {
                 rhs.GetFQName(), rhs.GetUuid(), rhs.GetHref(), nil}
         obj.bgp_router_refs = append(obj.bgp_router_refs, ref)
-        obj.modified |= global_system_config_bgp_router_refs
+        obj.modified[global_system_config_bgp_router_refs] = true
         return nil
 }
 
@@ -342,7 +455,7 @@ func (obj *GlobalSystemConfig) DeleteBgpRouter(uuid string) error {
                 return err
         }
 
-        if obj.modified & global_system_config_bgp_router_refs == 0 {
+        if !obj.modified[global_system_config_bgp_router_refs] {
                 obj.storeReferenceBase("bgp-router", obj.bgp_router_refs)
         }
 
@@ -354,18 +467,18 @@ func (obj *GlobalSystemConfig) DeleteBgpRouter(uuid string) error {
                         break
                 }
         }
-        obj.modified |= global_system_config_bgp_router_refs
+        obj.modified[global_system_config_bgp_router_refs] = true
         return nil
 }
 
 func (obj *GlobalSystemConfig) ClearBgpRouter() {
-        if (obj.valid & global_system_config_bgp_router_refs != 0) &&
-           (obj.modified & global_system_config_bgp_router_refs == 0) {
+        if (obj.valid[global_system_config_bgp_router_refs]) &&
+           (!obj.modified[global_system_config_bgp_router_refs]) {
                 obj.storeReferenceBase("bgp-router", obj.bgp_router_refs)
         }
         obj.bgp_router_refs = make([]contrail.Reference, 0)
-        obj.valid |= global_system_config_bgp_router_refs
-        obj.modified |= global_system_config_bgp_router_refs
+        obj.valid[global_system_config_bgp_router_refs] = true
+        obj.modified[global_system_config_bgp_router_refs] = true
 }
 
 func (obj *GlobalSystemConfig) SetBgpRouterList(
@@ -383,6 +496,26 @@ func (obj *GlobalSystemConfig) SetBgpRouterList(
 }
 
 
+func (obj *GlobalSystemConfig) readQosConfigBackRefs() error {
+        if !obj.IsTransient() &&
+                (!obj.valid[global_system_config_qos_config_back_refs]) {
+                err := obj.GetField(obj, "qos_config_back_refs")
+                if err != nil {
+                        return err
+                }
+        }
+        return nil
+}
+
+func (obj *GlobalSystemConfig) GetQosConfigBackRefs() (
+        contrail.ReferenceList, error) {
+        err := obj.readQosConfigBackRefs()
+        if err != nil {
+                return nil, err
+        }
+        return obj.qos_config_back_refs, nil
+}
+
 func (obj *GlobalSystemConfig) MarshalJSON() ([]byte, error) {
         msg := map[string]*json.RawMessage {
         }
@@ -391,7 +524,7 @@ func (obj *GlobalSystemConfig) MarshalJSON() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & global_system_config_autonomous_system != 0 {
+        if obj.modified[global_system_config_autonomous_system] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.autonomous_system)
                 if err != nil {
@@ -400,7 +533,7 @@ func (obj *GlobalSystemConfig) MarshalJSON() ([]byte, error) {
                 msg["autonomous_system"] = &value
         }
 
-        if obj.modified & global_system_config_config_version != 0 {
+        if obj.modified[global_system_config_config_version] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.config_version)
                 if err != nil {
@@ -409,7 +542,16 @@ func (obj *GlobalSystemConfig) MarshalJSON() ([]byte, error) {
                 msg["config_version"] = &value
         }
 
-        if obj.modified & global_system_config_plugin_tuning != 0 {
+        if obj.modified[global_system_config_graceful_restart_params] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.graceful_restart_params)
+                if err != nil {
+                        return nil, err
+                }
+                msg["graceful_restart_params"] = &value
+        }
+
+        if obj.modified[global_system_config_plugin_tuning] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.plugin_tuning)
                 if err != nil {
@@ -418,7 +560,7 @@ func (obj *GlobalSystemConfig) MarshalJSON() ([]byte, error) {
                 msg["plugin_tuning"] = &value
         }
 
-        if obj.modified & global_system_config_ibgp_auto_mesh != 0 {
+        if obj.modified[global_system_config_ibgp_auto_mesh] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.ibgp_auto_mesh)
                 if err != nil {
@@ -427,7 +569,7 @@ func (obj *GlobalSystemConfig) MarshalJSON() ([]byte, error) {
                 msg["ibgp_auto_mesh"] = &value
         }
 
-        if obj.modified & global_system_config_ip_fabric_subnets != 0 {
+        if obj.modified[global_system_config_ip_fabric_subnets] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.ip_fabric_subnets)
                 if err != nil {
@@ -436,7 +578,25 @@ func (obj *GlobalSystemConfig) MarshalJSON() ([]byte, error) {
                 msg["ip_fabric_subnets"] = &value
         }
 
-        if obj.modified & global_system_config_id_perms != 0 {
+        if obj.modified[global_system_config_alarm_enable] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.alarm_enable)
+                if err != nil {
+                        return nil, err
+                }
+                msg["alarm_enable"] = &value
+        }
+
+        if obj.modified[global_system_config_user_defined_log_statistics] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.user_defined_log_statistics)
+                if err != nil {
+                        return nil, err
+                }
+                msg["user_defined_log_statistics"] = &value
+        }
+
+        if obj.modified[global_system_config_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -445,7 +605,16 @@ func (obj *GlobalSystemConfig) MarshalJSON() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & global_system_config_display_name != 0 {
+        if obj.modified[global_system_config_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[global_system_config_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -476,96 +645,145 @@ func (obj *GlobalSystemConfig) UnmarshalJSON(body []byte) error {
         if err != nil {
                 return err
         }
+
         for key, value := range m {
                 switch key {
                 case "autonomous_system":
                         err = json.Unmarshal(value, &obj.autonomous_system)
                         if err == nil {
-                                obj.valid |= global_system_config_autonomous_system
+                                obj.valid[global_system_config_autonomous_system] = true
                         }
                         break
                 case "config_version":
                         err = json.Unmarshal(value, &obj.config_version)
                         if err == nil {
-                                obj.valid |= global_system_config_config_version
+                                obj.valid[global_system_config_config_version] = true
+                        }
+                        break
+                case "graceful_restart_params":
+                        err = json.Unmarshal(value, &obj.graceful_restart_params)
+                        if err == nil {
+                                obj.valid[global_system_config_graceful_restart_params] = true
                         }
                         break
                 case "plugin_tuning":
                         err = json.Unmarshal(value, &obj.plugin_tuning)
                         if err == nil {
-                                obj.valid |= global_system_config_plugin_tuning
+                                obj.valid[global_system_config_plugin_tuning] = true
                         }
                         break
                 case "ibgp_auto_mesh":
                         err = json.Unmarshal(value, &obj.ibgp_auto_mesh)
                         if err == nil {
-                                obj.valid |= global_system_config_ibgp_auto_mesh
+                                obj.valid[global_system_config_ibgp_auto_mesh] = true
                         }
                         break
                 case "ip_fabric_subnets":
                         err = json.Unmarshal(value, &obj.ip_fabric_subnets)
                         if err == nil {
-                                obj.valid |= global_system_config_ip_fabric_subnets
+                                obj.valid[global_system_config_ip_fabric_subnets] = true
+                        }
+                        break
+                case "alarm_enable":
+                        err = json.Unmarshal(value, &obj.alarm_enable)
+                        if err == nil {
+                                obj.valid[global_system_config_alarm_enable] = true
+                        }
+                        break
+                case "user_defined_log_statistics":
+                        err = json.Unmarshal(value, &obj.user_defined_log_statistics)
+                        if err == nil {
+                                obj.valid[global_system_config_user_defined_log_statistics] = true
                         }
                         break
                 case "id_perms":
                         err = json.Unmarshal(value, &obj.id_perms)
                         if err == nil {
-                                obj.valid |= global_system_config_id_perms
+                                obj.valid[global_system_config_id_perms] = true
+                        }
+                        break
+                case "perms2":
+                        err = json.Unmarshal(value, &obj.perms2)
+                        if err == nil {
+                                obj.valid[global_system_config_perms2] = true
                         }
                         break
                 case "display_name":
                         err = json.Unmarshal(value, &obj.display_name)
                         if err == nil {
-                                obj.valid |= global_system_config_display_name
+                                obj.valid[global_system_config_display_name] = true
                         }
                         break
                 case "bgp_router_refs":
                         err = json.Unmarshal(value, &obj.bgp_router_refs)
                         if err == nil {
-                                obj.valid |= global_system_config_bgp_router_refs
+                                obj.valid[global_system_config_bgp_router_refs] = true
                         }
                         break
                 case "global_vrouter_configs":
                         err = json.Unmarshal(value, &obj.global_vrouter_configs)
                         if err == nil {
-                                obj.valid |= global_system_config_global_vrouter_configs
+                                obj.valid[global_system_config_global_vrouter_configs] = true
+                        }
+                        break
+                case "global_qos_configs":
+                        err = json.Unmarshal(value, &obj.global_qos_configs)
+                        if err == nil {
+                                obj.valid[global_system_config_global_qos_configs] = true
                         }
                         break
                 case "physical_routers":
                         err = json.Unmarshal(value, &obj.physical_routers)
                         if err == nil {
-                                obj.valid |= global_system_config_physical_routers
+                                obj.valid[global_system_config_physical_routers] = true
                         }
                         break
                 case "virtual_routers":
                         err = json.Unmarshal(value, &obj.virtual_routers)
                         if err == nil {
-                                obj.valid |= global_system_config_virtual_routers
+                                obj.valid[global_system_config_virtual_routers] = true
                         }
                         break
                 case "config_nodes":
                         err = json.Unmarshal(value, &obj.config_nodes)
                         if err == nil {
-                                obj.valid |= global_system_config_config_nodes
+                                obj.valid[global_system_config_config_nodes] = true
                         }
                         break
                 case "analytics_nodes":
                         err = json.Unmarshal(value, &obj.analytics_nodes)
                         if err == nil {
-                                obj.valid |= global_system_config_analytics_nodes
+                                obj.valid[global_system_config_analytics_nodes] = true
                         }
                         break
                 case "database_nodes":
                         err = json.Unmarshal(value, &obj.database_nodes)
                         if err == nil {
-                                obj.valid |= global_system_config_database_nodes
+                                obj.valid[global_system_config_database_nodes] = true
                         }
                         break
                 case "service_appliance_sets":
                         err = json.Unmarshal(value, &obj.service_appliance_sets)
                         if err == nil {
-                                obj.valid |= global_system_config_service_appliance_sets
+                                obj.valid[global_system_config_service_appliance_sets] = true
+                        }
+                        break
+                case "api_access_lists":
+                        err = json.Unmarshal(value, &obj.api_access_lists)
+                        if err == nil {
+                                obj.valid[global_system_config_api_access_lists] = true
+                        }
+                        break
+                case "alarms":
+                        err = json.Unmarshal(value, &obj.alarms)
+                        if err == nil {
+                                obj.valid[global_system_config_alarms] = true
+                        }
+                        break
+                case "qos_config_back_refs":
+                        err = json.Unmarshal(value, &obj.qos_config_back_refs)
+                        if err == nil {
+                                obj.valid[global_system_config_qos_config_back_refs] = true
                         }
                         break
                 }
@@ -584,7 +802,7 @@ func (obj *GlobalSystemConfig) UpdateObject() ([]byte, error) {
                 return nil, err
         }
 
-        if obj.modified & global_system_config_autonomous_system != 0 {
+        if obj.modified[global_system_config_autonomous_system] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.autonomous_system)
                 if err != nil {
@@ -593,7 +811,7 @@ func (obj *GlobalSystemConfig) UpdateObject() ([]byte, error) {
                 msg["autonomous_system"] = &value
         }
 
-        if obj.modified & global_system_config_config_version != 0 {
+        if obj.modified[global_system_config_config_version] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.config_version)
                 if err != nil {
@@ -602,7 +820,16 @@ func (obj *GlobalSystemConfig) UpdateObject() ([]byte, error) {
                 msg["config_version"] = &value
         }
 
-        if obj.modified & global_system_config_plugin_tuning != 0 {
+        if obj.modified[global_system_config_graceful_restart_params] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.graceful_restart_params)
+                if err != nil {
+                        return nil, err
+                }
+                msg["graceful_restart_params"] = &value
+        }
+
+        if obj.modified[global_system_config_plugin_tuning] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.plugin_tuning)
                 if err != nil {
@@ -611,7 +838,7 @@ func (obj *GlobalSystemConfig) UpdateObject() ([]byte, error) {
                 msg["plugin_tuning"] = &value
         }
 
-        if obj.modified & global_system_config_ibgp_auto_mesh != 0 {
+        if obj.modified[global_system_config_ibgp_auto_mesh] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.ibgp_auto_mesh)
                 if err != nil {
@@ -620,7 +847,7 @@ func (obj *GlobalSystemConfig) UpdateObject() ([]byte, error) {
                 msg["ibgp_auto_mesh"] = &value
         }
 
-        if obj.modified & global_system_config_ip_fabric_subnets != 0 {
+        if obj.modified[global_system_config_ip_fabric_subnets] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.ip_fabric_subnets)
                 if err != nil {
@@ -629,7 +856,25 @@ func (obj *GlobalSystemConfig) UpdateObject() ([]byte, error) {
                 msg["ip_fabric_subnets"] = &value
         }
 
-        if obj.modified & global_system_config_id_perms != 0 {
+        if obj.modified[global_system_config_alarm_enable] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.alarm_enable)
+                if err != nil {
+                        return nil, err
+                }
+                msg["alarm_enable"] = &value
+        }
+
+        if obj.modified[global_system_config_user_defined_log_statistics] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.user_defined_log_statistics)
+                if err != nil {
+                        return nil, err
+                }
+                msg["user_defined_log_statistics"] = &value
+        }
+
+        if obj.modified[global_system_config_id_perms] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.id_perms)
                 if err != nil {
@@ -638,7 +883,16 @@ func (obj *GlobalSystemConfig) UpdateObject() ([]byte, error) {
                 msg["id_perms"] = &value
         }
 
-        if obj.modified & global_system_config_display_name != 0 {
+        if obj.modified[global_system_config_perms2] {
+                var value json.RawMessage
+                value, err := json.Marshal(&obj.perms2)
+                if err != nil {
+                        return nil, err
+                }
+                msg["perms2"] = &value
+        }
+
+        if obj.modified[global_system_config_display_name] {
                 var value json.RawMessage
                 value, err := json.Marshal(&obj.display_name)
                 if err != nil {
@@ -647,7 +901,7 @@ func (obj *GlobalSystemConfig) UpdateObject() ([]byte, error) {
                 msg["display_name"] = &value
         }
 
-        if obj.modified & global_system_config_bgp_router_refs != 0 {
+        if obj.modified[global_system_config_bgp_router_refs] {
                 if len(obj.bgp_router_refs) == 0 {
                         var value json.RawMessage
                         value, err := json.Marshal(
@@ -672,7 +926,7 @@ func (obj *GlobalSystemConfig) UpdateObject() ([]byte, error) {
 
 func (obj *GlobalSystemConfig) UpdateReferences() error {
 
-        if (obj.modified & global_system_config_bgp_router_refs != 0) &&
+        if (obj.modified[global_system_config_bgp_router_refs]) &&
            len(obj.bgp_router_refs) > 0 &&
            obj.hasReferenceBase("bgp-router") {
                 err := obj.UpdateReference(
