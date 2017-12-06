@@ -21,11 +21,13 @@ ignored = ["github.com/Juniper/contrail-go-api/types"]
   name = "github.com/docker/go-connections"
   revision = "3ede32e2033de7505e6500d6c868c2b9ed9f169d"
 
+# It is a transitive dependency but we would like to have this component in specific version
 [[override]]
   name = "github.com/docker/distribution"
   revision = "5db89f0ca68677abc5eefce8f2a0a772c98ba52d"
-  
-[[constraint]]
+
+# It is a transitive dependency but we would like to have this component in specific version
+[[override]]
   name = "github.com/docker/go-units"
   revision = "0dadbb0345b35ec7ef35e228dabb8de89a65bf52"
 
@@ -56,34 +58,6 @@ ignored = ["github.com/Juniper/contrail-go-api/types"]
 [[constraint]]
   name = "golang.org/x/sys"
   revision = "062cd7e4e68206d8bab9b18396626e855c992658"
-
-[[constraint]]
-  name = "golang.org/x/text"
-  revision = "acd49d43e9b95df46670431bf5c7ae59586daad8"
-
-[[constraint]]
-  name = "golang.org/x/net"
-  revision = "b129b8e0fbeb39c8358e51a07ab6c50ad415e72e"
-
-[[constraint]]
-  name = "gopkg.in/yaml.v2"
-  revision = "eb3733d160e74a9c7e442f435eb3bea458e1d19f"
-
-[[constraint]]
-  name = "github.com/gogo/protobuf"
-  revision = "2adc21fd136931e0388e278825291678e1d98309"
-
-[[constraint]]
-  name = "github.com/opencontainers/image-spec"
-  revision = "ebd93fd0782379ca3d821f0fa74f0651a9347a3e"
-
-[[constraint]]
-  name = "github.com/coreos/go-systemd"
-  revision = "d2196463941895ee908e13531a23a39feb9e1243"
-
-[[constraint]]
-  name = "github.com/pkg/errors"
-  revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
 
 [[constraint]]
   name = "github.com/pborman/uuid"

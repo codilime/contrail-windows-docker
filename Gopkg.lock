@@ -48,7 +48,6 @@
   name = "github.com/docker/go-units"
   packages = ["."]
   revision = "0dadbb0345b35ec7ef35e228dabb8de89a65bf52"
-  version = "v0.3.2"
 
 [[projects]]
   name = "github.com/docker/libnetwork"
@@ -142,6 +141,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "758120ad40677115a1e5e45842f7d1846295b64254eb0d4434849d29a369c8e0"
+  inputs-digest = "3dab873db44e1d5277a44e284abe79f43e271703ce64527e1b9bb55c7fbaefed"
   solver-name = "gps-cdcl"
   solver-version = 1
