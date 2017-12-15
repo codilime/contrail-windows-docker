@@ -42,6 +42,3 @@ _testmain.go
 
 ### Delve debugger temporary executable ###
 /debug
-
-# Vendor code, it is pulled by dependency manager
-vendor/*
